@@ -1,7 +1,8 @@
 use gtk::prelude::*;
-use gtk::{Application, Window, ApplicationWindow, Button};
+use gtk::{Application, ApplicationWindow, Button};
 use gtk4 as gtk;
 
+mod backend;
 mod interface;
 
 fn main() {
@@ -30,7 +31,7 @@ fn main() {
         window.set_child(Some(&boxx));
         window.show();
 
-        interface::Interface::new();
+        interface::interfaces_ui();
     });
 
     application.run();
