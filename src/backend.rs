@@ -1,8 +1,24 @@
+use network_interface::NetworkInterfaceConfig;
+use std::process::Command;
+
 pub fn get_interfaces() -> Vec<String> {
-    vec!["wlp3s0".to_string(), "lo".to_string(), "help".to_string()]
+    let mut ret = vec![];
+    let ifaces = network_interface::NetworkInterface::show().unwrap();
+
+    for iface in ifaces {
+        ret.push(iface.name);
+    }
+    ret
 }
 
-pub fn enable_monitor_mode(iface: &str) -> Option<String> {
-    //Some("fedf".to_string())
-    None
+pub fn enable_monitor_mode(iface: &str) -> Result<String, ()> {
+    let output = Command::new("sh")
+        .args(["-c", "sudo", "airmon-ng", "start", iface])
+        .output()
+        .expect("failed to execute process");
+
+    match output.status.success() {
+        true => Ok(iface.to_string() + "mon"),
+        false => Err(()),
+    }
 }

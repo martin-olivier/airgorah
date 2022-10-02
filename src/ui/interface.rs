@@ -1,14 +1,19 @@
 use gtk4::prelude::*;
-use gtk4::{Button, ListStore, Window};
+use gtk4::{Application, Button, ListStore, Window};
 use std::rc::Rc;
 
-pub fn interfaces_ui() -> String {
+use crate::globals::IFACE;
+
+pub fn interfaces_ui(app: &Application) {
     let handle = Window::builder()
         .title("Select wireless interface")
         .default_width(350)
         .default_height(70)
         .resizable(false)
+        .modal(true)
         .build();
+
+    handle.set_transient_for(app.active_window().as_ref());
 
     let model = Rc::new(ListStore::new(&[glib::Type::STRING]));
 
@@ -66,11 +71,12 @@ pub fn interfaces_ui() -> String {
         let iface = val.get::<&str>().unwrap();
 
         match crate::backend::enable_monitor_mode(iface) {
-            Some(_str) => {
+            Ok(str) => {
+                IFACE.lock().unwrap().clear();
+                IFACE.lock().unwrap().push_str(str.as_str());
                 handle.close();
-                //return str;
             }
-            None => {
+            Err(()) => {
                 let dialog = gtk4::MessageDialog::builder()
                     .text(&format!("\nMonitor mode failed"))
                     .secondary_text(&format!("Could not enable monitor mode on \"{}\"", iface))
@@ -87,5 +93,4 @@ pub fn interfaces_ui() -> String {
             }
         };
     });
-    "".to_string()
 }
