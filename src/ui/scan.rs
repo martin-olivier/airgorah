@@ -5,7 +5,7 @@ use std::rc::Rc;
 pub fn scan_ui() {
     let win = Window::builder()
         .title("Scan")
-        .default_width(250)
+        .default_width(200)
         .default_height(170)
         .resizable(false)
         .modal(true)
@@ -21,6 +21,8 @@ pub fn scan_ui() {
         .active(false)
         .label("5 GHZ")
         .build();
+
+    ghz_2_4.set_margin_start(6);
 
     let but_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 10);
     but_box.append(&ghz_2_4);
@@ -38,6 +40,7 @@ pub fn scan_ui() {
             .build(),
     );
     let channel_filter_but = Rc::new(gtk4::CheckButton::builder().active(false).build());
+    channel_filter_but.set_margin_start(10);
 
     let channel_filter_entry_other = channel_filter_entry.clone();
     channel_filter_but.connect_toggled(move |this| {
@@ -56,6 +59,7 @@ pub fn scan_ui() {
             .build(),
     );
     let bssid_filter_but = Rc::new(gtk4::CheckButton::builder().active(false).build());
+    bssid_filter_but.set_margin_start(10);
 
     let bssid_filter_entry_other = bssid_filter_entry.clone();
     bssid_filter_but.connect_toggled(move |this| {
