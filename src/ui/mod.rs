@@ -1,4 +1,5 @@
 mod interface;
+mod scan;
 
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Button};
@@ -6,7 +7,15 @@ use gtk4 as gtk;
 use std::rc::Rc;
 
 fn build_aps_view(view: &gtk4::TreeView) {
-    let colomn_names = ["ESSID", "BSSID", "Channel", "Speed", "Power", "Encryption"];
+    let colomn_names = [
+        "ESSID",
+        "BSSID",
+        "Vendor",
+        "Channel",
+        "Speed",
+        "Power",
+        "Encryption",
+    ];
     let mut pos = 0;
 
     for colomn_name in colomn_names {
@@ -27,6 +36,7 @@ fn build_aps_view(view: &gtk4::TreeView) {
 }
 
 pub fn build_ui(app: &Application) {
+    sudo::escalate_if_needed().unwrap();
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
@@ -35,8 +45,10 @@ pub fn build_ui(app: &Application) {
         .build();
 
     let main_box = gtk4::Box::new(gtk4::Orientation::Vertical, 10);
+    let but_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 10);
 
     let model = Rc::new(gtk4::ListStore::new(&[
+        glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
@@ -51,10 +63,11 @@ pub fn build_ui(app: &Application) {
         &[
             (0, &"NEUF_A598".to_string()),
             (1, &"10:20:30:40:50".to_string()),
-            (2, &"6".to_string()),
-            (3, &"55".to_string()),
-            (4, &"95".to_string()),
-            (5, &"WPA2".to_string()),
+            (2, &"APPLE INC".to_string()),
+            (3, &"6".to_string()),
+            (4, &"55".to_string()),
+            (5, &"95".to_string()),
+            (6, &"WPA2".to_string()),
         ],
     );
 
@@ -64,14 +77,22 @@ pub fn build_ui(app: &Application) {
     view.set_vexpand(true);
     view.set_model(Some(&*model));
 
-    let button = Button::with_label("About");
-    button.connect_clicked(|_| {
+    let about_button = Button::with_label("About");
+    about_button.connect_clicked(|_| {
         let about = gtk4::AboutDialog::new();
         about.show();
     });
 
+    let scan_button = Button::with_label("Scan");
+    scan_button.connect_clicked(|_| {
+        scan::scan_ui();
+    });
+
     main_box.append(&view);
-    main_box.append(&button);
+    main_box.append(&but_box);
+
+    but_box.append(&about_button);
+    but_box.append(&scan_button);
 
     window.set_child(Some(&main_box));
     window.show();

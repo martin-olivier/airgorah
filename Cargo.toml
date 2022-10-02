@@ -7,5 +7,6 @@ edition = "2021"
 
 gtk4 = "0.4.8"
 glib = "0.15.12"
+sudo = "0.6.0"
 lazy_static = "1.4.0"
 network-interface = "0.1.3"

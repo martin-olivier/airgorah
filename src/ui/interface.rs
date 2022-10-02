@@ -78,7 +78,7 @@ pub fn interfaces_ui(app: &Application) {
             }
             Err(()) => {
                 let dialog = gtk4::MessageDialog::builder()
-                    .text(&format!("\nMonitor mode failed"))
+                    .text(&format!("Monitor mode failed"))
                     .secondary_text(&format!("Could not enable monitor mode on \"{}\"", iface))
                     .decorated(true)
                     .message_type(gtk4::MessageType::Error)
