@@ -1,12 +1,14 @@
 mod interface;
 mod scan;
 
-use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Button};
-use gtk4 as gtk;
+use gtk4::prelude::*;
+use gtk4::{
+    AboutDialog, Application, ApplicationWindow, Box, Button, CellRendererText, ListStore,
+    Orientation, TreeView, TreeViewColumn,
+};
 use std::rc::Rc;
 
-fn build_aps_view(view: &gtk4::TreeView) {
+fn build_aps_view(view: &TreeView) {
     let colomn_names = [
         "ESSID",
         "BSSID",
@@ -19,7 +21,7 @@ fn build_aps_view(view: &gtk4::TreeView) {
     let mut pos = 0;
 
     for colomn_name in colomn_names {
-        let column = gtk4::TreeViewColumn::builder()
+        let column = TreeViewColumn::builder()
             .title(colomn_name)
             .resizable(true)
             .min_width(50)
@@ -27,7 +29,7 @@ fn build_aps_view(view: &gtk4::TreeView) {
             .build();
         view.append_column(&column);
 
-        let renderer = gtk4::CellRendererText::new();
+        let renderer = CellRendererText::new();
         column.pack_start(&renderer, true);
         column.add_attribute(&renderer, "text", pos);
         pos += 1;
@@ -44,10 +46,10 @@ pub fn build_ui(app: &Application) {
         .default_height(370)
         .build();
 
-    let main_box = gtk4::Box::new(gtk4::Orientation::Vertical, 10);
-    let but_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 10);
+    let main_box = Box::new(Orientation::Vertical, 10);
+    let but_box = Box::new(Orientation::Horizontal, 10);
 
-    let model = Rc::new(gtk4::ListStore::new(&[
+    let model = Rc::new(ListStore::new(&[
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
@@ -71,7 +73,7 @@ pub fn build_ui(app: &Application) {
         ],
     );
 
-    let view = gtk4::TreeView::new();
+    let view = TreeView::new();
     build_aps_view(&view);
 
     view.set_vexpand(true);
@@ -79,7 +81,7 @@ pub fn build_ui(app: &Application) {
 
     let about_button = Button::with_label("About");
     about_button.connect_clicked(|_| {
-        let about = gtk4::AboutDialog::new();
+        let about = AboutDialog::new();
         about.show();
     });
 

@@ -1,5 +1,8 @@
 use gtk4::prelude::*;
-use gtk4::{Application, Button, ListStore, Window};
+use gtk4::{
+    Application, Box, Button, ButtonsType, CellRendererText, ComboBox, ListStore, MessageDialog,
+    MessageType, Orientation, Window,
+};
 use std::rc::Rc;
 
 use crate::globals::IFACE;
@@ -22,10 +25,10 @@ pub fn interfaces_ui(app: &Application) {
         model.insert_with_values(None, &[(0, &iface)]);
     }
 
-    let combo = gtk4::ComboBox::with_model(&*model);
+    let combo = ComboBox::with_model(&*model);
     combo.set_width_request(240);
 
-    let cell = gtk4::CellRendererText::new();
+    let cell = CellRendererText::new();
     combo.pack_start(&cell, false);
     combo.add_attribute(&cell, "text", 0);
     combo.set_active(Some(0));
@@ -33,8 +36,8 @@ pub fn interfaces_ui(app: &Application) {
     let refresh_but = Button::with_label("Refresh");
     let select_but = Button::with_label("Select");
 
-    let hbox = gtk4::Box::new(gtk4::Orientation::Horizontal, 10);
-    let vbox = gtk4::Box::new(gtk4::Orientation::Vertical, 10);
+    let hbox = Box::new(Orientation::Horizontal, 10);
+    let vbox = Box::new(Orientation::Vertical, 10);
 
     hbox.append(&combo);
     hbox.append(&refresh_but);
@@ -77,12 +80,12 @@ pub fn interfaces_ui(app: &Application) {
                 handle.close();
             }
             Err(()) => {
-                let dialog = gtk4::MessageDialog::builder()
+                let dialog = MessageDialog::builder()
                     .text(&format!("Monitor mode failed"))
                     .secondary_text(&format!("Could not enable monitor mode on \"{}\"", iface))
                     .decorated(true)
-                    .message_type(gtk4::MessageType::Error)
-                    .buttons(gtk4::ButtonsType::Close)
+                    .message_type(MessageType::Error)
+                    .buttons(ButtonsType::Close)
                     .modal(true)
                     .transient_for(&handle)
                     .build();

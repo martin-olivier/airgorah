@@ -1,6 +1,5 @@
-use gtk::prelude::*;
-use gtk::Application;
-use gtk4 as gtk;
+use gtk4::prelude::*;
+use gtk4::Application;
 
 mod backend;
 mod globals;
