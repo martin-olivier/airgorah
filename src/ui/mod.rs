@@ -1,6 +1,10 @@
+mod dialog;
 mod interface;
+mod progress;
 mod scan;
 
+use crate::globals::IFACE;
+use dialog::ErrorDialog;
 use gtk4::prelude::*;
 use gtk4::{
     AboutDialog, Application, ApplicationWindow, Box, Button, CellRendererText, ListStore,
@@ -39,6 +43,9 @@ fn build_aps_view(view: &TreeView) {
 
 pub fn build_ui(app: &Application) {
     sudo::escalate_if_needed().unwrap();
+
+    let scan_window = Rc::new(scan::ScanWindow::new());
+
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
@@ -86,8 +93,10 @@ pub fn build_ui(app: &Application) {
     });
 
     let scan_button = Button::with_label("Scan");
-    scan_button.connect_clicked(|_| {
-        scan::scan_ui();
+
+    let scan_window_ref = scan_window.clone();
+    scan_button.connect_clicked(move |_| {
+        scan_window_ref.window.show();
     });
 
     main_box.append(&view);
@@ -99,5 +108,38 @@ pub fn build_ui(app: &Application) {
     window.set_child(Some(&main_box));
     window.show();
 
-    interface::interfaces_ui(&app);
+    let interface_window = interface::InterfaceWindow::new(&app);
+
+    let scan_window_ref = scan_window.clone();
+    scan_window.scan_but.connect_clicked(move |_| {
+        scan_window_ref.window.hide();
+        let prog_win = progress::ProgressWindow::spawn(10, || {
+            println!("done");
+        });
+        prog_win.window.show();
+    });
+
+    interface_window.select_but.connect_clicked(move |_| {
+        let iter = match interface_window.combo.active_iter() {
+            Some(iter) => iter,
+            None => return,
+        };
+        let val = interface_window.model.get_value(&iter, 0);
+        let iface = val.get::<&str>().unwrap();
+
+        match crate::backend::enable_monitor_mode(iface) {
+            Ok(str) => {
+                IFACE.lock().unwrap().clear();
+                IFACE.lock().unwrap().push_str(str.as_str());
+                interface_window.window.close();
+            }
+            Err(()) => {
+                ErrorDialog::spawn(
+                    Some(&interface_window.window),
+                    "Monitor mode failed",
+                    &format!("Could not enable monitor mode on \"{}\"", iface),
+                );
+            }
+        };
+    });
 }
