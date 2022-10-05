@@ -8,17 +8,19 @@ pub struct ProgressWindow {
 }
 
 impl ProgressWindow {
-    pub fn spawn<F: Fn() + 'static>(timeout: u64, callback: F) -> Self {
+    pub fn spawn<F: FnMut() + 'static>(timeout: u64, mut callback: F) -> Self {
         let window = Rc::new(
             Window::builder()
-                .title("Scanning nearby networks...")
+                .title("")
                 .default_width(250)
-                .default_height(50)
+                .default_height(30)
                 .resizable(false)
                 .modal(true)
                 .build(),
         );
         let bar = Rc::new(ProgressBar::new());
+        bar.set_text(Some("Scanning nearby networks..."));
+        bar.set_show_text(true);
         let refresh_rate = (timeout * 1000) / 100;
 
         let win_ref = window.clone();
@@ -32,6 +34,11 @@ impl ProgressWindow {
             }
             glib::Continue(true)
         });
+
+        bar.set_margin_top(10);
+        bar.set_margin_end(10);
+        bar.set_margin_start(10);
+        bar.set_margin_bottom(10);
 
         window.set_child(Some(&*bar));
         Self { window }
