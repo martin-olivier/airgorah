@@ -1,13 +1,14 @@
 mod dialog;
 mod interface;
-mod scan;
 
+use crate::backend;
 use crate::globals::IFACE;
 use dialog::ErrorDialog;
 use gtk4::prelude::*;
 use gtk4::*;
 use regex::Regex;
 use std::rc::Rc;
+use std::time::Duration;
 
 fn build_aps_model() -> ListStore {
     let model = ListStore::new(&[
@@ -218,6 +219,13 @@ pub fn build_ui(app: &Application) {
     window.set_child(Some(&main_box));
     window.show();
 
+    // Refresh
+
+    glib::timeout_add_local(Duration::from_millis(500), move || {
+        let _data = backend::get_airodump_data();
+        glib::Continue(true)
+    });
+
     // Actions
 
     let interface_window = interface::InterfaceWindow::new(&app);
@@ -235,6 +243,8 @@ pub fn build_ui(app: &Application) {
                 IFACE.lock().unwrap().clear();
                 IFACE.lock().unwrap().push_str(str.as_str());
                 interface_window.window.close();
+
+                backend::set_scan_process(&vec![]);
             }
             Err(()) => {
                 ErrorDialog::spawn(
