@@ -19,23 +19,11 @@ fn build_aps_model() -> ListStore {
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
+        glib::Type::STRING,
+        glib::Type::STRING,
+        glib::Type::STRING,
     ]);
 
-    // fake values
-    let it = model.append();
-    model.set(
-        &it,
-        &[
-            (0, &"NEUF_A598".to_string()),
-            (1, &"10:20:30:40:50".to_string()),
-            (2, &"2.4 GHz".to_string()),
-            (3, &"6".to_string()),
-            (4, &"55".to_string()),
-            (5, &"95".to_string()),
-            (6, &"WPA2".to_string()),
-        ],
-    );
-    // fake values END
     model
 }
 
@@ -49,6 +37,9 @@ fn build_aps_view() -> TreeView {
         "Speed",
         "Power",
         "Encryption",
+        "Clients",
+        "First time seen",
+        "Last time seen",
     ];
     let mut pos = 0;
 
@@ -58,6 +49,7 @@ fn build_aps_view() -> TreeView {
             .resizable(true)
             .min_width(50)
             .sort_indicator(true)
+            .expand(true)
             .build();
         view.append_column(&column);
 
@@ -73,27 +65,44 @@ fn build_aps_view() -> TreeView {
 //
 
 fn build_cli_model() -> ListStore {
-    let model = ListStore::new(&[glib::Type::STRING]);
+    let model = ListStore::new(&[
+        glib::Type::STRING,
+        glib::Type::STRING,
+        glib::Type::STRING,
+        glib::Type::STRING,
+        glib::Type::STRING,
+    ]);
 
-    // fake values
-    let it = model.append();
-    model.set(&it, &[(0, &"01:21:32:45:22".to_string())]);
-    // fake values END
     model
 }
 
 fn build_cli_view() -> TreeView {
     let view = TreeView::new();
+    let colomn_names = [
+        "Station MAC",
+        "Packets",
+        "Power",
+        "First time seen",
+        "Last time seen",
+    ];
+    let mut pos = 0;
 
-    let column = TreeViewColumn::builder().title("Clients").build();
-    view.append_column(&column);
+    for colomn_name in colomn_names {
+        let column = TreeViewColumn::builder()
+            .title(colomn_name)
+            .resizable(true)
+            .min_width(50)
+            .sort_indicator(true)
+            .expand(true)
+            .build();
+        view.append_column(&column);
 
-    let renderer = CellRendererText::new();
-    column.pack_start(&renderer, true);
-    column.add_attribute(&renderer, "text", 0);
-
+        let renderer = CellRendererText::new();
+        column.pack_start(&renderer, true);
+        column.add_attribute(&renderer, "text", pos);
+        pos += 1;
+    }
     view
-    //renderer2.set_background(Some("Orange"));
 }
 
 pub fn build_ui(app: &Application) {
@@ -106,17 +115,30 @@ pub fn build_ui(app: &Application) {
 
     let aps_model = build_aps_model();
     let aps_view = build_aps_view();
+    let aps_scroll = ScrolledWindow::new();
+
+    aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
+    aps_scroll.set_child(Some(&aps_view));
 
     aps_view.set_vexpand(true);
     aps_view.set_hexpand(true);
     aps_view.set_model(Some(&aps_model));
 
-    let cli_model = build_cli_model();
+    let cli_model = Rc::new(build_cli_model());
     let cli_view = build_cli_view();
+    let cli_scroll = ScrolledWindow::new();
+
+    cli_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
+    cli_scroll.set_child(Some(&cli_view));
 
     cli_view.set_vexpand(true);
     cli_view.set_hexpand(true);
-    cli_view.set_model(Some(&cli_model));
+    cli_view.set_model(Some(&*cli_model));
+
+    let cli_model_ref = cli_model.clone();
+    aps_view.connect_cursor_changed(move |_| {
+        cli_model_ref.clear();
+    });
 
     // SCAN
 
@@ -210,8 +232,8 @@ pub fn build_ui(app: &Application) {
 
     let panned = Paned::new(Orientation::Vertical);
     panned.set_wide_handle(true);
-    panned.set_start_child(Some(&aps_view));
-    panned.set_end_child(Some(&cli_view));
+    panned.set_start_child(Some(&aps_scroll));
+    panned.set_end_child(Some(&cli_scroll));
 
     main_box.append(&panned);
     main_box.append(&scan_box);
@@ -221,8 +243,122 @@ pub fn build_ui(app: &Application) {
 
     // Refresh
 
-    glib::timeout_add_local(Duration::from_millis(500), move || {
-        let _data = backend::get_airodump_data();
+    glib::timeout_add_local(Duration::from_millis(100), move || {
+        match backend::get_airodump_data() {
+            Some(aps) => {
+                for ap in aps.iter() {
+                    //
+                    let mut iter = aps_model.iter_first();
+                    let mut already_there = false;
+
+                    while let Some(it) = iter {
+                        let val = aps_model.get_value(&it, 1);
+                        let bssid = val.get::<&str>().unwrap();
+
+                        if bssid == ap.bssid {
+                            aps_model.set(
+                                &it,
+                                &[
+                                (0, &ap.essid),
+                                (1, &ap.bssid),
+                                (2, &ap.band),
+                                (3, &ap.channel),
+                                (4, &ap.speed),
+                                (5, &ap.power),
+                                (6, &ap.privacy),
+                                (7, &ap.clients.len().to_string()),
+                                (8, &ap.first_time_seen),
+                                (9, &ap.last_time_seen),
+                                ],
+                            );
+                            already_there = true;
+                        }
+                        iter = match aps_model.iter_next(&it) {
+                            true => Some(it),
+                            false => None,
+                        }
+                    }
+
+                    if already_there == false {
+                        let it = aps_model.append();
+                        aps_model.set(
+                        &it,
+                        &[
+                            (0, &ap.essid),
+                            (1, &ap.bssid),
+                            (2, &ap.band),
+                            (3, &ap.channel),
+                            (4, &ap.speed),
+                            (5, &ap.power),
+                            (6, &ap.privacy),
+                            (7, &ap.clients.len().to_string()),
+                            (8, &ap.first_time_seen),
+                            (9, &ap.last_time_seen),
+                            ],
+                        );
+                    }
+                }
+                match aps_view.selection().selected() {
+                    Some(selection) => {
+                        let val = aps_model.get_value(&selection.1, 1);
+                        let bssid = val.get::<&str>().unwrap();
+                        let mut clients = vec![];
+                        
+                        for ap in aps.iter() {
+                            if ap.bssid == bssid {
+                                clients = ap.clients.to_vec();
+                                break;
+                            }
+                        }
+
+                        for cli in clients.iter() {
+                            //
+                            let mut iter = cli_model.iter_first();
+                            let mut already_there = false;
+        
+                            while let Some(it) = iter {
+                                let val = cli_model.get_value(&it, 0);
+                                let mac = val.get::<&str>().unwrap();
+        
+                                if mac == cli.mac {
+                                    cli_model.set(
+                                        &it,
+                                        &[
+                                        (0, &cli.mac),
+                                        (1, &cli.packets),
+                                        (2, &cli.power),
+                                        (3, &cli.first_time_seen),
+                                        (4, &cli.last_time_seen),
+                                        ],
+                                    );
+                                    already_there = true;
+                                }
+                                iter = match cli_model.iter_next(&it) {
+                                    true => Some(it),
+                                    false => None,
+                                }
+                            }
+        
+                            if already_there == false {
+                                let it = cli_model.append();
+                                cli_model.set(
+                                    &it,
+                                    &[
+                                    (0, &cli.mac),
+                                    (1, &cli.packets),
+                                    (2, &cli.power),
+                                    (3, &cli.first_time_seen),
+                                    (4, &cli.last_time_seen),
+                                    ],
+                                );
+                            }
+                        }
+                    }
+                    None => {}
+                }
+            }
+            None => {}
+        }
         glib::Continue(true)
     });
 
@@ -239,9 +375,8 @@ pub fn build_ui(app: &Application) {
         let iface = val.get::<&str>().unwrap();
 
         match crate::backend::enable_monitor_mode(iface) {
-            Ok(str) => {
-                IFACE.lock().unwrap().clear();
-                IFACE.lock().unwrap().push_str(str.as_str());
+            Ok(res) => {
+                IFACE.lock().unwrap().replace(res);
                 interface_window.window.close();
 
                 backend::set_scan_process(&vec![]);
