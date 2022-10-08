@@ -1,6 +1,4 @@
 use crate::globals::{IFACE, SCAN_PATH, SCAN_PROC};
-use csv::{Error, Position, ReaderBuilder};
-use network_interface::NetworkInterfaceConfig;
 use std::process::Command;
 
 use serde::Deserialize;
@@ -20,23 +18,23 @@ struct RawAP {
     #[serde(rename = " Privacy")]
     privacy: String,
     #[serde(rename = " Cipher")]
-    cipher: String,
+    _cipher: String,
     #[serde(rename = " Authentication")]
-    authentication: String,
+    _authentication: String,
     #[serde(rename = " Power")]
     power: String,
     #[serde(rename = " # beacons")]
-    beacons: String,
+    _beacons: String,
     #[serde(rename = " # IV")]
-    iv: String,
+    _iv: String,
     #[serde(rename = " LAN IP")]
-    lan_ip: String,
+    _lan_ip: String,
     #[serde(rename = " ID-length")]
     id_length: String,
     #[serde(rename = " ESSID")]
     essid: String,
     #[serde(rename = " Key")]
-    key: String,
+    _key: String,
 }
 
 #[derive(Clone)]
@@ -68,7 +66,7 @@ struct RawClient {
     #[serde(rename = " BSSID")]
     bssid: String,
     #[serde(rename = " Probed ESSIDs")]
-    probed_essids: String,
+    _probed_essids: String,
 }
 
 #[derive(Clone)]
@@ -81,25 +79,85 @@ pub struct Client {
 }
 
 pub fn get_interfaces() -> Vec<String> {
-    let mut ret = vec![];
-    let ifaces = network_interface::NetworkInterface::show().unwrap();
+    let cmd = Command::new("sh")
+        .args(["-c", "iw dev | awk \'$1==\"Interface\"{print $2}\'"])
+        .output()
+        .expect("failed to execute process: sh");
 
-    for iface in ifaces {
-        if !ret.contains(&iface.name) && iface.name != "lo" {
-            ret.push(iface.name);
-        }
+    if !cmd.status.success() {
+        return vec![];
     }
-    ret
+
+    let out = String::from_utf8(cmd.stdout).unwrap();
+
+    out.split_terminator('\n').map(String::from).collect()
 }
 
 pub fn enable_monitor_mode(iface: &str) -> Result<String, ()> {
-    let output = Command::new("airmon-ng")
+    let check_monitor_cmd = Command::new("iw")
+        .args(["dev", iface, "info"])
+        .output()
+        .expect("failed to execute process: iw");
+
+    if !check_monitor_cmd.status.success() {
+        return Err(());
+    }
+
+    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout).unwrap();
+
+    if check_monitor_output.contains("type monitor") {
+        return Ok(iface.to_string());
+    }
+
+    let enable_monitor_cmd = Command::new("airmon-ng")
         .args(["start", iface])
         .output()
         .expect("failed to execute process: airmon-ng");
 
-    match output.status.success() {
+    if !enable_monitor_cmd.status.success() {
+        return Err(());
+    }
+
+    let check_monitor_cmd = Command::new("iw")
+        .args(["dev", &(iface.to_string() + "mon"), "info"])
+        .output()
+        .expect("failed to execute process: iw");
+
+    if !check_monitor_cmd.status.success() {
+        return Err(());
+    }
+
+    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout).unwrap();
+
+    match check_monitor_output.contains("type monitor") {
         true => Ok(iface.to_string() + "mon"),
+        false => Err(()),
+    }
+}
+
+pub fn disable_monitor_mode(iface: &str) -> Result<(), ()> {
+    let check_monitor_cmd = Command::new("iw")
+        .args(["dev", iface, "info"])
+        .output()
+        .expect("failed to execute process: iw");
+
+    if !check_monitor_cmd.status.success() {
+        return Err(());
+    }
+
+    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout).unwrap();
+
+    if !check_monitor_output.contains("type monitor") {
+        return Ok(());
+    }
+
+    let disable_monitor_cmd = Command::new("airmon-ng")
+        .args(["stop", iface])
+        .output()
+        .expect("failed to execute process: airmon-ng");
+
+    match disable_monitor_cmd.status.success() {
+        true => Ok(()),
         false => Err(()),
     }
 }
@@ -111,7 +169,10 @@ pub fn set_scan_process(args: &[&str]) {
     };
 
     match SCAN_PROC.lock().unwrap().as_mut() {
-        Some(child) => child.kill().unwrap(),
+        Some(child) => {
+            child.kill().unwrap();
+            child.wait().unwrap();
+        }
         None => (),
     };
 
@@ -133,7 +194,8 @@ pub fn set_scan_process(args: &[&str]) {
         .args(proc_args)
         .stdout(std::process::Stdio::null())
         .spawn()
-        .unwrap();
+        .expect("failed to execute process: airodump-ng");
+
     SCAN_PROC.lock().unwrap().replace(child);
 }
 
@@ -142,12 +204,20 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
     let full_path = SCAN_PATH.to_string() + "-01.csv";
     let csv_file = match std::fs::read_to_string(full_path) {
         Ok(file) => file,
-        Err(_) => return None
+        Err(_) => return None,
     };
 
     let file_parts: Vec<&str> = csv_file.split("\r\n\r\n").collect();
-    let ap_part = if file_parts.len() >= 1 {file_parts[0]} else {""};
-    let cli_part = if file_parts.len() >= 2 {file_parts[1]} else {""};
+    let ap_part = if file_parts.len() >= 1 {
+        file_parts[0]
+    } else {
+        ""
+    };
+    let cli_part = if file_parts.len() >= 2 {
+        file_parts[1]
+    } else {
+        ""
+    };
 
     let mut ap_reader = csv::Reader::from_reader(ap_part.as_bytes());
     let mut cli_reader = csv::Reader::from_reader(cli_part.as_bytes());
@@ -161,40 +231,44 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
                     essid = format!("[Hidden ESSID] (length: {})", res.id_length.trim_start());
                 }
                 aps.push(AP {
-                            essid,
-                            bssid: res.bssid.trim_start().to_string(),
-                            band: if channel_nb > 14 {"5 GHz".to_string()} else {"2.4 GHz".to_string()},
-                            channel: res.channel.trim_start().to_string(),
-                            speed: res.speed.trim_start().to_string(),
+                    essid,
+                    bssid: res.bssid.trim_start().to_string(),
+                    band: if channel_nb > 14 {
+                        "5 GHz".to_string()
+                    } else {
+                        "2.4 GHz".to_string()
+                    },
+                    channel: res.channel.trim_start().to_string(),
+                    speed: res.speed.trim_start().to_string(),
+                    power: res.power.trim_start().to_string(),
+                    privacy: res.privacy.trim_start().to_string(),
+                    first_time_seen: res.first_time_seen.trim_start().to_string(),
+                    last_time_seen: res.last_time_seen.trim_start().to_string(),
+                    clients: vec![],
+                })
+            }
+            Err(_) => {}
+        }
+    }
+
+    for result in cli_reader.deserialize::<RawClient>() {
+        match result {
+            Ok(res) => {
+                for ap in aps.iter_mut() {
+                    if ap.bssid == res.bssid.trim_start() {
+                        ap.clients.push(Client {
+                            mac: res.station_mac.trim_start().to_string(),
+                            packets: res.packets.trim_start().to_string(),
                             power: res.power.trim_start().to_string(),
-                            privacy: res.privacy.trim_start().to_string(),
                             first_time_seen: res.first_time_seen.trim_start().to_string(),
                             last_time_seen: res.last_time_seen.trim_start().to_string(),
-                            clients: vec![],
                         })
                     }
-                    Err(_) => {},
                 }
             }
-
-            for result in cli_reader.deserialize::<RawClient>() {
-                match result {
-                    Ok(res) => {
-                        for ap in aps.iter_mut() {
-                            if ap.bssid == res.bssid.trim_start() {
-                                ap.clients.push(Client {
-                                    mac: res.station_mac.trim_start().to_string(),
-                                    packets: res.packets.trim_start().to_string(),
-                                    power: res.power.trim_start().to_string(),
-                                    first_time_seen: res.first_time_seen.trim_start().to_string(),
-                                    last_time_seen: res.last_time_seen.trim_start().to_string(),
-                                })
-                            }
-                        }
-                    }
-                    Err(_) => {},
-                }
-            }
+            Err(_) => {}
+        }
+    }
 
     Some(aps)
 }

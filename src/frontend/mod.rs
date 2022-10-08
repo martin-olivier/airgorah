@@ -2,8 +2,9 @@ mod dialog;
 mod interface;
 
 use crate::backend;
-use crate::globals::IFACE;
+use crate::globals::*;
 use dialog::ErrorDialog;
+use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
 use regex::Regex;
@@ -15,11 +16,11 @@ fn build_aps_model() -> ListStore {
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
+        glib::Type::I32,
+        glib::Type::I32,
+        glib::Type::I32,
         glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING,
+        glib::Type::I32,
         glib::Type::STRING,
         glib::Type::STRING,
     ]);
@@ -49,13 +50,20 @@ fn build_aps_view() -> TreeView {
             .resizable(true)
             .min_width(50)
             .sort_indicator(true)
+            .sort_column_id(pos)
             .expand(true)
             .build();
+
+        /*let icon_renderer = CellRendererPixbuf::new();
+        column.pack_start(&icon_renderer, false);
+        column.add_attribute(&icon_renderer, "pixbuf", pos);*/
+
+        let text_renderer = CellRendererText::new();
+        column.pack_start(&text_renderer, true);
+        column.add_attribute(&text_renderer, "text", pos);
+
         view.append_column(&column);
 
-        let renderer = CellRendererText::new();
-        column.pack_start(&renderer, true);
-        column.add_attribute(&renderer, "text", pos);
         pos += 1;
     }
     view
@@ -67,8 +75,8 @@ fn build_aps_view() -> TreeView {
 fn build_cli_model() -> ListStore {
     let model = ListStore::new(&[
         glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING,
+        glib::Type::I32,
+        glib::Type::I32,
         glib::Type::STRING,
         glib::Type::STRING,
     ]);
@@ -93,36 +101,66 @@ fn build_cli_view() -> TreeView {
             .resizable(true)
             .min_width(50)
             .sort_indicator(true)
+            .sort_column_id(pos)
             .expand(true)
             .build();
+
+        /*let icon_renderer = CellRendererPixbuf::new();
+        column.pack_start(&icon_renderer, false);
+        column.add_attribute(&icon_renderer, "pixbuf", pos);*/
+
+        let text_renderer = CellRendererText::new();
+        column.pack_start(&text_renderer, true);
+        column.add_attribute(&text_renderer, "text", pos);
+
         view.append_column(&column);
 
-        let renderer = CellRendererText::new();
-        column.pack_start(&renderer, true);
-        column.add_attribute(&renderer, "text", pos);
         pos += 1;
     }
     view
 }
 
 pub fn build_ui(app: &Application) {
+    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
+
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
-        .default_width(850)
-        .default_height(370)
+        .default_width(1280)
+        .default_height(540)
         .build();
 
-    let aps_model = build_aps_model();
+    window.connect_close_request(|_| {
+        if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
+            child.kill().unwrap();
+            child.wait().unwrap();
+        }
+        if let Some(iface) = IFACE.lock().unwrap().as_ref() {
+            backend::disable_monitor_mode(iface).ok();
+        }
+        glib::signal::Inhibit(false)
+    });
+
+    if sudo::check() != sudo::RunningAs::Root {
+        return ErrorDialog::spawn(
+            Some(&window),
+            "Error",
+            "Airgorah and its dependencies need root privilege to run",
+            true,
+        );
+    }
+
+    let aps_model = Rc::new(build_aps_model());
     let aps_view = build_aps_view();
     let aps_scroll = ScrolledWindow::new();
 
     aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
+    aps_scroll.set_height_request(140);
     aps_scroll.set_child(Some(&aps_view));
 
     aps_view.set_vexpand(true);
     aps_view.set_hexpand(true);
-    aps_view.set_model(Some(&aps_model));
+    aps_view.set_model(Some(&*aps_model));
 
     let cli_model = Rc::new(build_cli_model());
     let cli_view = build_cli_view();
@@ -141,6 +179,32 @@ pub fn build_ui(app: &Application) {
     });
 
     // SCAN
+
+    let top_but_box = Box::new(Orientation::Horizontal, 10);
+
+    let about_button = Button::new();
+    about_button.set_icon_name("dialog-information");
+    about_button.connect_clicked(|_| {
+        let about = AboutDialog::builder()
+            .program_name("Airgorah")
+            .version("0.1 beta")
+            .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
+            .copyright("(c) Martin OLIVIER")
+            .license_type(License::MitX11)
+            .comments("A GUI around aircrack-ng suite tools")
+            .logo_icon_name("network-wireless-hotspot")
+            .website_label("https://github.com/martin-olivier/airgorah")
+            .build();
+        about.show();
+    });
+
+    let export_button = Button::new();
+    export_button.set_icon_name("media-floppy");
+    export_button.connect_clicked(|_| {
+    });
+
+    top_but_box.append(&about_button);
+    top_but_box.append(&export_button);
 
     let scan_box = Box::new(Orientation::Vertical, 10);
 
@@ -205,10 +269,11 @@ pub fn build_ui(app: &Application) {
     let bssid_frame = Frame::new(Some("BSSID filter"));
     bssid_frame.set_child(Some(&bssid_box));
 
-    let scan_but = Button::with_label("Apply");
+    let scan_but = Button::with_label("Scan");
 
     let deauth_button = Button::with_label("Deauth attack");
 
+    scan_box.append(&top_but_box);
     scan_box.append(&band_frame);
     scan_box.append(&channel_frame);
     scan_box.append(&bssid_frame);
@@ -221,12 +286,6 @@ pub fn build_ui(app: &Application) {
     scan_box.set_margin_end(10);
 
     //
-
-    let about_button = Button::with_label("About");
-    about_button.connect_clicked(|_| {
-        let about = AboutDialog::new();
-        about.show();
-    });
 
     let main_box = Box::new(Orientation::Horizontal, 10);
 
@@ -243,67 +302,68 @@ pub fn build_ui(app: &Application) {
 
     // Refresh
 
+    let aps_model_ref = aps_model.clone();
+    let cli_model_ref = cli_model.clone();
     glib::timeout_add_local(Duration::from_millis(100), move || {
         match backend::get_airodump_data() {
             Some(aps) => {
                 for ap in aps.iter() {
-                    //
-                    let mut iter = aps_model.iter_first();
+                    let mut iter = aps_model_ref.iter_first();
                     let mut already_there = false;
 
                     while let Some(it) = iter {
-                        let val = aps_model.get_value(&it, 1);
+                        let val = aps_model_ref.get_value(&it, 1);
                         let bssid = val.get::<&str>().unwrap();
 
                         if bssid == ap.bssid {
-                            aps_model.set(
+                            aps_model_ref.set(
                                 &it,
                                 &[
-                                (0, &ap.essid),
-                                (1, &ap.bssid),
-                                (2, &ap.band),
-                                (3, &ap.channel),
-                                (4, &ap.speed),
-                                (5, &ap.power),
-                                (6, &ap.privacy),
-                                (7, &ap.clients.len().to_string()),
-                                (8, &ap.first_time_seen),
-                                (9, &ap.last_time_seen),
+                                    (0, &ap.essid),
+                                    (1, &ap.bssid),
+                                    (2, &ap.band),
+                                    (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
+                                    (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
+                                    (5, &ap.power.parse::<i32>().unwrap_or(-1)),
+                                    (6, &ap.privacy),
+                                    (7, &(ap.clients.len() as i32)),
+                                    (8, &ap.first_time_seen),
+                                    (9, &ap.last_time_seen),
                                 ],
                             );
                             already_there = true;
                         }
-                        iter = match aps_model.iter_next(&it) {
+                        iter = match aps_model_ref.iter_next(&it) {
                             true => Some(it),
                             false => None,
                         }
                     }
 
                     if already_there == false {
-                        let it = aps_model.append();
-                        aps_model.set(
-                        &it,
-                        &[
-                            (0, &ap.essid),
-                            (1, &ap.bssid),
-                            (2, &ap.band),
-                            (3, &ap.channel),
-                            (4, &ap.speed),
-                            (5, &ap.power),
-                            (6, &ap.privacy),
-                            (7, &ap.clients.len().to_string()),
-                            (8, &ap.first_time_seen),
-                            (9, &ap.last_time_seen),
+                        let it = aps_model_ref.append();
+                        aps_model_ref.set(
+                            &it,
+                            &[
+                                (0, &ap.essid),
+                                (1, &ap.bssid),
+                                (2, &ap.band),
+                                (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
+                                (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
+                                (5, &ap.power.parse::<i32>().unwrap_or(-1)),
+                                (6, &ap.privacy),
+                                (7, &(ap.clients.len() as i32)),
+                                (8, &ap.first_time_seen),
+                                (9, &ap.last_time_seen),
                             ],
                         );
                     }
                 }
                 match aps_view.selection().selected() {
                     Some(selection) => {
-                        let val = aps_model.get_value(&selection.1, 1);
+                        let val = aps_model_ref.get_value(&selection.1, 1);
                         let bssid = val.get::<&str>().unwrap();
                         let mut clients = vec![];
-                        
+
                         for ap in aps.iter() {
                             if ap.bssid == bssid {
                                 clients = ap.clients.to_vec();
@@ -312,43 +372,42 @@ pub fn build_ui(app: &Application) {
                         }
 
                         for cli in clients.iter() {
-                            //
-                            let mut iter = cli_model.iter_first();
+                            let mut iter = cli_model_ref.iter_first();
                             let mut already_there = false;
-        
+
                             while let Some(it) = iter {
-                                let val = cli_model.get_value(&it, 0);
+                                let val = cli_model_ref.get_value(&it, 0);
                                 let mac = val.get::<&str>().unwrap();
-        
+
                                 if mac == cli.mac {
-                                    cli_model.set(
+                                    cli_model_ref.set(
                                         &it,
                                         &[
-                                        (0, &cli.mac),
-                                        (1, &cli.packets),
-                                        (2, &cli.power),
-                                        (3, &cli.first_time_seen),
-                                        (4, &cli.last_time_seen),
+                                            (0, &cli.mac),
+                                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                                            (3, &cli.first_time_seen),
+                                            (4, &cli.last_time_seen),
                                         ],
                                     );
                                     already_there = true;
                                 }
-                                iter = match cli_model.iter_next(&it) {
+                                iter = match cli_model_ref.iter_next(&it) {
                                     true => Some(it),
                                     false => None,
                                 }
                             }
-        
+
                             if already_there == false {
-                                let it = cli_model.append();
-                                cli_model.set(
+                                let it = cli_model_ref.append();
+                                cli_model_ref.set(
                                     &it,
                                     &[
-                                    (0, &cli.mac),
-                                    (1, &cli.packets),
-                                    (2, &cli.power),
-                                    (3, &cli.first_time_seen),
-                                    (4, &cli.last_time_seen),
+                                        (0, &cli.mac),
+                                        (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                                        (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                                        (3, &cli.first_time_seen),
+                                        (4, &cli.last_time_seen),
                                     ],
                                 );
                             }
@@ -386,111 +445,91 @@ pub fn build_ui(app: &Application) {
                     Some(&interface_window.window),
                     "Monitor mode failed",
                     &format!("Could not enable monitor mode on \"{}\"", iface),
+                    false,
                 );
             }
         };
     });
 
-    /*let scan_window_ref = scan_window.clone();
-    scan_window.scan_but.connect_clicked(move |_| {
-        // return if no IFACE
-        if !scan_window_ref.ghz_2_4_but.is_active() && !scan_window_ref.ghz_5_but.is_active() {
-            return dialog::ErrorDialog::spawn(
-                Some(&scan_window_ref.window),
+    /*
+        SCAN BUT
+    */
+
+    scan_but.connect_clicked(move |_| {
+        let iface = match IFACE.lock().unwrap().as_ref() {
+            Some(iface) => iface.to_string(),
+            None => {
+                return ErrorDialog::spawn(
+                    Some(&window),
+                    "Error",
+                    "You need to select a network card first",
+                    false,
+                )
+            }
+        };
+        let mut args = vec![];
+        let mut channel_filter = "".to_string();
+        let mut bssid_filter = "".to_string();
+
+        if !ghz_2_4_but.is_active() && !ghz_5_but.is_active() {
+            return ErrorDialog::spawn(
+                Some(&window),
                 "Error",
                 "You need to select at least one frequency band",
+                false,
             );
         }
-        let chanel_filter = match scan_window_ref.channel_filter_but.is_active() {
-            true => {
-                if !Regex::new(r"^[1-9]+[0-9]*$")
-                    .unwrap()
-                    .is_match(&scan_window_ref.channel_filter_entry.text())
-                {
-                    return dialog::ErrorDialog::spawn(
-                        Some(&scan_window_ref.window),
+
+        let mut bands = "".to_string();
+        if ghz_5_but.is_active() {
+            bands.push_str("a");
+        }
+        if ghz_2_4_but.is_active() {
+            bands.push_str("bg");
+        }
+        args.push("--band");
+        args.push(&bands);
+
+        if channel_filter_but.is_active() {
+            let channel_regex = Regex::new(r"^[1-9]+[0-9]*$").unwrap();
+            let channel_list: Vec<String> = channel_filter_entry
+                .text()
+                .split_terminator(',')
+                .map(String::from)
+                .collect();
+            for chan in channel_list {
+                if !channel_regex.is_match(&chan) {
+                    return ErrorDialog::spawn(
+                        Some(&window),
                         "Error",
                         "You need to put a valid channel filter",
+                        false,
                     );
                 }
-                "--channel ".to_string() + &scan_window_ref.channel_filter_entry.text()
             }
-            false => "".to_string(),
-        };
-        //
-        let bssid_filter = match scan_window_ref.bssid_filter_but.is_active() {
-            true => {
-                if !Regex::new(r"^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$")
-                    .unwrap()
-                    .is_match(&scan_window_ref.bssid_filter_entry.text())
-                {
-                    return dialog::ErrorDialog::spawn(
-                        Some(&scan_window_ref.window),
-                        "Error",
-                        "You need to put a valid BSSID filter",
-                    );
-                }
-                "--bssid ".to_string() + &scan_window_ref.bssid_filter_entry.text()
-            }
-            false => "".to_string(),
-        };
-        let iface = IFACE.lock().unwrap();
-        if iface.is_empty() {
-            return dialog::ErrorDialog::spawn(
-                Some(&scan_window_ref.window),
-                "Error",
-                "You need to select a network card first",
-            );
+            channel_filter = channel_filter_entry.text().to_string();
+            args.push("--channel");
+            args.push(&channel_filter);
         }
-        let scan_duration = scan_window_ref.spin.value_as_int();
-        //
-        let mut child = std::process::Command::new("airodump-ng")
-            .args([&iface, &chanel_filter, &bssid_filter])
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
-            .expect("failed to execute process");
-        //
-        scan_window_ref.window.hide();
-        let scan_window_ref2 = scan_window_ref.clone();
-        let prog_win = progress::ProgressWindow::spawn(scan_duration as u64, move || {
-            match child.try_wait() {
-                Ok(Some(_exit_status)) => {
-                    return dialog::ErrorDialog::spawn(
-                        Some(&scan_window_ref2.window),
-                        "Error",
-                        "airodump-ng exited earlier",
-                    );
-                }
-                Ok(None) => {
-                    child.kill().unwrap();
-                    let mut outbuf = vec![];
-                    child
-                        .stdout
-                        .as_mut()
-                        .unwrap()
-                        .read_to_end(&mut outbuf)
-                        .unwrap();
-                    println!("{}", String::from_utf8_lossy(&outbuf));
-                }
-                Err(_) => {
-                    return dialog::ErrorDialog::spawn(
-                        Some(&scan_window_ref2.window),
-                        "Error",
-                        "fork error",
-                    );
-                }
-            }
-            println!("done");
-        });
-        prog_win.window.show();
-    });*/
 
-    // Note:
-    /*
-    faire un scan en continu /tmp/scan et lire le fichier grace à un glib::timer toute les 1 sec
-    mettre les flitres de scan à droite
-    Start/stop scan
-    Clear
-    */
+        if bssid_filter_but.is_active() {
+            if !Regex::new(r"^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$")
+                .unwrap()
+                .is_match(&bssid_filter_entry.text())
+            {
+                return ErrorDialog::spawn(
+                    Some(&window),
+                    "Error",
+                    "You need to put a valid BSSID filter",
+                    false,
+                );
+            }
+            bssid_filter = bssid_filter_entry.text().to_string();
+            args.push("--bssid");
+            args.push(&bssid_filter);
+        }
+        backend::set_scan_process(&args);
+        aps_model.clear();
+        cli_model.clear();
+    });
 }

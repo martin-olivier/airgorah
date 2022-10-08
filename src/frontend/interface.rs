@@ -5,14 +5,14 @@ use std::rc::Rc;
 pub struct InterfaceWindow {
     pub window: Window,
     pub select_but: Button,
-    pub combo: ComboBox,
+    pub combo: Rc<ComboBox>,
     pub model: Rc<ListStore>,
 }
 
 impl InterfaceWindow {
     pub fn new(app: &Application) -> Self {
         let window = Window::builder()
-            .title("Select wireless interface")
+            .title("Select a wireless interface")
             .default_width(350)
             .default_height(70)
             .resizable(false)
@@ -24,17 +24,17 @@ impl InterfaceWindow {
         let model = Rc::new(ListStore::new(&[glib::Type::STRING]));
 
         let ifaces = crate::backend::get_interfaces();
-        for iface in ifaces.into_iter() {
+        for iface in ifaces.iter() {
             model.insert_with_values(None, &[(0, &iface)]);
         }
 
-        let combo = ComboBox::with_model(&*model);
+        let combo = Rc::new(ComboBox::with_model(&*model));
         combo.set_width_request(240);
 
         let cell = CellRendererText::new();
         combo.pack_start(&cell, false);
         combo.add_attribute(&cell, "text", 0);
-        combo.set_active(Some(0));
+        combo.set_active(if ifaces.len() > 0 {Some(0)} else {None});
 
         let refresh_but = Button::with_label("Refresh");
         let select_but = Button::with_label("Select");
@@ -42,7 +42,7 @@ impl InterfaceWindow {
         let hbox = Box::new(Orientation::Horizontal, 10);
         let vbox = Box::new(Orientation::Vertical, 10);
 
-        hbox.append(&combo);
+        hbox.append(&*combo);
         hbox.append(&refresh_but);
 
         hbox.set_margin_top(10);
@@ -58,14 +58,18 @@ impl InterfaceWindow {
         window.show();
 
         let model_ref = model.clone();
+        let combo_ref = combo.clone();
         refresh_but.connect_clicked(move |_| {
             model_ref.clear();
 
             let ifaces = crate::backend::get_interfaces();
-            for iface in ifaces.into_iter() {
+            for iface in ifaces.iter() {
                 model_ref.insert_with_values(None, &[(0, &iface)]);
             }
+
+            combo_ref.set_active(if ifaces.len() > 0 {Some(0)} else {None});
         });
+
         Self {
             window,
             select_but,

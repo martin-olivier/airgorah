@@ -4,7 +4,7 @@ use gtk4::{ButtonsType, MessageDialog, MessageType, Window};
 pub struct ErrorDialog;
 
 impl ErrorDialog {
-    pub fn spawn(parent: Option<&Window>, title: &str, content: &str) {
+    pub fn spawn(parent: Option<&impl IsA<Window>>, title: &str, content: &str, terminate: bool) {
         let dialog = MessageDialog::builder()
             .text(title)
             .secondary_text(content)
@@ -16,8 +16,18 @@ impl ErrorDialog {
 
         dialog.set_transient_for(parent);
         dialog.show();
-        dialog.connect_response(|this, _| {
+
+        dialog.connect_response(move |this, _| {
             this.close();
+            if terminate == true {
+                std::process::exit(1);
+            }
+        });
+
+        dialog.connect_close(move |_| {
+            if terminate == true {
+                std::process::exit(1);
+            }
         });
     }
 }
@@ -25,7 +35,7 @@ impl ErrorDialog {
 pub struct InfoDialog;
 
 impl InfoDialog {
-    pub fn spawn(parent: Option<&Window>, title: &str, content: &str) {
+    pub fn spawn(parent: Option<&impl IsA<Window>>, title: &str, content: &str) {
         let dialog = MessageDialog::builder()
             .text(title)
             .secondary_text(content)
