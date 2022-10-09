@@ -13,6 +13,7 @@ impl InterfaceWindow {
     pub fn new(app: &Application) -> Self {
         let window = Window::builder()
             .title("Select a wireless interface")
+            .hide_on_close(true)
             .default_width(350)
             .default_height(70)
             .resizable(false)

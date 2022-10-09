@@ -1,15 +1,33 @@
 mod dialog;
 mod interface;
+mod header_bar;
 
 use crate::backend;
 use crate::globals::*;
 use dialog::ErrorDialog;
-use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
 use regex::Regex;
 use std::rc::Rc;
 use std::time::Duration;
+
+use self::dialog::InfoDialog;
+
+fn build_main_window(app: &Application) -> ApplicationWindow {
+    let window = ApplicationWindow::builder()
+        .application(app)
+        .title("Airgorah")
+        .default_width(1280)
+        .default_height(540)
+        .build();
+
+    window.connect_close_request(|_| {
+        backend::app_cleanup();
+        glib::signal::Inhibit(false)
+    });
+
+    window
+}
 
 fn build_aps_model() -> ListStore {
     let model = ListStore::new(&[
@@ -29,7 +47,7 @@ fn build_aps_model() -> ListStore {
 }
 
 fn build_aps_view() -> TreeView {
-    let view = TreeView::new();
+    let view = TreeView::builder().vexpand(true).hexpand(true).build();
     let colomn_names = [
         "ESSID",
         "BSSID",
@@ -54,10 +72,6 @@ fn build_aps_view() -> TreeView {
             .expand(true)
             .build();
 
-        /*let icon_renderer = CellRendererPixbuf::new();
-        column.pack_start(&icon_renderer, false);
-        column.add_attribute(&icon_renderer, "pixbuf", pos);*/
-
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos);
@@ -70,7 +84,13 @@ fn build_aps_view() -> TreeView {
     //renderer2.set_background(Some("Orange"));
 }
 
-//
+fn build_aps_scroll() -> ScrolledWindow {
+    let aps_scroll = ScrolledWindow::new();
+    aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
+    aps_scroll.set_height_request(140);
+
+    aps_scroll
+}
 
 fn build_cli_model() -> ListStore {
     let model = ListStore::new(&[
@@ -85,7 +105,7 @@ fn build_cli_model() -> ListStore {
 }
 
 fn build_cli_view() -> TreeView {
-    let view = TreeView::new();
+    let view = TreeView::builder().vexpand(true).hexpand(true).build();
     let colomn_names = [
         "Station MAC",
         "Packets",
@@ -105,10 +125,6 @@ fn build_cli_view() -> TreeView {
             .expand(true)
             .build();
 
-        /*let icon_renderer = CellRendererPixbuf::new();
-        column.pack_start(&icon_renderer, false);
-        column.add_attribute(&icon_renderer, "pixbuf", pos);*/
-
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos);
@@ -120,57 +136,46 @@ fn build_cli_view() -> TreeView {
     view
 }
 
+fn build_cli_scroll() -> ScrolledWindow {
+    let aps_scroll = ScrolledWindow::new();
+    aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
+
+    aps_scroll
+}
+
 pub fn build_ui(app: &Application) {
-    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
+    let window = Rc::new(build_main_window(app));
 
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("Airgorah")
-        .default_width(1280)
-        .default_height(540)
-        .build();
+    backend::app_cleanup();
 
-    window.connect_close_request(|_| {
-        if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
-            child.kill().unwrap();
-            child.wait().unwrap();
-        }
-        if let Some(iface) = IFACE.lock().unwrap().as_ref() {
-            backend::disable_monitor_mode(iface).ok();
-        }
-        glib::signal::Inhibit(false)
-    });
+    ctrlc::set_handler(move || {
+        backend::app_cleanup();
+        std::process::exit(1);
+    }).expect("Error setting Ctrl-C handler");
 
     if sudo::check() != sudo::RunningAs::Root {
         return ErrorDialog::spawn(
-            Some(&window),
+            Some(&*window),
             "Error",
             "Airgorah and its dependencies need root privilege to run",
             true,
         );
     }
 
+    header_bar::build_header_bar(&*window);
+
     let aps_model = Rc::new(build_aps_model());
     let aps_view = build_aps_view();
-    let aps_scroll = ScrolledWindow::new();
+    let aps_scroll = build_aps_scroll();
 
-    aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
-    aps_scroll.set_height_request(140);
     aps_scroll.set_child(Some(&aps_view));
-
-    aps_view.set_vexpand(true);
-    aps_view.set_hexpand(true);
     aps_view.set_model(Some(&*aps_model));
 
     let cli_model = Rc::new(build_cli_model());
     let cli_view = build_cli_view();
-    let cli_scroll = ScrolledWindow::new();
+    let cli_scroll = build_cli_scroll();
 
-    cli_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
     cli_scroll.set_child(Some(&cli_view));
-
-    cli_view.set_vexpand(true);
-    cli_view.set_hexpand(true);
     cli_view.set_model(Some(&*cli_model));
 
     let cli_model_ref = cli_model.clone();
@@ -178,33 +183,34 @@ pub fn build_ui(app: &Application) {
         cli_model_ref.clear();
     });
 
-    // SCAN
+    // TOP RIGHT BUTTONS
 
-    let top_but_box = Box::new(Orientation::Horizontal, 10);
+    let top_but_box = CenterBox::new();
 
-    let about_button = Button::new();
-    about_button.set_icon_name("dialog-information");
-    about_button.connect_clicked(|_| {
-        let about = AboutDialog::builder()
-            .program_name("Airgorah")
-            .version("0.1 beta")
-            .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
-            .copyright("(c) Martin OLIVIER")
-            .license_type(License::MitX11)
-            .comments("A GUI around aircrack-ng suite tools")
-            .logo_icon_name("network-wireless-hotspot")
-            .website_label("https://github.com/martin-olivier/airgorah")
-            .build();
-        about.show();
+    let scan_but = Rc::new(Button::builder().icon_name("media-playback-start").build());
+
+    let scan_but_ref = scan_but.clone();
+    let stop_button = Rc::new(Button::builder().icon_name("media-playback-stop").sensitive(false).build());
+    stop_button.connect_clicked(move |but| {
+        backend::stop_scan_process();
+        but.set_sensitive(false);
+        scan_but_ref.set_icon_name("media-playback-start");
     });
 
-    let export_button = Button::new();
-    export_button.set_icon_name("media-floppy");
-    export_button.connect_clicked(|_| {
+    let export_button = Button::builder().icon_name("media-floppy").build();
+    let window_ref = window.clone();
+    export_button.connect_clicked(move |_| {
+        InfoDialog::spawn(Some(&*window_ref), "Info", "Not yet implemented");
     });
 
-    top_but_box.append(&about_button);
-    top_but_box.append(&export_button);
+    top_but_box.set_margin_start(20);
+    top_but_box.set_margin_end(20);
+    top_but_box.set_margin_top(15);
+    top_but_box.set_start_widget(Some(&*scan_but));
+    top_but_box.set_center_widget(Some(&*stop_button));
+    top_but_box.set_end_widget(Some(&export_button));
+
+    // SCAN BUTTONS
 
     let scan_box = Box::new(Orientation::Vertical, 10);
 
@@ -269,15 +275,18 @@ pub fn build_ui(app: &Application) {
     let bssid_frame = Frame::new(Some("BSSID filter"));
     bssid_frame.set_child(Some(&bssid_box));
 
-    let scan_but = Button::with_label("Scan");
-
     let deauth_button = Button::with_label("Deauth attack");
+    deauth_button.set_margin_bottom(10);
 
-    scan_box.append(&top_but_box);
+    let separator = Separator::new(Orientation::Vertical);
+    separator.set_vexpand(true);
+    separator.set_opacity(0.0);
+
     scan_box.append(&band_frame);
     scan_box.append(&channel_frame);
     scan_box.append(&bssid_frame);
-    scan_box.append(&scan_but);
+    scan_box.append(&top_but_box);
+    scan_box.append(&separator);
     scan_box.append(&deauth_button);
 
     scan_box.set_hexpand(false);
@@ -285,7 +294,7 @@ pub fn build_ui(app: &Application) {
     scan_box.set_margin_top(10);
     scan_box.set_margin_end(10);
 
-    //
+    // PANNELS AND TREE VIEWS
 
     let main_box = Box::new(Orientation::Horizontal, 10);
 
@@ -300,10 +309,11 @@ pub fn build_ui(app: &Application) {
     window.set_child(Some(&main_box));
     window.show();
 
-    // Refresh
+    // REFRESH
 
     let aps_model_ref = aps_model.clone();
     let cli_model_ref = cli_model.clone();
+
     glib::timeout_add_local(Duration::from_millis(100), move || {
         match backend::get_airodump_data() {
             Some(aps) => {
@@ -421,28 +431,31 @@ pub fn build_ui(app: &Application) {
         glib::Continue(true)
     });
 
-    // Actions
+    // ACTIONS
 
-    let interface_window = interface::InterfaceWindow::new(&app);
+    let interface_window = Rc::new(interface::InterfaceWindow::new(&app));
+
+    let interface_window_ref = interface_window.clone();
+    let scan_but_ref = scan_but.clone();
 
     interface_window.select_but.connect_clicked(move |_| {
-        let iter = match interface_window.combo.active_iter() {
+        let iter = match interface_window_ref.combo.active_iter() {
             Some(iter) => iter,
             None => return,
         };
-        let val = interface_window.model.get_value(&iter, 0);
+        let val = interface_window_ref.model.get_value(&iter, 0);
         let iface = val.get::<&str>().unwrap();
 
         match crate::backend::enable_monitor_mode(iface) {
             Ok(res) => {
                 IFACE.lock().unwrap().replace(res);
-                interface_window.window.close();
+                interface_window_ref.window.hide();
 
-                backend::set_scan_process(&vec![]);
+                scan_but_ref.emit_clicked();
             }
             Err(()) => {
                 ErrorDialog::spawn(
-                    Some(&interface_window.window),
+                    Some(&interface_window_ref.window),
                     "Monitor mode failed",
                     &format!("Could not enable monitor mode on \"{}\"", iface),
                     false,
@@ -455,25 +468,18 @@ pub fn build_ui(app: &Application) {
         SCAN BUT
     */
 
-    scan_but.connect_clicked(move |_| {
-        let iface = match IFACE.lock().unwrap().as_ref() {
-            Some(iface) => iface.to_string(),
-            None => {
-                return ErrorDialog::spawn(
-                    Some(&window),
-                    "Error",
-                    "You need to select a network card first",
-                    false,
-                )
-            }
-        };
+    scan_but.connect_clicked(move |this| {
         let mut args = vec![];
         let mut channel_filter = "".to_string();
         let mut bssid_filter = "".to_string();
 
+        if IFACE.lock().unwrap().is_none() {
+            return interface_window.window.show();
+        }
+
         if !ghz_2_4_but.is_active() && !ghz_5_but.is_active() {
             return ErrorDialog::spawn(
-                Some(&window),
+                Some(&*window),
                 "Error",
                 "You need to select at least one frequency band",
                 false,
@@ -500,7 +506,7 @@ pub fn build_ui(app: &Application) {
             for chan in channel_list {
                 if !channel_regex.is_match(&chan) {
                     return ErrorDialog::spawn(
-                        Some(&window),
+                        Some(&*window),
                         "Error",
                         "You need to put a valid channel filter",
                         false,
@@ -518,7 +524,7 @@ pub fn build_ui(app: &Application) {
                 .is_match(&bssid_filter_entry.text())
             {
                 return ErrorDialog::spawn(
-                    Some(&window),
+                    Some(&*window),
                     "Error",
                     "You need to put a valid BSSID filter",
                     false,
@@ -528,7 +534,11 @@ pub fn build_ui(app: &Application) {
             args.push("--bssid");
             args.push(&bssid_filter);
         }
-        backend::set_scan_process(&args);
+
+        this.set_icon_name("object-rotate-right");
+        stop_button.set_sensitive(true);
+
+        backend::launch_scan_process(&args);
         aps_model.clear();
         cli_model.clear();
     });

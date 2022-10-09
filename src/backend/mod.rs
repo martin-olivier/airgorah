@@ -162,7 +162,7 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), ()> {
     }
 }
 
-pub fn set_scan_process(args: &[&str]) {
+pub fn launch_scan_process(args: &[&str]) {
     let iface = match IFACE.lock().unwrap().as_ref() {
         Some(res) => res.to_string(),
         None => return,
@@ -197,6 +197,19 @@ pub fn set_scan_process(args: &[&str]) {
         .expect("failed to execute process: airodump-ng");
 
     SCAN_PROC.lock().unwrap().replace(child);
+}
+
+pub fn stop_scan_process() {
+
+    match SCAN_PROC.lock().unwrap().as_mut() {
+        Some(child) => {
+            child.kill().unwrap();
+            child.wait().unwrap();
+        }
+        None => (),
+    };
+
+    SCAN_PROC.lock().unwrap().take();
 }
 
 pub fn get_airodump_data() -> Option<Vec<AP>> {
@@ -271,4 +284,15 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
     }
 
     Some(aps)
+}
+
+pub fn app_cleanup() {
+    if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
+        child.kill().unwrap();
+        child.wait().unwrap();
+    }
+    if let Some(iface) = IFACE.lock().unwrap().as_ref() {
+        disable_monitor_mode(iface).ok();
+    }
+    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
 }
