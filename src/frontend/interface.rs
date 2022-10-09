@@ -1,5 +1,5 @@
 use gtk4::prelude::*;
-use gtk4::{Application, Box, Button, CellRendererText, ComboBox, ListStore, Orientation, Window};
+use gtk4::*;
 use std::rc::Rc;
 
 pub struct InterfaceWindow {

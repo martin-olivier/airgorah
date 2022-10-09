@@ -1,17 +1,16 @@
 mod dialog;
-mod interface;
 mod header_bar;
+mod interface;
 
 use crate::backend;
 use crate::globals::*;
-use dialog::ErrorDialog;
+use dialog::*;
 use gtk4::prelude::*;
 use gtk4::*;
+use header_bar::*;
 use regex::Regex;
 use std::rc::Rc;
 use std::time::Duration;
-
-use self::dialog::InfoDialog;
 
 fn build_main_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
@@ -151,7 +150,8 @@ pub fn build_ui(app: &Application) {
     ctrlc::set_handler(move || {
         backend::app_cleanup();
         std::process::exit(1);
-    }).expect("Error setting Ctrl-C handler");
+    })
+    .expect("Error setting Ctrl-C handler");
 
     if sudo::check() != sudo::RunningAs::Root {
         return ErrorDialog::spawn(
@@ -162,7 +162,10 @@ pub fn build_ui(app: &Application) {
         );
     }
 
-    header_bar::build_header_bar(&*window);
+    let header_bar = build_header_bar();
+    window.set_titlebar(Some(&header_bar));
+
+    // Left Views (APs and Clients)
 
     let aps_model = Rc::new(build_aps_model());
     let aps_view = build_aps_view();
@@ -183,21 +186,28 @@ pub fn build_ui(app: &Application) {
         cli_model_ref.clear();
     });
 
-    // TOP RIGHT BUTTONS
+    // Scan, Stop and Save Buttons
 
     let top_but_box = CenterBox::new();
 
     let scan_but = Rc::new(Button::builder().icon_name("media-playback-start").build());
 
+    let stop_button = Rc::new(
+        Button::builder()
+            .icon_name("media-playback-stop")
+            .sensitive(false)
+            .build(),
+    );
+
     let scan_but_ref = scan_but.clone();
-    let stop_button = Rc::new(Button::builder().icon_name("media-playback-stop").sensitive(false).build());
     stop_button.connect_clicked(move |but| {
         backend::stop_scan_process();
         but.set_sensitive(false);
         scan_but_ref.set_icon_name("media-playback-start");
     });
 
-    let export_button = Button::builder().icon_name("media-floppy").build();
+    let export_button = Rc::new(Button::builder().icon_name("media-floppy").build());
+
     let window_ref = window.clone();
     export_button.connect_clicked(move |_| {
         InfoDialog::spawn(Some(&*window_ref), "Info", "Not yet implemented");
@@ -208,9 +218,9 @@ pub fn build_ui(app: &Application) {
     top_but_box.set_margin_top(15);
     top_but_box.set_start_widget(Some(&*scan_but));
     top_but_box.set_center_widget(Some(&*stop_button));
-    top_but_box.set_end_widget(Some(&export_button));
+    top_but_box.set_end_widget(Some(&*export_button));
 
-    // SCAN BUTTONS
+    // Scan filters
 
     let scan_box = Box::new(Orientation::Vertical, 10);
 
@@ -275,12 +285,12 @@ pub fn build_ui(app: &Application) {
     let bssid_frame = Frame::new(Some("BSSID filter"));
     bssid_frame.set_child(Some(&bssid_box));
 
-    let deauth_button = Button::with_label("Deauth attack");
-    deauth_button.set_margin_bottom(10);
-
     let separator = Separator::new(Orientation::Vertical);
     separator.set_vexpand(true);
     separator.set_opacity(0.0);
+
+    let deauth_button = Button::with_label("Deauth attack");
+    deauth_button.set_margin_bottom(10);
 
     scan_box.append(&band_frame);
     scan_box.append(&channel_frame);
@@ -294,7 +304,7 @@ pub fn build_ui(app: &Application) {
     scan_box.set_margin_top(10);
     scan_box.set_margin_end(10);
 
-    // PANNELS AND TREE VIEWS
+    // Set main window childs
 
     let main_box = Box::new(Orientation::Horizontal, 10);
 
@@ -309,129 +319,90 @@ pub fn build_ui(app: &Application) {
     window.set_child(Some(&main_box));
     window.show();
 
-    // REFRESH
+    // Main window refresh
 
     let aps_model_ref = aps_model.clone();
     let cli_model_ref = cli_model.clone();
 
+    let list_store_find = |storage: &ListStore, pos: i32, to_match: &str| -> Option<TreeIter> {
+        let mut iter = storage.iter_first();
+
+        while let Some(it) = iter {
+            let value = storage.get_value(&it, pos);
+            let value_as_str = value.get::<&str>().unwrap();
+
+            if value_as_str == to_match {
+                return Some(it);
+            }
+
+            iter = match storage.iter_next(&it) {
+                true => Some(it),
+                false => None,
+            }
+        }
+
+        None
+    };
+
     glib::timeout_add_local(Duration::from_millis(100), move || {
-        match backend::get_airodump_data() {
-            Some(aps) => {
+        if let Some(aps) = backend::get_airodump_data() {
+            for ap in aps.iter() {
+                let it = match list_store_find(&*aps_model_ref, 1, &ap.bssid) {
+                    Some(it) => it,
+                    None => aps_model_ref.append(),
+                };
+
+                aps_model_ref.set(
+                    &it,
+                    &[
+                        (0, &ap.essid),
+                        (1, &ap.bssid),
+                        (2, &ap.band),
+                        (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
+                        (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
+                        (5, &ap.power.parse::<i32>().unwrap_or(-1)),
+                        (6, &ap.privacy),
+                        (7, &(ap.clients.len() as i32)),
+                        (8, &ap.first_time_seen),
+                        (9, &ap.last_time_seen),
+                    ],
+                );
+            }
+            if let Some(selection) = aps_view.selection().selected() {
+                let val = aps_model_ref.get_value(&selection.1, 1);
+                let bssid = val.get::<&str>().unwrap();
+                let mut clients = vec![];
+
                 for ap in aps.iter() {
-                    let mut iter = aps_model_ref.iter_first();
-                    let mut already_there = false;
-
-                    while let Some(it) = iter {
-                        let val = aps_model_ref.get_value(&it, 1);
-                        let bssid = val.get::<&str>().unwrap();
-
-                        if bssid == ap.bssid {
-                            aps_model_ref.set(
-                                &it,
-                                &[
-                                    (0, &ap.essid),
-                                    (1, &ap.bssid),
-                                    (2, &ap.band),
-                                    (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
-                                    (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
-                                    (5, &ap.power.parse::<i32>().unwrap_or(-1)),
-                                    (6, &ap.privacy),
-                                    (7, &(ap.clients.len() as i32)),
-                                    (8, &ap.first_time_seen),
-                                    (9, &ap.last_time_seen),
-                                ],
-                            );
-                            already_there = true;
-                        }
-                        iter = match aps_model_ref.iter_next(&it) {
-                            true => Some(it),
-                            false => None,
-                        }
-                    }
-
-                    if already_there == false {
-                        let it = aps_model_ref.append();
-                        aps_model_ref.set(
-                            &it,
-                            &[
-                                (0, &ap.essid),
-                                (1, &ap.bssid),
-                                (2, &ap.band),
-                                (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
-                                (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
-                                (5, &ap.power.parse::<i32>().unwrap_or(-1)),
-                                (6, &ap.privacy),
-                                (7, &(ap.clients.len() as i32)),
-                                (8, &ap.first_time_seen),
-                                (9, &ap.last_time_seen),
-                            ],
-                        );
+                    if ap.bssid == bssid {
+                        clients = ap.clients.to_vec();
+                        break;
                     }
                 }
-                match aps_view.selection().selected() {
-                    Some(selection) => {
-                        let val = aps_model_ref.get_value(&selection.1, 1);
-                        let bssid = val.get::<&str>().unwrap();
-                        let mut clients = vec![];
 
-                        for ap in aps.iter() {
-                            if ap.bssid == bssid {
-                                clients = ap.clients.to_vec();
-                                break;
-                            }
-                        }
+                for cli in clients.iter() {
+                    let it = match list_store_find(&*cli_model_ref, 0, &cli.mac) {
+                        Some(it) => it,
+                        None => cli_model_ref.append(),
+                    };
 
-                        for cli in clients.iter() {
-                            let mut iter = cli_model_ref.iter_first();
-                            let mut already_there = false;
-
-                            while let Some(it) = iter {
-                                let val = cli_model_ref.get_value(&it, 0);
-                                let mac = val.get::<&str>().unwrap();
-
-                                if mac == cli.mac {
-                                    cli_model_ref.set(
-                                        &it,
-                                        &[
-                                            (0, &cli.mac),
-                                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
-                                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
-                                            (3, &cli.first_time_seen),
-                                            (4, &cli.last_time_seen),
-                                        ],
-                                    );
-                                    already_there = true;
-                                }
-                                iter = match cli_model_ref.iter_next(&it) {
-                                    true => Some(it),
-                                    false => None,
-                                }
-                            }
-
-                            if already_there == false {
-                                let it = cli_model_ref.append();
-                                cli_model_ref.set(
-                                    &it,
-                                    &[
-                                        (0, &cli.mac),
-                                        (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
-                                        (2, &cli.power.parse::<i32>().unwrap_or(-1)),
-                                        (3, &cli.first_time_seen),
-                                        (4, &cli.last_time_seen),
-                                    ],
-                                );
-                            }
-                        }
-                    }
-                    None => {}
+                    cli_model_ref.set(
+                        &it,
+                        &[
+                            (0, &cli.mac),
+                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                            (3, &cli.first_time_seen),
+                            (4, &cli.last_time_seen),
+                        ],
+                    );
                 }
             }
-            None => {}
         }
         glib::Continue(true)
     });
 
-    // ACTIONS
+    // Interfaces window callbacks
 
     let interface_window = Rc::new(interface::InterfaceWindow::new(&app));
 
@@ -464,14 +435,12 @@ pub fn build_ui(app: &Application) {
         };
     });
 
-    /*
-        SCAN BUT
-    */
+    // Main window callbacks
 
     scan_but.connect_clicked(move |this| {
         let mut args = vec![];
-        let mut channel_filter = "".to_string();
-        let mut bssid_filter = "".to_string();
+        let channel_filter;
+        let bssid_filter;
 
         if IFACE.lock().unwrap().is_none() {
             return interface_window.window.show();

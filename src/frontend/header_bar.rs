@@ -20,12 +20,10 @@ fn build_about_button() -> Button {
     about_button
 }
 
-pub fn build_header_bar(window: &ApplicationWindow) {
-    let header_bar = HeaderBar::new();
-    header_bar.set_show_title_buttons(true);
-    
-    window.set_titlebar(Some(&header_bar));
+pub fn build_header_bar() -> HeaderBar {
+    let header_bar = HeaderBar::builder().show_title_buttons(true).build();
 
-    let about_but = build_about_button();
-    header_bar.pack_start(&about_but);
+    header_bar.pack_start(&build_about_button());
+
+    header_bar
 }

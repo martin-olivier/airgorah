@@ -1,5 +1,5 @@
 use gtk4::prelude::*;
-use gtk4::{ButtonsType, MessageDialog, MessageType, Window};
+use gtk4::*;
 
 pub struct ErrorDialog;
 
@@ -15,20 +15,18 @@ impl ErrorDialog {
             .build();
 
         dialog.set_transient_for(parent);
-        dialog.show();
-
         dialog.connect_response(move |this, _| {
             this.close();
             if terminate == true {
                 std::process::exit(1);
             }
         });
-
         dialog.connect_close(move |_| {
             if terminate == true {
                 std::process::exit(1);
             }
         });
+        dialog.show();
     }
 }
 
@@ -46,9 +44,9 @@ impl InfoDialog {
             .build();
 
         dialog.set_transient_for(parent);
-        dialog.show();
         dialog.connect_response(|this, _| {
             this.close();
         });
+        dialog.show();
     }
 }
