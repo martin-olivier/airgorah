@@ -1,6 +1,7 @@
 mod app;
 mod dialog;
 mod interface;
+mod deauth;
 
 use crate::backend;
 use crate::globals::*;
@@ -13,6 +14,7 @@ use std::time::Duration;
 
 use app::AppWindow;
 use interface::InterfaceWindow;
+use deauth::DeauthWindow;
 
 pub fn build_ui(app: &Application) {
 
@@ -85,6 +87,7 @@ pub fn build_ui(app: &Application) {
 
                 for ap in aps.iter() {
                     if ap.bssid == bssid {
+                        SELECTED_AP.lock().unwrap().replace(ap.clone());
                         clients = ap.clients.to_vec();
                         break;
                     }
@@ -143,7 +146,7 @@ pub fn build_ui(app: &Application) {
         };
     });
 
-    // Main window callbacks
+    // Scan button callback
 
     let main_window_ref = main_window.clone();
 
@@ -220,5 +223,21 @@ pub fn build_ui(app: &Application) {
         backend::launch_scan_process(&args);
         main_window_ref.aps_model.clear();
         main_window_ref.cli_model.clear();
+    });
+
+    // Deauth button callback
+
+    let main_window_ref = main_window.clone();
+
+    main_window.deauth_but.connect_clicked(move |_| {
+        if main_window_ref.aps_view.selection().selected().is_none() {
+            return;
+        }
+        let ap = match SELECTED_AP.lock().unwrap().clone() {
+            Some(ap) => ap,
+            None => return,
+        };
+
+        DeauthWindow::new(main_window_ref.window.as_ref(), ap);
     });
 }
