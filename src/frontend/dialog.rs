@@ -4,7 +4,7 @@ use gtk4::*;
 pub struct ErrorDialog;
 
 impl ErrorDialog {
-    pub fn spawn(parent: Option<&impl IsA<Window>>, title: &str, content: &str, terminate: bool) {
+    pub fn spawn(parent: &impl IsA<Window>, title: &str, content: &str, terminate: bool) {
         let dialog = MessageDialog::builder()
             .text(title)
             .secondary_text(content)
@@ -14,7 +14,7 @@ impl ErrorDialog {
             .modal(true)
             .build();
 
-        dialog.set_transient_for(parent);
+        dialog.set_transient_for(Some(parent));
         dialog.connect_response(move |this, _| {
             this.close();
             if terminate == true {
@@ -33,7 +33,7 @@ impl ErrorDialog {
 pub struct InfoDialog;
 
 impl InfoDialog {
-    pub fn spawn(parent: Option<&impl IsA<Window>>, title: &str, content: &str) {
+    pub fn spawn(parent: &impl IsA<Window>, title: &str, content: &str) {
         let dialog = MessageDialog::builder()
             .text(title)
             .secondary_text(content)
@@ -43,7 +43,7 @@ impl InfoDialog {
             .modal(true)
             .build();
 
-        dialog.set_transient_for(parent);
+        dialog.set_transient_for(Some(parent));
         dialog.connect_response(|this, _| {
             this.close();
         });

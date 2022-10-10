@@ -29,7 +29,7 @@ impl InterfaceWindow {
             model.insert_with_values(None, &[(0, &iface)]);
         }
 
-        let combo = Rc::new(ComboBox::with_model(&*model));
+        let combo = Rc::new(ComboBox::with_model(model.as_ref()));
         combo.set_width_request(240);
 
         let cell = CellRendererText::new();
@@ -43,7 +43,7 @@ impl InterfaceWindow {
         let hbox = Box::new(Orientation::Horizontal, 10);
         let vbox = Box::new(Orientation::Vertical, 10);
 
-        hbox.append(&*combo);
+        hbox.append(combo.as_ref());
         hbox.append(&refresh_but);
 
         hbox.set_margin_top(10);
