@@ -3,6 +3,9 @@ use gtk4::*;
 use std::rc::Rc;
 use crate::backend;
 use crate::frontend::dialog::*;
+use crate::globals::*;
+use std::fs::File;
+use std::io::prelude::*;
 
 fn build_about_button() -> Button {
     let about_button = Button::builder().icon_name("dialog-information").build();
@@ -287,7 +290,12 @@ impl AppWindow {
 
         let deauth_but = Rc::new(Button::with_label("Deauth attack"));
         deauth_but.set_sensitive(false);
-        deauth_but.set_margin_bottom(10);
+
+        let capture_hs_but = Rc::new(Button::with_label("Capture Handshake"));
+        capture_hs_but.set_sensitive(false);
+
+        let decrypt_hs_but = Rc::new(Button::with_label("Decrypt Handshake"));
+        decrypt_hs_but.set_margin_bottom(10);
 
         scan_box.append(&band_frame);
         scan_box.append(&channel_frame);
@@ -295,6 +303,8 @@ impl AppWindow {
         scan_box.append(&top_but_box);
         scan_box.append(&separator);
         scan_box.append(deauth_but.as_ref());
+        scan_box.append(capture_hs_but.as_ref());
+        scan_box.append(decrypt_hs_but.as_ref());
 
         scan_box.set_hexpand(false);
 
@@ -314,6 +324,7 @@ impl AppWindow {
         main_box.append(&scan_box);
 
         window.set_child(Some(&main_box));
+
         window.show();
 
         // Set callbacks
@@ -329,16 +340,48 @@ impl AppWindow {
         let window_ref = window.clone();
 
         export_but.connect_clicked(move |_| {
-            InfoDialog::spawn(window_ref.as_ref(), "Info", "Not yet implemented");
-        });
+            let aps = APS.lock().unwrap();
+
+            if aps.is_empty() {
+                return InfoDialog::spawn(window_ref.as_ref(), "Info", "There is no data to export");
+            }
+
+            let json_data = serde_json::to_string::<Vec<backend::AP>>(aps.as_ref()).unwrap();
+
+            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+                Some("Save Capture"),
+                Some(window_ref.as_ref()),
+                FileChooserAction::Save,
+                &[("Save", ResponseType::Accept)],
+            ));
+
+            file_chooser_dialog.run_async(move |this, response| {
+                if response == ResponseType::Accept {
+                    let gio_file = match this.file() {
+                        Some(file) => file,
+                        None => return,
+                    };
+                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
+                    file.write_all(json_data.as_bytes()).unwrap();
+                }
+                this.hide();
+            });
+        });        
 
         let cli_model_ref = cli_model.clone();
         let deauth_but_ref = deauth_but.clone();
+        let capture_hs_but_ref = capture_hs_but.clone();
 
         aps_view.connect_cursor_changed(move |this| {
             match this.selection().selected().is_some() {
-                true => deauth_but_ref.set_sensitive(true),
-                false => deauth_but_ref.set_sensitive(false),
+                true => {
+                    deauth_but_ref.set_sensitive(true);
+                    capture_hs_but_ref.set_sensitive(true);
+                }
+                false => {
+                    deauth_but_ref.set_sensitive(false);
+                    capture_hs_but_ref.set_sensitive(false);
+                }
             };
             cli_model_ref.clear();
         });

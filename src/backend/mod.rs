@@ -1,7 +1,7 @@
-use crate::globals::{IFACE, SCAN_PATH, SCAN_PROC};
+use crate::globals::*;
 use std::process::Command;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 struct RawAP {
@@ -37,7 +37,7 @@ struct RawAP {
     _key: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AP {
     pub essid: String,
     pub bssid: String,
@@ -69,7 +69,7 @@ struct RawClient {
     _probed_essids: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Client {
     pub mac: String,
     pub packets: String,
@@ -200,7 +200,6 @@ pub fn launch_scan_process(args: &[&str]) {
 }
 
 pub fn stop_scan_process() {
-
     match SCAN_PROC.lock().unwrap().as_mut() {
         Some(child) => {
             child.kill().unwrap();
@@ -240,9 +239,11 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
             Ok(res) => {
                 let channel_nb = res.channel.trim_start().parse::<i32>().unwrap_or(-1);
                 let mut essid = res.essid.trim_start().to_string();
+
                 if essid.is_empty() {
                     essid = format!("[Hidden ESSID] (length: {})", res.id_length.trim_start());
                 }
+
                 aps.push(AP {
                     essid,
                     bssid: res.bssid.trim_start().to_string(),
@@ -286,10 +287,55 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
     Some(aps)
 }
 
+pub fn launch_deauth_process(ap_bssid: &str, only_specific_clients: Option<Vec<String>>) {
+    let mut attack_pool = vec![];
+
+    let iface = match IFACE.lock().unwrap().as_ref() {
+        Some(res) => res.to_string(),
+        None => return,
+    };
+
+    match only_specific_clients {
+        Some(specific_clients) => {
+            for cli in specific_clients {
+                attack_pool.push((
+                    Some(cli.to_owned()),
+                    Command::new("aireplay-ng")
+                        .args(["-0", "0", "-D", "-a", ap_bssid, "-c", &cli, &iface])
+                        .stdout(std::process::Stdio::null())
+                        .spawn()
+                        .expect("failed to execute process: aireplay-ng"),
+                ));
+            }
+        }
+        None => {
+            attack_pool.push((
+                None,
+                Command::new("aireplay-ng")
+                    .args(["-0", "0", "-D", "-a", ap_bssid, &iface])
+                    .stdout(std::process::Stdio::null())
+                    .spawn()
+                    .expect("failed to execute process: aireplay-ng"),
+            ));
+        }
+    };
+
+    ATTACK_POOL
+        .lock()
+        .unwrap()
+        .insert(ap_bssid.to_string(), attack_pool);
+}
+
 pub fn app_cleanup() {
     if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
         child.kill().unwrap();
         child.wait().unwrap();
+    }
+    for attacked_ap in ATTACK_POOL.lock().unwrap().iter_mut() {
+        for attack_proc in attacked_ap.1.iter_mut() {
+            attack_proc.1.kill().unwrap();
+            attack_proc.1.wait().unwrap();
+        }
     }
     if let Some(iface) = IFACE.lock().unwrap().as_ref() {
         disable_monitor_mode(iface).ok();

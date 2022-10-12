@@ -4,6 +4,7 @@ mod interface;
 mod deauth;
 
 use crate::backend;
+use crate::globals;
 use crate::globals::*;
 use dialog::*;
 use gtk4::prelude::*;
@@ -11,6 +12,7 @@ use gtk4::*;
 use regex::Regex;
 use std::rc::Rc;
 use std::time::Duration;
+use crate::backend::AP;
 
 use app::AppWindow;
 use interface::InterfaceWindow;
@@ -64,6 +66,13 @@ pub fn build_ui(app: &Application) {
                     None => main_window_ref.aps_model.append(),
                 };
 
+                if ATTACK_POOL.lock().unwrap().contains_key(&ap.bssid) {
+                    //Change color
+
+                    //main_window_ref.aps_view.set_property("background", "#0000ff");
+                    //main_window_ref.aps_view.set_property("background-set", 1);
+                }
+
                 main_window_ref.aps_model.set(
                     &it,
                     &[
@@ -87,7 +96,6 @@ pub fn build_ui(app: &Application) {
 
                 for ap in aps.iter() {
                     if ap.bssid == bssid {
-                        SELECTED_AP.lock().unwrap().replace(ap.clone());
                         clients = ap.clients.to_vec();
                         break;
                     }
@@ -111,6 +119,9 @@ pub fn build_ui(app: &Application) {
                     );
                 }
             }
+            let mut glob_aps = globals::APS.lock().unwrap();
+            glob_aps.clear();
+            glob_aps.append(&mut aps.clone());
         }
         glib::Continue(true)
     });
@@ -230,14 +241,19 @@ pub fn build_ui(app: &Application) {
     let main_window_ref = main_window.clone();
 
     main_window.deauth_but.connect_clicked(move |_| {
-        if main_window_ref.aps_view.selection().selected().is_none() {
-            return;
-        }
-        let ap = match SELECTED_AP.lock().unwrap().clone() {
-            Some(ap) => ap,
+        let (_model, iter) = match main_window_ref.aps_view.selection().selected() {
+            Some((selection, iter)) => (selection, iter),
             None => return,
         };
+        let val = main_window_ref.aps_model.get_value(&iter, 1);
+        let bssid = val.get::<&str>().unwrap();
 
-        DeauthWindow::new(main_window_ref.window.as_ref(), ap);
+        let aps: Vec<AP> = APS.lock().unwrap().clone();
+
+        for ap in aps {
+            if ap.bssid == bssid {
+                return DeauthWindow::spawn(main_window_ref.window.as_ref(), ap);
+            }
+        }
     });
 }
