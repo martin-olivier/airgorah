@@ -1,6 +1,7 @@
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
+use crate::backend;
 
 pub struct InterfaceWindow {
     pub window: Window,
@@ -24,7 +25,7 @@ impl InterfaceWindow {
 
         let model = Rc::new(ListStore::new(&[glib::Type::STRING]));
 
-        let ifaces = crate::backend::get_interfaces();
+        let ifaces = backend::get_interfaces();
         for iface in ifaces.iter() {
             model.insert_with_values(None, &[(0, &iface)]);
         }
@@ -63,7 +64,7 @@ impl InterfaceWindow {
         refresh_but.connect_clicked(move |_| {
             model_ref.clear();
 
-            let ifaces = crate::backend::get_interfaces();
+            let ifaces = backend::get_interfaces();
             for iface in ifaces.iter() {
                 model_ref.insert_with_values(None, &[(0, &iface)]);
             }

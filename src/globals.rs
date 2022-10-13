@@ -2,14 +2,10 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::process::Child;
 use std::sync::Mutex;
-use crate::backend::AP;
+use crate::types::*;
 
 pub static SCAN_PATH: &'static str = "/tmp/airgorah";
-
-pub enum AttackTargets {
-    All(Child),
-    Selection(Vec<(String, Child)>),
-}
+pub static VERSION: &'static str = "0.1.0";
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);

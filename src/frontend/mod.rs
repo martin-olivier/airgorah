@@ -4,7 +4,7 @@ mod interface;
 mod deauth;
 
 use crate::backend;
-use crate::globals;
+use crate::types::*;
 use crate::globals::*;
 use dialog::*;
 use gtk4::prelude::*;
@@ -12,7 +12,6 @@ use gtk4::*;
 use regex::Regex;
 use std::rc::Rc;
 use std::time::Duration;
-use crate::backend::AP;
 
 use app::AppWindow;
 use interface::InterfaceWindow;
@@ -68,14 +67,17 @@ pub fn build_ui(app: &Application) {
                 match attack_pool.contains_key(bssid) {
                     true => {
                         main_window_ref.deauth_but.set_label("Stop Attack");
+                        main_window_ref.deauth_but.set_tooltip_text(Some("Stop the deauth attack on the selected AP"));
                     }
                     false => {
                         main_window_ref.deauth_but.set_label("Deauth Attack");
+                        main_window_ref.deauth_but.set_tooltip_text(Some("Perform a deauth attack on the selected AP"));
                     }
                 }
             }
             None => {
                 main_window_ref.deauth_but.set_label("Deauth Attack");
+                main_window_ref.deauth_but.set_tooltip_text(Some("Perform a deauth attack on the selected AP"));
             }
         };
 
@@ -157,7 +159,7 @@ pub fn build_ui(app: &Application) {
                     );
                 }
             }
-            let mut glob_aps = globals::APS.lock().unwrap();
+            let mut glob_aps = APS.lock().unwrap();
 
             glob_aps.clear();
             glob_aps.append(&mut aps.clone());

@@ -4,6 +4,7 @@ use gtk4::Application;
 mod frontend;
 mod backend;
 mod globals;
+mod types;
 
 fn main() {
     let application = Application::builder()

@@ -1,6 +1,7 @@
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
+use crate::types::*;
 use crate::backend;
 use crate::frontend::dialog::*;
 use crate::globals::*;
@@ -12,7 +13,7 @@ fn build_about_button() -> Button {
     about_button.connect_clicked(|_| {
         let about = AboutDialog::builder()
             .program_name("Airgorah")
-            .version("0.1 beta")
+            .version(VERSION)
             .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
@@ -221,16 +222,27 @@ impl AppWindow {
 
         let top_but_box = CenterBox::new();
 
-        let scan_but = Rc::new(Button::builder().icon_name("media-playback-start").build());
+        let scan_but = Rc::new(
+            Button::builder()
+                .icon_name("media-playback-start")
+                .tooltip_text("Start a scan with the current settings")
+                .build()
+        );
 
         let stop_but = Rc::new(
             Button::builder()
                 .icon_name("media-playback-stop")
                 .sensitive(false)
+                .tooltip_text("Stop the scan")
                 .build(),
         );
 
-        let export_but = Rc::new(Button::builder().icon_name("media-floppy").build());
+        let export_but = Rc::new(
+            Button::builder()
+                .icon_name("media-floppy")
+                .tooltip_text("Export the scan results to a JSON file")
+                .build()
+        );
 
         top_but_box.set_margin_start(20);
         top_but_box.set_margin_end(20);
@@ -292,14 +304,29 @@ impl AppWindow {
         separator.set_vexpand(true);
         separator.set_opacity(0.0);
 
-        let deauth_but = Rc::new(Button::with_label("Deauth Attack"));
-        deauth_but.set_sensitive(false);
+        let deauth_but = Rc::new(
+            Button::builder()
+                .label("Deauth Attack")
+                .tooltip_text("Perform a deauth attack on the selected AP")
+                .sensitive(false)
+                .build()
+        );
 
-        let capture_hs_but = Rc::new(Button::with_label("Capture Handshake"));
-        capture_hs_but.set_sensitive(false);
+        let capture_hs_but = Rc::new(
+            Button::builder()
+                .label("Capture Handshake")
+                .tooltip_text("Capture a handshake from the selected AP")
+                .sensitive(false)
+                .build()
+        );
 
-        let decrypt_hs_but = Rc::new(Button::with_label("Decrypt Handshake"));
-        decrypt_hs_but.set_margin_bottom(10);
+        let decrypt_hs_but = Rc::new(
+            Button::builder()
+                .label("Decrypt Handshake")
+                .tooltip_text("Decrypt a captured handshake")
+                .margin_bottom(10)
+                .build()
+        );
 
         scan_box.append(&band_frame);
         scan_box.append(&channel_frame);
@@ -350,7 +377,7 @@ impl AppWindow {
                 return InfoDialog::spawn(window_ref.as_ref(), "Info", "There is no data to export");
             }
 
-            let json_data = serde_json::to_string::<Vec<backend::AP>>(aps.as_ref()).unwrap();
+            let json_data = serde_json::to_string::<Vec<AP>>(aps.as_ref()).unwrap();
 
             let file_chooser_dialog = Rc::new(FileChooserDialog::new(
                 Some("Save Capture"),

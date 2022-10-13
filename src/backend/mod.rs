@@ -1,7 +1,8 @@
 use crate::globals::*;
-use std::process::Command;
+use crate::types::*;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::process::Command;
 
 #[derive(Debug, Deserialize)]
 struct RawAP {
@@ -37,20 +38,6 @@ struct RawAP {
     _key: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AP {
-    pub essid: String,
-    pub bssid: String,
-    pub band: String,
-    pub channel: String,
-    pub speed: String,
-    pub power: String,
-    pub privacy: String,
-    pub first_time_seen: String,
-    pub last_time_seen: String,
-    pub clients: Vec<Client>,
-}
-
 #[derive(Debug, Deserialize)]
 struct RawClient {
     #[serde(rename = "Station MAC")]
@@ -67,15 +54,6 @@ struct RawClient {
     bssid: String,
     #[serde(rename = " Probed ESSIDs")]
     _probed_essids: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Client {
-    pub mac: String,
-    pub packets: String,
-    pub power: String,
-    pub first_time_seen: String,
-    pub last_time_seen: String,
 }
 
 pub fn get_interfaces() -> Vec<String> {
@@ -235,52 +213,47 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
     let mut cli_reader = csv::Reader::from_reader(cli_part.as_bytes());
 
     for result in ap_reader.deserialize::<RawAP>() {
-        match result {
-            Ok(res) => {
-                let channel_nb = res.channel.trim_start().parse::<i32>().unwrap_or(-1);
-                let mut essid = res.essid.trim_start().to_string();
+        if let Ok(res) = result {
+            let channel_nb = res.channel.trim_start().parse::<i32>().unwrap_or(-1);
+            let band = if channel_nb > 14 {
+                "5 GHz".to_string()
+            } else {
+                "2.4 GHz".to_string()
+            };
+            let mut essid = res.essid.trim_start().to_string();
 
-                if essid.is_empty() {
-                    essid = format!("[Hidden ESSID] (length: {})", res.id_length.trim_start());
-                }
-
-                aps.push(AP {
-                    essid,
-                    bssid: res.bssid.trim_start().to_string(),
-                    band: if channel_nb > 14 {
-                        "5 GHz".to_string()
-                    } else {
-                        "2.4 GHz".to_string()
-                    },
-                    channel: res.channel.trim_start().to_string(),
-                    speed: res.speed.trim_start().to_string(),
-                    power: res.power.trim_start().to_string(),
-                    privacy: res.privacy.trim_start().to_string(),
-                    first_time_seen: res.first_time_seen.trim_start().to_string(),
-                    last_time_seen: res.last_time_seen.trim_start().to_string(),
-                    clients: vec![],
-                })
+            if essid.is_empty() {
+                essid = format!("[Hidden ESSID] (length: {})", res.id_length.trim_start());
             }
-            Err(_) => {}
+
+            aps.push(AP {
+                essid,
+                bssid: res.bssid.trim_start().to_string(),
+                band,
+                channel: res.channel.trim_start().to_string(),
+                speed: res.speed.trim_start().to_string(),
+                power: res.power.trim_start().to_string(),
+                privacy: res.privacy.trim_start().to_string(),
+                first_time_seen: res.first_time_seen.trim_start().to_string(),
+                last_time_seen: res.last_time_seen.trim_start().to_string(),
+                clients: vec![],
+            });
         }
     }
 
     for result in cli_reader.deserialize::<RawClient>() {
-        match result {
-            Ok(res) => {
-                for ap in aps.iter_mut() {
-                    if ap.bssid == res.bssid.trim_start() {
-                        ap.clients.push(Client {
-                            mac: res.station_mac.trim_start().to_string(),
-                            packets: res.packets.trim_start().to_string(),
-                            power: res.power.trim_start().to_string(),
-                            first_time_seen: res.first_time_seen.trim_start().to_string(),
-                            last_time_seen: res.last_time_seen.trim_start().to_string(),
-                        })
-                    }
+        if let Ok(res) = result {
+            for ap in aps.iter_mut() {
+                if ap.bssid == res.bssid.trim_start() {
+                    ap.clients.push(Client {
+                        mac: res.station_mac.trim_start().to_string(),
+                        packets: res.packets.trim_start().to_string(),
+                        power: res.power.trim_start().to_string(),
+                        first_time_seen: res.first_time_seen.trim_start().to_string(),
+                        last_time_seen: res.last_time_seen.trim_start().to_string(),
+                    })
                 }
             }
-            Err(_) => {}
         }
     }
 
@@ -293,9 +266,7 @@ pub fn launch_deauth_attack(ap_bssid: &str, only_specific_clients: Option<Vec<St
         None => return,
     };
 
-    let mut attack_pool = ATTACK_POOL
-        .lock()
-        .unwrap();
+    let mut attack_pool = ATTACK_POOL.lock().unwrap();
 
     let attack_targets = match only_specific_clients {
         Some(specific_clients) => {
@@ -312,21 +283,16 @@ pub fn launch_deauth_attack(ap_bssid: &str, only_specific_clients: Option<Vec<St
             }
             AttackTargets::Selection(cli_attack_targets)
         }
-        None => {
-            AttackTargets::All(
-                Command::new("aireplay-ng")
-                    .args(["-0", "0", "-D", "-a", ap_bssid, &iface])
-                    .stdout(std::process::Stdio::null())
-                    .spawn()
-                    .expect("failed to execute process: aireplay-ng"),
-            )
-        }
+        None => AttackTargets::All(
+            Command::new("aireplay-ng")
+                .args(["-0", "0", "-D", "-a", ap_bssid, &iface])
+                .stdout(std::process::Stdio::null())
+                .spawn()
+                .expect("failed to execute process: aireplay-ng"),
+        ),
     };
 
-    attack_pool.insert(
-        ap_bssid.to_string(),
-        attack_targets,
-    );
+    attack_pool.insert(ap_bssid.to_string(), attack_targets);
 }
 
 pub fn stop_deauth_attack(ap_bssid: &str) {
@@ -336,7 +302,6 @@ pub fn stop_deauth_attack(ap_bssid: &str) {
             AttackTargets::All(child) => {
                 child.kill().unwrap();
                 child.wait().unwrap();
-
             }
             AttackTargets::Selection(child_list) => {
                 for (_cli, child) in child_list {

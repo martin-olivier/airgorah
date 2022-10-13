@@ -3,7 +3,8 @@ use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
 
-use crate::backend::{self, AP};
+use crate::backend;
+use crate::types::*;
 
 pub struct DeauthWindow;
 
