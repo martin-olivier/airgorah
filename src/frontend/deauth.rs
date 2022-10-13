@@ -45,34 +45,22 @@ impl DeauthWindow {
 
         window.set_transient_for(Some(parent));
 
-        let all_cli_but = CheckButton::new();
-        let sel_cli_but = CheckButton::new();
+        let all_cli_but = CheckButton::with_label("Deauth all clients");
+        let sel_cli_but = CheckButton::with_label("Deauth selected clients");
 
         all_cli_but.set_active(true);
         sel_cli_but.set_group(Some(&all_cli_but));
 
-        let all_cli_lab = Label::new(Some("Deauth all clients"));
-        let sel_cli_lab = Label::new(Some("Deauth selected clients"));
+        all_cli_but.set_margin_start(15);
+        all_cli_but.set_margin_top(15);
 
-        let all_cli_box = Box::new(Orientation::Horizontal, 10);
-        let sel_cli_box = Box::new(Orientation::Horizontal, 10);
-
-        all_cli_box.set_margin_start(15);
-        all_cli_box.set_margin_top(15);
-
-        sel_cli_box.set_margin_start(15);
-        sel_cli_box.set_margin_bottom(15);
-
-        all_cli_box.append(&all_cli_but);
-        all_cli_box.append(&all_cli_lab);
-
-        sel_cli_box.append(&sel_cli_but);
-        sel_cli_box.append(&sel_cli_lab);
+        sel_cli_but.set_margin_start(15);
+        sel_cli_but.set_margin_bottom(15);
 
         let but_box = Box::new(Orientation::Vertical, 10);
 
-        but_box.append(&all_cli_box);
-        but_box.append(&sel_cli_box);
+        but_box.append(&all_cli_but);
+        but_box.append(&sel_cli_but);
 
         let frame = Frame::new(None);
 
@@ -170,7 +158,7 @@ impl DeauthWindow {
                 false => None,
             };
 
-            backend::launch_deauth_process(&ap.bssid, params);
+            backend::launch_deauth_attack(&ap.bssid, params);
 
             window.close();
         });

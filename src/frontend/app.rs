@@ -62,6 +62,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,
         glib::Type::STRING,
         glib::Type::STRING,
+        glib::Type::STRING,
     ]);
 
     model
@@ -96,6 +97,7 @@ fn build_aps_view() -> TreeView {
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos);
+        column.add_attribute(&text_renderer, "background", 10);
 
         view.append_column(&column);
 
@@ -118,6 +120,7 @@ fn build_cli_model() -> ListStore {
         glib::Type::STRING,
         glib::Type::I32,
         glib::Type::I32,
+        glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
     ]);
@@ -149,6 +152,7 @@ fn build_cli_view() -> TreeView {
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos);
+        column.add_attribute(&text_renderer, "background", 5);
 
         view.append_column(&column);
 
@@ -240,7 +244,7 @@ impl AppWindow {
         let scan_box = Box::new(Orientation::Vertical, 10);
 
         let ghz_2_4_but = Rc::new(CheckButton::builder().active(true).label("2.4 GHZ").build());
-        let ghz_5_but = Rc::new(CheckButton::builder().active(false).label("5 GHZ").build());
+        let ghz_5_but = Rc::new(CheckButton::builder().active(true).label("5 GHZ").build());
 
         ghz_2_4_but.set_margin_start(6);
         ghz_5_but.set_margin_end(6);
@@ -288,7 +292,7 @@ impl AppWindow {
         separator.set_vexpand(true);
         separator.set_opacity(0.0);
 
-        let deauth_but = Rc::new(Button::with_label("Deauth attack"));
+        let deauth_but = Rc::new(Button::with_label("Deauth Attack"));
         deauth_but.set_sensitive(false);
 
         let capture_hs_but = Rc::new(Button::with_label("Capture Handshake"));
@@ -364,7 +368,7 @@ impl AppWindow {
                     let mut file = File::create(gio_file.path().unwrap()).unwrap();
                     file.write_all(json_data.as_bytes()).unwrap();
                 }
-                this.hide();
+                this.close();
             });
         });        
 
@@ -402,6 +406,16 @@ impl AppWindow {
                 true => channel_filter_entry_ref.set_sensitive(true),
                 false => channel_filter_entry_ref.set_sensitive(false),
             };
+        });
+
+        let window_ref = window.clone();
+        capture_hs_but.connect_clicked(move |_| {
+            InfoDialog::spawn(window_ref.as_ref(), "Comming Soon", "This feature will be available in a future version");
+        });
+
+        let window_ref = window.clone();
+        decrypt_hs_but.connect_clicked(move |_| {
+            InfoDialog::spawn(window_ref.as_ref(), "Comming Soon", "This feature will be available in a future version");
         });
 
         Self {

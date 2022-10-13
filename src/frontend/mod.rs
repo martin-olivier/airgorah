@@ -59,6 +59,26 @@ pub fn build_ui(app: &Application) {
             None
         };
 
+        match main_window_ref.aps_view.selection().selected() {
+            Some((_model, iter)) => {
+                let val = main_window_ref.aps_model.get_value(&iter, 1);
+                let bssid = val.get::<&str>().unwrap();
+                let attack_pool = ATTACK_POOL.lock().unwrap();
+
+                match attack_pool.contains_key(bssid) {
+                    true => {
+                        main_window_ref.deauth_but.set_label("Stop Attack");
+                    }
+                    false => {
+                        main_window_ref.deauth_but.set_label("Deauth Attack");
+                    }
+                }
+            }
+            None => {
+                main_window_ref.deauth_but.set_label("Deauth Attack");
+            }
+        };
+
         if let Some(aps) = backend::get_airodump_data() {
             for ap in aps.iter() {
                 let it = match list_store_find(main_window_ref.aps_model.as_ref(), 1, &ap.bssid) {
@@ -66,12 +86,10 @@ pub fn build_ui(app: &Application) {
                     None => main_window_ref.aps_model.append(),
                 };
 
-                if ATTACK_POOL.lock().unwrap().contains_key(&ap.bssid) {
-                    //Change color
-
-                    //main_window_ref.aps_view.set_property("background", "#0000ff");
-                    //main_window_ref.aps_view.set_property("background-set", 1);
-                }
+                let background_color = match ATTACK_POOL.lock().unwrap().contains_key(&ap.bssid) {
+                    true => gdk::RGBA::RED,
+                    false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                };
 
                 main_window_ref.aps_model.set(
                     &it,
@@ -86,6 +104,7 @@ pub fn build_ui(app: &Application) {
                         (7, &(ap.clients.len() as i32)),
                         (8, &ap.first_time_seen),
                         (9, &ap.last_time_seen),
+                        (10, &background_color.to_str()),
                     ],
                 );
             }
@@ -107,6 +126,24 @@ pub fn build_ui(app: &Application) {
                         None => main_window_ref.cli_model.append(),
                     };
 
+                    let background_color = match ATTACK_POOL.lock().unwrap().get(bssid) {
+                        Some(attack_target) => {
+                            match attack_target {
+                                AttackTargets::All(_) => gdk::RGBA::RED,
+                                AttackTargets::Selection(selection) => {
+                                    let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+                                    for sel in selection.iter() {
+                                        if sel.0 == cli.mac.as_str() {
+                                            color = gdk::RGBA::RED;
+                                        }
+                                    }
+                                    color
+                                }
+                            }
+                        }
+                        None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                    };
+
                     main_window_ref.cli_model.set(
                         &it,
                         &[
@@ -115,11 +152,13 @@ pub fn build_ui(app: &Application) {
                             (2, &cli.power.parse::<i32>().unwrap_or(-1)),
                             (3, &cli.first_time_seen),
                             (4, &cli.last_time_seen),
+                            (5, &background_color.to_str())
                         ],
                     );
                 }
             }
             let mut glob_aps = globals::APS.lock().unwrap();
+
             glob_aps.clear();
             glob_aps.append(&mut aps.clone());
         }
@@ -245,8 +284,13 @@ pub fn build_ui(app: &Application) {
             Some((selection, iter)) => (selection, iter),
             None => return,
         };
+
         let val = main_window_ref.aps_model.get_value(&iter, 1);
         let bssid = val.get::<&str>().unwrap();
+
+        if ATTACK_POOL.lock().unwrap().contains_key(bssid) {
+            return backend::stop_deauth_attack(bssid);
+        }
 
         let aps: Vec<AP> = APS.lock().unwrap().clone();
 
