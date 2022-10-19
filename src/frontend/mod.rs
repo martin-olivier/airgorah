@@ -1,12 +1,14 @@
 mod app;
+mod deauth;
 mod dialog;
 mod interface;
-mod deauth;
+mod tools;
 
 use crate::backend;
-use crate::types::*;
 use crate::globals::*;
+use crate::types::*;
 use dialog::*;
+
 use gtk4::prelude::*;
 use gtk4::*;
 use regex::Regex;
@@ -14,13 +16,20 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use app::AppWindow;
-use interface::InterfaceWindow;
 use deauth::DeauthWindow;
+use interface::InterfaceWindow;
 
 pub fn build_ui(app: &Application) {
+    backend::app_cleanup();
 
     let main_window = Rc::new(AppWindow::new(app));
     let interface_window = Rc::new(InterfaceWindow::new(app));
+
+    ctrlc::set_handler(move || {
+        backend::app_cleanup();
+        std::process::exit(1);
+    })
+    .expect("Error setting Ctrl-C handler");
 
     if sudo::check() != sudo::RunningAs::Root {
         interface_window.window.hide();
@@ -37,27 +46,6 @@ pub fn build_ui(app: &Application) {
     let main_window_ref = main_window.clone();
 
     glib::timeout_add_local(Duration::from_millis(100), move || {
-
-        let list_store_find = |storage: &ListStore, pos: i32, to_match: &str| -> Option<TreeIter> {
-            let mut iter = storage.iter_first();
-        
-            while let Some(it) = iter {
-                let value = storage.get_value(&it, pos);
-                let value_as_str = value.get::<&str>().unwrap();
-        
-                if value_as_str == to_match {
-                    return Some(it);
-                }
-        
-                iter = match storage.iter_next(&it) {
-                    true => Some(it),
-                    false => None,
-                }
-            }
-        
-            None
-        };
-
         match main_window_ref.aps_view.selection().selected() {
             Some((_model, iter)) => {
                 let val = main_window_ref.aps_model.get_value(&iter, 1);
@@ -65,25 +53,18 @@ pub fn build_ui(app: &Application) {
                 let attack_pool = ATTACK_POOL.lock().unwrap();
 
                 match attack_pool.contains_key(bssid) {
-                    true => {
-                        main_window_ref.deauth_but.set_label("Stop Attack");
-                        main_window_ref.deauth_but.set_tooltip_text(Some("Stop the deauth attack on the selected AP"));
-                    }
-                    false => {
-                        main_window_ref.deauth_but.set_label("Deauth Attack");
-                        main_window_ref.deauth_but.set_tooltip_text(Some("Perform a deauth attack on the selected AP"));
-                    }
+                    true => main_window_ref.deauth_but.set_label("Stop Attack"),
+                    false => main_window_ref.deauth_but.set_label("Deauth Attack"),
                 }
             }
             None => {
                 main_window_ref.deauth_but.set_label("Deauth Attack");
-                main_window_ref.deauth_but.set_tooltip_text(Some("Perform a deauth attack on the selected AP"));
             }
         };
 
         if let Some(aps) = backend::get_airodump_data() {
             for ap in aps.iter() {
-                let it = match list_store_find(main_window_ref.aps_model.as_ref(), 1, &ap.bssid) {
+                let it = match tools::list_store_find(main_window_ref.aps_model.as_ref(), 1, &ap.bssid) {
                     Some(it) => it,
                     None => main_window_ref.aps_model.append(),
                 };
@@ -123,26 +104,25 @@ pub fn build_ui(app: &Application) {
                 }
 
                 for cli in clients.iter() {
-                    let it = match list_store_find(main_window_ref.cli_model.as_ref(), 0, &cli.mac) {
+                    let it = match tools::list_store_find(main_window_ref.cli_model.as_ref(), 0, &cli.mac)
+                    {
                         Some(it) => it,
                         None => main_window_ref.cli_model.append(),
                     };
 
                     let background_color = match ATTACK_POOL.lock().unwrap().get(bssid) {
-                        Some(attack_target) => {
-                            match attack_target {
-                                AttackTargets::All(_) => gdk::RGBA::RED,
-                                AttackTargets::Selection(selection) => {
-                                    let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
-                                    for sel in selection.iter() {
-                                        if sel.0 == cli.mac.as_str() {
-                                            color = gdk::RGBA::RED;
-                                        }
+                        Some(attack_target) => match &attack_target.1 {
+                            AttackedClients::All(_) => gdk::RGBA::RED,
+                            AttackedClients::Selection(selection) => {
+                                let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+                                for sel in selection.iter() {
+                                    if sel.0 == cli.mac.as_str() {
+                                        color = gdk::RGBA::RED;
                                     }
-                                    color
                                 }
+                                color
                             }
-                        }
+                        },
                         None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                     };
 
@@ -154,7 +134,7 @@ pub fn build_ui(app: &Application) {
                             (2, &cli.power.parse::<i32>().unwrap_or(-1)),
                             (3, &cli.first_time_seen),
                             (4, &cli.last_time_seen),
-                            (5, &background_color.to_str())
+                            (5, &background_color.to_str()),
                         ],
                     );
                 }
@@ -232,7 +212,8 @@ pub fn build_ui(app: &Application) {
 
         if main_window_ref.channel_filter_but.is_active() {
             let channel_regex = Regex::new(r"^[1-9]+[0-9]*$").unwrap();
-            let channel_list: Vec<String> = main_window_ref.channel_filter_entry
+            let channel_list: Vec<String> = main_window_ref
+                .channel_filter_entry
                 .text()
                 .split_terminator(',')
                 .map(String::from)

@@ -37,7 +37,7 @@ impl DeauthWindow {
         let window = Rc::new(
             Window::builder()
                 .title(&format!("Deauth \"{}\"", ap.essid))
-                .default_width(260)
+                .default_width(360)
                 .default_height(140)
                 .resizable(false)
                 .modal(true)
@@ -159,7 +159,7 @@ impl DeauthWindow {
                 false => None,
             };
 
-            backend::launch_deauth_attack(&ap.bssid, params);
+            backend::launch_deauth_attack(ap.clone(), params);
 
             window.close();
         });

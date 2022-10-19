@@ -15,7 +15,7 @@ impl InterfaceWindow {
         let window = Window::builder()
             .title("Select a wireless interface")
             .hide_on_close(true)
-            .default_width(350)
+            .default_width(280)
             .default_height(70)
             .resizable(false)
             .modal(true)
@@ -31,14 +31,15 @@ impl InterfaceWindow {
         }
 
         let combo = Rc::new(ComboBox::with_model(model.as_ref()));
-        combo.set_width_request(240);
+        combo.set_hexpand(true);
+        //combo.set_width_request(240);
 
         let cell = CellRendererText::new();
         combo.pack_start(&cell, false);
         combo.add_attribute(&cell, "text", 0);
         combo.set_active(if ifaces.len() > 0 {Some(0)} else {None});
 
-        let refresh_but = Button::with_label("Refresh");
+        let refresh_but = Button::builder().icon_name("object-rotate-right").build();
         let select_but = Button::with_label("Select");
 
         let hbox = Box::new(Orientation::Horizontal, 10);

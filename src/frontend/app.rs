@@ -105,7 +105,6 @@ fn build_aps_view() -> TreeView {
         pos += 1;
     }
     view
-    //renderer2.set_background(Some("Orange"));
 }
 
 fn build_aps_scroll() -> ScrolledWindow {
@@ -190,14 +189,6 @@ pub struct AppWindow {
 impl AppWindow {
     pub fn new(app: &Application) -> Self {
         let window = Rc::new(build_main_window(app));
-
-        backend::app_cleanup();
-
-        ctrlc::set_handler(move || {
-            backend::app_cleanup();
-            std::process::exit(1);
-        })
-        .expect("Error setting Ctrl-C handler");
 
         let header_bar = build_header_bar();
         window.set_titlebar(Some(&header_bar));
@@ -307,7 +298,7 @@ impl AppWindow {
         let deauth_but = Rc::new(
             Button::builder()
                 .label("Deauth Attack")
-                .tooltip_text("Perform a deauth attack on the selected AP")
+                .tooltip_text("Perform (or stop) a deauth attack on the selected AP")
                 .sensitive(false)
                 .build()
         );
@@ -374,7 +365,7 @@ impl AppWindow {
             let aps = APS.lock().unwrap();
 
             if aps.is_empty() {
-                return InfoDialog::spawn(window_ref.as_ref(), "Info", "There is no data to export");
+                return ErrorDialog::spawn(window_ref.as_ref(), "Error", "There is no data to export", false);
             }
 
             let json_data = serde_json::to_string::<Vec<AP>>(aps.as_ref()).unwrap();
@@ -385,6 +376,8 @@ impl AppWindow {
                 FileChooserAction::Save,
                 &[("Save", ResponseType::Accept)],
             ));
+
+            file_chooser_dialog.set_current_name("capture.json");
 
             file_chooser_dialog.run_async(move |this, response| {
                 if response == ResponseType::Accept {
