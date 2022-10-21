@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use crate::backend;
 use crate::types::*;
+use super::dialog::*;
 
 pub struct DeauthWindow;
 
@@ -159,7 +160,14 @@ impl DeauthWindow {
                 false => None,
             };
 
-            backend::launch_deauth_attack(ap.clone(), params);
+            backend::launch_deauth_attack(ap.clone(), params).unwrap_or_else(|e| {
+                return ErrorDialog::spawn(
+                    window.as_ref(),
+                    "Error",
+                    &format!("Could not start deauth process: {}", e.to_string()),
+                    false,
+                );
+            });
 
             window.close();
         });

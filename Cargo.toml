@@ -13,6 +13,7 @@ sudo = "0.6.0"
 ctrlc = "3.2.3"
 regex = "1.6.0"
 lazy_static = "1.4.0"
+which = "4.3.0"
 
 [dependencies.gtk4]
 version = "0.4.8"

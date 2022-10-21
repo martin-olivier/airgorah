@@ -5,6 +5,7 @@ mod frontend;
 mod backend;
 mod globals;
 mod types;
+mod error;
 
 fn main() {
     let application = Application::builder()

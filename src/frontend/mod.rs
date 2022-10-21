@@ -5,7 +5,6 @@ mod interface;
 mod tools;
 
 use crate::backend;
-use crate::globals::*;
 use crate::types::*;
 use dialog::*;
 
@@ -41,6 +40,18 @@ pub fn build_ui(app: &Application) {
         );
     }
 
+    if let Err(e) =
+        backend::check_dependencies(&["sh", "iw", "awk", "airmon-ng", "airodump-ng", "aireplay-ng"])
+    {
+        interface_window.window.hide();
+        return ErrorDialog::spawn(
+            main_window.window.as_ref(),
+            "Missing dependencies",
+            &e.to_string(),
+            true,
+        );
+    }
+
     // Main window refresh
 
     let main_window_ref = main_window.clone();
@@ -50,7 +61,7 @@ pub fn build_ui(app: &Application) {
             Some((_model, iter)) => {
                 let val = main_window_ref.aps_model.get_value(&iter, 1);
                 let bssid = val.get::<&str>().unwrap();
-                let attack_pool = ATTACK_POOL.lock().unwrap();
+                let attack_pool = backend::get_attack_pool();
 
                 match attack_pool.contains_key(bssid) {
                     true => main_window_ref.deauth_but.set_label("Stop Attack"),
@@ -64,12 +75,16 @@ pub fn build_ui(app: &Application) {
 
         if let Some(aps) = backend::get_airodump_data() {
             for ap in aps.iter() {
-                let it = match tools::list_store_find(main_window_ref.aps_model.as_ref(), 1, &ap.bssid) {
+                let it = match tools::list_store_find(
+                    main_window_ref.aps_model.as_ref(),
+                    1,
+                    &ap.bssid,
+                ) {
                     Some(it) => it,
                     None => main_window_ref.aps_model.append(),
                 };
 
-                let background_color = match ATTACK_POOL.lock().unwrap().contains_key(&ap.bssid) {
+                let background_color = match backend::get_attack_pool().contains_key(&ap.bssid) {
                     true => gdk::RGBA::RED,
                     false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                 };
@@ -104,13 +119,16 @@ pub fn build_ui(app: &Application) {
                 }
 
                 for cli in clients.iter() {
-                    let it = match tools::list_store_find(main_window_ref.cli_model.as_ref(), 0, &cli.mac)
-                    {
+                    let it = match tools::list_store_find(
+                        main_window_ref.cli_model.as_ref(),
+                        0,
+                        &cli.mac,
+                    ) {
                         Some(it) => it,
                         None => main_window_ref.cli_model.append(),
                     };
 
-                    let background_color = match ATTACK_POOL.lock().unwrap().get(bssid) {
+                    let background_color = match backend::get_attack_pool().get(bssid) {
                         Some(attack_target) => match &attack_target.1 {
                             AttackedClients::All(_) => gdk::RGBA::RED,
                             AttackedClients::Selection(selection) => {
@@ -139,7 +157,7 @@ pub fn build_ui(app: &Application) {
                     );
                 }
             }
-            let mut glob_aps = APS.lock().unwrap();
+            let mut glob_aps = backend::get_aps();
 
             glob_aps.clear();
             glob_aps.append(&mut aps.clone());
@@ -162,18 +180,22 @@ pub fn build_ui(app: &Application) {
 
         match crate::backend::enable_monitor_mode(iface) {
             Ok(res) => {
-                IFACE.lock().unwrap().replace(res);
+                backend::set_iface(res);
                 interface_window_ref.window.hide();
-
                 scan_but.emit_clicked();
             }
-            Err(()) => {
+            Err(e) => {
                 ErrorDialog::spawn(
-                    &interface_window_ref.window,
+                    interface_window_ref.window.as_ref(),
                     "Monitor mode failed",
-                    &format!("Could not enable monitor mode on \"{}\"", iface),
+                    &format!(
+                        "Could not enable monitor mode on \"{}\":\n{}",
+                        iface,
+                        e.to_string()
+                    ),
                     false,
                 );
+                interface_window_ref.refresh_but.emit_clicked();
             }
         };
     });
@@ -187,7 +209,7 @@ pub fn build_ui(app: &Application) {
         let channel_filter;
         let bssid_filter;
 
-        if IFACE.lock().unwrap().is_none() {
+        if backend::get_iface().is_none() {
             return interface_window.window.show();
         }
 
@@ -253,7 +275,14 @@ pub fn build_ui(app: &Application) {
         this.set_icon_name("object-rotate-right");
         main_window_ref.stop_but.set_sensitive(true);
 
-        backend::launch_scan_process(&args);
+        backend::set_scan_process(&args).unwrap_or_else(|e| {
+            return ErrorDialog::spawn(
+                main_window_ref.window.as_ref(),
+                "Error",
+                &format!("Could not start scan process: {}", e.to_string()),
+                false,
+            );
+        });
         main_window_ref.aps_model.clear();
         main_window_ref.cli_model.clear();
     });
@@ -271,11 +300,11 @@ pub fn build_ui(app: &Application) {
         let val = main_window_ref.aps_model.get_value(&iter, 1);
         let bssid = val.get::<&str>().unwrap();
 
-        if ATTACK_POOL.lock().unwrap().contains_key(bssid) {
+        if backend::get_attack_pool().contains_key(bssid) {
             return backend::stop_deauth_attack(bssid);
         }
 
-        let aps: Vec<AP> = APS.lock().unwrap().clone();
+        let aps: Vec<AP> = backend::get_aps().clone();
 
         for ap in aps {
             if ap.bssid == bssid {
