@@ -1,27 +1,27 @@
-use gtk4::prelude::*;
-use gtk4::*;
-use std::rc::Rc;
-use crate::types::*;
 use crate::backend;
 use crate::frontend::dialog::*;
 use crate::globals::*;
+use crate::types::*;
+use gtk4::prelude::*;
+use gtk4::*;
 use std::fs::File;
 use std::io::prelude::*;
+use std::rc::Rc;
 
 fn build_about_button() -> Button {
     let about_button = Button::builder().icon_name("dialog-information").build();
     about_button.connect_clicked(|_| {
-        let about = AboutDialog::builder()
+        AboutDialog::builder()
             .program_name("Airgorah")
             .version(VERSION)
             .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
-            .comments("A GUI around aircrack-ng suite tools")
+            .comments("A WiFi pentest application that can performs deauth attacks and WPA/WPA2 passwords cracking")
             .logo_icon_name("network-wireless-hotspot")
             .website_label("https://github.com/martin-olivier/airgorah")
-            .build();
-        about.show();
+            .build()
+            .show();
     });
 
     about_button
@@ -52,7 +52,7 @@ fn build_main_window(app: &Application) -> ApplicationWindow {
 }
 
 fn build_aps_model() -> ListStore {
-    let model = ListStore::new(&[
+    ListStore::new(&[
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
@@ -64,9 +64,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
-    ]);
-
-    model
+    ])
 }
 
 fn build_aps_view() -> TreeView {
@@ -83,26 +81,23 @@ fn build_aps_view() -> TreeView {
         "First time seen",
         "Last time seen",
     ];
-    let mut pos = 0;
 
-    for colomn_name in colomn_names {
+    for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(colomn_name)
             .resizable(true)
             .min_width(50)
             .sort_indicator(true)
-            .sort_column_id(pos)
+            .sort_column_id(pos as i32)
             .expand(true)
             .build();
 
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
-        column.add_attribute(&text_renderer, "text", pos);
+        column.add_attribute(&text_renderer, "text", pos as i32);
         column.add_attribute(&text_renderer, "background", 10);
 
         view.append_column(&column);
-
-        pos += 1;
     }
     view
 }
@@ -116,16 +111,14 @@ fn build_aps_scroll() -> ScrolledWindow {
 }
 
 fn build_cli_model() -> ListStore {
-    let model = ListStore::new(&[
+    ListStore::new(&[
         glib::Type::STRING,
         glib::Type::I32,
         glib::Type::I32,
         glib::Type::STRING,
         glib::Type::STRING,
         glib::Type::STRING,
-    ]);
-
-    model
+    ])
 }
 
 fn build_cli_view() -> TreeView {
@@ -137,26 +130,23 @@ fn build_cli_view() -> TreeView {
         "First time seen",
         "Last time seen",
     ];
-    let mut pos = 0;
 
-    for colomn_name in colomn_names {
+    for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(colomn_name)
             .resizable(true)
             .min_width(50)
             .sort_indicator(true)
-            .sort_column_id(pos)
+            .sort_column_id(pos as i32)
             .expand(true)
             .build();
 
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
-        column.add_attribute(&text_renderer, "text", pos);
+        column.add_attribute(&text_renderer, "text", pos as i32);
         column.add_attribute(&text_renderer, "background", 5);
 
         view.append_column(&column);
-
-        pos += 1;
     }
     view
 }
@@ -189,9 +179,7 @@ pub struct AppWindow {
 impl AppWindow {
     pub fn new(app: &Application) -> Self {
         let window = Rc::new(build_main_window(app));
-
-        let header_bar = build_header_bar();
-        window.set_titlebar(Some(&header_bar));
+        window.set_titlebar(Some(&build_header_bar()));
 
         // Left Views (APs and Clients)
 
@@ -217,7 +205,7 @@ impl AppWindow {
             Button::builder()
                 .icon_name("media-playback-start")
                 .tooltip_text("Start a scan with the current settings")
-                .build()
+                .build(),
         );
 
         let stop_but = Rc::new(
@@ -232,7 +220,7 @@ impl AppWindow {
             Button::builder()
                 .icon_name("media-floppy")
                 .tooltip_text("Export the scan results to a JSON file")
-                .build()
+                .build(),
         );
 
         top_but_box.set_margin_start(20);
@@ -300,23 +288,23 @@ impl AppWindow {
                 .label("Deauth Attack")
                 .tooltip_text("Perform (or stop) a deauth attack on the selected AP")
                 .sensitive(false)
-                .build()
+                .build(),
         );
 
         let capture_hs_but = Rc::new(
             Button::builder()
-                .label("Capture Handshake")
+                .label("Handshake Capture")
                 .tooltip_text("Capture a handshake from the selected AP")
                 .sensitive(false)
-                .build()
+                .build(),
         );
 
         let decrypt_hs_but = Rc::new(
             Button::builder()
-                .label("Decrypt Handshake")
+                .label("Handshake Decrypt")
                 .tooltip_text("Decrypt a captured handshake")
                 .margin_bottom(10)
-                .build()
+                .build(),
         );
 
         scan_box.append(&band_frame);
@@ -365,7 +353,12 @@ impl AppWindow {
             let aps = APS.lock().unwrap();
 
             if aps.is_empty() {
-                return ErrorDialog::spawn(window_ref.as_ref(), "Error", "There is no data to export", false);
+                return ErrorDialog::spawn(
+                    window_ref.as_ref(),
+                    "Error",
+                    "There is no data to export",
+                    false,
+                );
             }
 
             let json_data = serde_json::to_string::<Vec<AP>>(aps.as_ref()).unwrap();
@@ -378,7 +371,6 @@ impl AppWindow {
             ));
 
             file_chooser_dialog.set_current_name("capture.json");
-
             file_chooser_dialog.run_async(move |this, response| {
                 if response == ResponseType::Accept {
                     let gio_file = match this.file() {
@@ -390,7 +382,7 @@ impl AppWindow {
                 }
                 this.close();
             });
-        });        
+        });
 
         let cli_model_ref = cli_model.clone();
         let deauth_but_ref = deauth_but.clone();
@@ -430,12 +422,20 @@ impl AppWindow {
 
         let window_ref = window.clone();
         capture_hs_but.connect_clicked(move |_| {
-            InfoDialog::spawn(window_ref.as_ref(), "Comming Soon", "This feature will be available in a future version");
+            InfoDialog::spawn(
+                window_ref.as_ref(),
+                "Comming Soon",
+                "This feature will be available in a future version",
+            );
         });
 
         let window_ref = window.clone();
         decrypt_hs_but.connect_clicked(move |_| {
-            InfoDialog::spawn(window_ref.as_ref(), "Comming Soon", "This feature will be available in a future version");
+            InfoDialog::spawn(
+                window_ref.as_ref(),
+                "Comming Soon",
+                "This feature will be available in a future version",
+            );
         });
 
         Self {

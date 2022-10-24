@@ -18,11 +18,8 @@ use app::AppWindow;
 use deauth::DeauthWindow;
 use interface::InterfaceWindow;
 
-pub fn build_ui(app: &Application) {
+pub fn app_setup(app: &Application) {
     backend::app_cleanup();
-
-    let main_window = Rc::new(AppWindow::new(app));
-    let interface_window = Rc::new(InterfaceWindow::new(app));
 
     ctrlc::set_handler(move || {
         backend::app_cleanup();
@@ -31,9 +28,8 @@ pub fn build_ui(app: &Application) {
     .expect("Error setting Ctrl-C handler");
 
     if sudo::check() != sudo::RunningAs::Root {
-        interface_window.window.hide();
         return ErrorDialog::spawn(
-            main_window.window.as_ref(),
+            &app.active_window().unwrap(),
             "Error",
             "Airgorah and its dependencies need root privilege to run",
             true,
@@ -43,14 +39,20 @@ pub fn build_ui(app: &Application) {
     if let Err(e) =
         backend::check_dependencies(&["sh", "iw", "awk", "airmon-ng", "airodump-ng", "aireplay-ng"])
     {
-        interface_window.window.hide();
-        return ErrorDialog::spawn(
-            main_window.window.as_ref(),
+        ErrorDialog::spawn(
+            &app.active_window().unwrap(),
             "Missing dependencies",
             &e.to_string(),
             true,
-        );
+        )
     }
+}
+
+pub fn build_ui(app: &Application) {
+    let main_window = Rc::new(AppWindow::new(app));
+    let interface_window = Rc::new(InterfaceWindow::new(app));
+
+    app_setup(app);
 
     // Main window refresh
 
@@ -58,7 +60,7 @@ pub fn build_ui(app: &Application) {
 
     glib::timeout_add_local(Duration::from_millis(100), move || {
         match main_window_ref.aps_view.selection().selected() {
-            Some((_model, iter)) => {
+            Some((_, iter)) => {
                 let val = main_window_ref.aps_model.get_value(&iter, 1);
                 let bssid = val.get::<&str>().unwrap();
                 let attack_pool = backend::get_attack_pool();
@@ -73,7 +75,7 @@ pub fn build_ui(app: &Application) {
             }
         };
 
-        if let Some(aps) = backend::get_airodump_data() {
+        if let Some(mut aps) = backend::get_airodump_data() {
             for ap in aps.iter() {
                 let it = match tools::list_store_find(
                     main_window_ref.aps_model.as_ref(),
@@ -106,8 +108,9 @@ pub fn build_ui(app: &Application) {
                     ],
                 );
             }
-            if let Some(selection) = main_window_ref.aps_view.selection().selected() {
-                let val = main_window_ref.aps_model.get_value(&selection.1, 1);
+
+            if let Some((_, iter)) = main_window_ref.aps_view.selection().selected() {
+                let val = main_window_ref.aps_model.get_value(&iter, 1);
                 let bssid = val.get::<&str>().unwrap();
                 let mut clients = vec![];
 
@@ -160,7 +163,7 @@ pub fn build_ui(app: &Application) {
             let mut glob_aps = backend::get_aps();
 
             glob_aps.clear();
-            glob_aps.append(&mut aps.clone());
+            glob_aps.append(&mut aps);
         }
         glib::Continue(true)
     });
@@ -188,11 +191,7 @@ pub fn build_ui(app: &Application) {
                 ErrorDialog::spawn(
                     interface_window_ref.window.as_ref(),
                     "Monitor mode failed",
-                    &format!(
-                        "Could not enable monitor mode on \"{}\":\n{}",
-                        iface,
-                        e.to_string()
-                    ),
+                    &format!("Could not enable monitor mode on \"{}\":\n{}", iface, e),
                     false,
                 );
                 interface_window_ref.refresh_but.emit_clicked();
@@ -224,7 +223,7 @@ pub fn build_ui(app: &Application) {
 
         let mut bands = "".to_string();
         if main_window_ref.ghz_5_but.is_active() {
-            bands.push_str("a");
+            bands.push('a');
         }
         if main_window_ref.ghz_2_4_but.is_active() {
             bands.push_str("bg");
@@ -279,7 +278,7 @@ pub fn build_ui(app: &Application) {
             return ErrorDialog::spawn(
                 main_window_ref.window.as_ref(),
                 "Error",
-                &format!("Could not start scan process: {}", e.to_string()),
+                &format!("Could not start scan process: {}", e),
                 false,
             );
         });

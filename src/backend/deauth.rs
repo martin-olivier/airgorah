@@ -1,13 +1,16 @@
+use crate::error::Error;
+use crate::globals::*;
+use crate::types::*;
 use std::collections::HashMap;
 use std::process::Command;
 use std::sync::MutexGuard;
-use crate::globals::*;
-use crate::types::*;
-use crate::error::Error;
 
-pub fn launch_deauth_attack(ap: AP, only_specific_clients: Option<Vec<String>>) -> Result<(), Error> {
-    let iface = match IFACE.lock().unwrap().as_ref() {
-        Some(res) => res.to_string(),
+pub fn launch_deauth_attack(
+    ap: AP,
+    only_specific_clients: Option<Vec<String>>,
+) -> Result<(), Error> {
+    let iface = match super::get_iface() {
+        Some(res) => res,
         None => return Err(Error::new("No interface set")),
     };
 

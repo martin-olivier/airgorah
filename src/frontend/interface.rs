@@ -1,8 +1,8 @@
+use super::dialog::*;
+use crate::backend;
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
-use crate::backend;
-use super::dialog::*;
 
 pub struct InterfaceWindow {
     pub window: Rc<Window>,
@@ -14,14 +14,15 @@ pub struct InterfaceWindow {
 
 impl InterfaceWindow {
     pub fn new(app: &Application) -> Self {
-        let window = Rc::new(Window::builder()
-            .title("Select a wireless interface")
-            .hide_on_close(true)
-            .default_width(280)
-            .default_height(70)
-            .resizable(false)
-            .modal(true)
-            .build()
+        let window = Rc::new(
+            Window::builder()
+                .title("Select a wireless interface")
+                .hide_on_close(true)
+                .default_width(280)
+                .default_height(70)
+                .resizable(false)
+                .modal(true)
+                .build(),
         );
 
         window.set_transient_for(app.active_window().as_ref());
@@ -79,7 +80,7 @@ impl InterfaceWindow {
                 model_ref.insert_with_values(None, &[(0, &iface)]);
             }
 
-            combo_ref.set_active(if ifaces.len() > 0 {Some(0)} else {None});
+            combo_ref.set_active(if !ifaces.is_empty() { Some(0) } else { None });
         });
 
         refresh_but.emit_clicked();

@@ -17,12 +17,12 @@ impl ErrorDialog {
         dialog.set_transient_for(Some(parent));
         dialog.connect_response(move |this, _| {
             this.close();
-            if terminate == true {
+            if terminate {
                 std::process::exit(1);
             }
         });
         dialog.connect_close(move |_| {
-            if terminate == true {
+            if terminate {
                 std::process::exit(1);
             }
         });

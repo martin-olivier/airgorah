@@ -3,9 +3,9 @@ use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
 
+use super::dialog::*;
 use crate::backend;
 use crate::types::*;
-use super::dialog::*;
 
 pub struct DeauthWindow;
 
@@ -127,11 +127,10 @@ impl DeauthWindow {
 
         let window_ref = window.clone();
         let store_ref = store.clone();
-        let scroll_ref = scroll.clone();
         let attack_but_ref = attack_but.clone();
 
         sel_cli_but.connect_toggled(move |_| {
-            scroll_ref.show();
+            scroll.show();
             window_ref.set_height_request(300);
             if get_selected_clis(&store_ref).is_empty() {
                 attack_but_ref.set_sensitive(false);
@@ -164,7 +163,7 @@ impl DeauthWindow {
                 return ErrorDialog::spawn(
                     window.as_ref(),
                     "Error",
-                    &format!("Could not start deauth process: {}", e.to_string()),
+                    &format!("Could not start deauth process: {}", e),
                     false,
                 );
             });

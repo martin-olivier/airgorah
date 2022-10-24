@@ -1,11 +1,11 @@
 use gtk4::prelude::*;
 use gtk4::Application;
 
-mod frontend;
 mod backend;
+mod error;
+mod frontend;
 mod globals;
 mod types;
-mod error;
 
 fn main() {
     let application = Application::builder()

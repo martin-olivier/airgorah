@@ -1,16 +1,14 @@
+use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
-use crate::error::Error;
 
 pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {
     for dep in deps {
         if which::which(dep).is_err() {
-            return Err(Error::new(
-                &format!("Missing dependency: \"{}\"\n{}",
-                    dep.to_string(),
-                    "Please install it using your package manager and try again."
-                )
-            ));
+            return Err(Error::new(&format!(
+                "Missing dependency: \"{}\"\n{}",
+                dep, "Please install it using your package manager"
+            )));
         }
     }
     Ok(())
@@ -23,7 +21,7 @@ pub fn app_cleanup() {
     }
 
     for attacked_ap in ATTACK_POOL.lock().unwrap().iter_mut() {
-        match &mut attacked_ap.1.1 {
+        match &mut attacked_ap.1 .1 {
             AttackedClients::All(child) => {
                 child.kill().unwrap();
                 child.wait().unwrap();
