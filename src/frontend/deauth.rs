@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use super::dialog::*;
 use crate::backend;
+use crate::list_store_get;
 use crate::types::*;
 
 pub struct DeauthWindow;
@@ -14,14 +15,11 @@ fn get_selected_clis(storage: &ListStore) -> Vec<String> {
     let mut selected_clis = vec![];
 
     while let Some(it) = iter {
-        let check_value = storage.get_value(&it, 0);
-        let check_value_as_bool = check_value.get::<bool>().unwrap();
+        let check_val = list_store_get!(storage, &it, 0, bool);
+        let mac_val = list_store_get!(storage, &it, 1, String);
 
-        let mac_value = storage.get_value(&it, 1);
-        let mac_value_as_str = mac_value.get::<&str>().unwrap();
-
-        if check_value_as_bool {
-            selected_clis.push(mac_value_as_str.to_string());
+        if check_val {
+            selected_clis.push(mac_val);
         }
 
         iter = match storage.iter_next(&it) {
@@ -60,20 +58,15 @@ impl DeauthWindow {
         sel_cli_but.set_margin_bottom(15);
 
         let but_box = Box::new(Orientation::Vertical, 10);
-
         but_box.append(&all_cli_but);
         but_box.append(&sel_cli_but);
 
-        let frame = Frame::new(None);
-
-        frame.set_child(Some(&but_box));
-
-        //
-
-        let view = Rc::new(TreeView::new());
-
         let store = Rc::new(ListStore::new(&[glib::Type::BOOL, glib::Type::STRING]));
 
+        let frame = Frame::new(None);
+        frame.set_child(Some(&but_box));
+
+        let view = Rc::new(TreeView::new());
         view.set_model(Some(store.as_ref()));
 
         for cli in ap.clients.iter() {
@@ -142,10 +135,9 @@ impl DeauthWindow {
 
         toggle.connect_toggled(move |_, path| {
             let iter = store_ref.iter(&path).unwrap();
-            let old_val = store_ref.get_value(&iter, 0);
-            let old_val_as_bool = old_val.get::<bool>().unwrap();
+            let old_val = list_store_get!(store_ref, &iter, 0, bool);
 
-            store_ref.set_value(&iter, 0, &Value::from(&(!old_val_as_bool)));
+            store_ref.set_value(&iter, 0, &Value::from(&(!old_val)));
 
             match get_selected_clis(&store_ref).is_empty() {
                 true => attack_but_ref.set_sensitive(false),

@@ -29,9 +29,7 @@ fn build_about_button() -> Button {
 
 pub fn build_header_bar() -> HeaderBar {
     let header_bar = HeaderBar::builder().show_title_buttons(true).build();
-
     header_bar.pack_start(&build_about_button());
-
     header_bar
 }
 
@@ -334,7 +332,6 @@ impl AppWindow {
         main_box.append(&scan_box);
 
         window.set_child(Some(&main_box));
-
         window.show();
 
         // Set callbacks

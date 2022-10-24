@@ -1,14 +1,21 @@
 use gtk4::prelude::*;
 use gtk4::*;
+use crate::types::*;
+
+#[macro_export]
+macro_rules! list_store_get {
+    ($storage:expr,$iter:expr,$pos:expr,$typ:ty) => {
+        $storage.get_value($iter, $pos).get::<$typ>().unwrap()
+    }
+}
 
 pub fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
     let mut iter = storage.iter_first();
 
     while let Some(it) = iter {
-        let value = storage.get_value(&it, pos);
-        let value_as_str = value.get::<&str>().unwrap();
+        let value = list_store_get!(storage, &it, pos, String);
 
-        if value_as_str == to_match {
+        if value == to_match {
             return Some(it);
         }
 
@@ -18,5 +25,14 @@ pub fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<
         }
     }
 
+    None
+}
+
+pub fn find_ap(aps: &[AP], bssid: &str) -> Option<AP> {
+    for ap in aps.iter() {
+        if ap.bssid == bssid {
+            return Some(ap.clone());
+        }
+    }
     None
 }

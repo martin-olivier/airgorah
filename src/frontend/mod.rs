@@ -4,9 +4,11 @@ mod dialog;
 mod interface;
 mod tools;
 
-use crate::backend;
 use crate::types::*;
+use crate::backend;
+use crate::list_store_get;
 use dialog::*;
+use tools::*;
 
 use gtk4::prelude::*;
 use gtk4::*;
@@ -31,7 +33,7 @@ pub fn app_setup(app: &Application) {
         return ErrorDialog::spawn(
             &app.active_window().unwrap(),
             "Error",
-            "Airgorah and its dependencies need root privilege to run",
+            "Airgorah need root privilege to run",
             true,
         );
     }
@@ -61,11 +63,10 @@ pub fn build_ui(app: &Application) {
     glib::timeout_add_local(Duration::from_millis(100), move || {
         match main_window_ref.aps_view.selection().selected() {
             Some((_, iter)) => {
-                let val = main_window_ref.aps_model.get_value(&iter, 1);
-                let bssid = val.get::<&str>().unwrap();
+                let bssid = list_store_get!(main_window_ref.aps_model, &iter, 1, String);
                 let attack_pool = backend::get_attack_pool();
 
-                match attack_pool.contains_key(bssid) {
+                match attack_pool.contains_key(&bssid) {
                     true => main_window_ref.deauth_but.set_label("Stop Attack"),
                     false => main_window_ref.deauth_but.set_label("Deauth Attack"),
                 }
@@ -77,10 +78,10 @@ pub fn build_ui(app: &Application) {
 
         if let Some(mut aps) = backend::get_airodump_data() {
             for ap in aps.iter() {
-                let it = match tools::list_store_find(
+                let it = match list_store_find(
                     main_window_ref.aps_model.as_ref(),
                     1,
-                    &ap.bssid,
+                    ap.bssid.as_str(),
                 ) {
                     Some(it) => it,
                     None => main_window_ref.aps_model.append(),
@@ -110,32 +111,25 @@ pub fn build_ui(app: &Application) {
             }
 
             if let Some((_, iter)) = main_window_ref.aps_view.selection().selected() {
-                let val = main_window_ref.aps_model.get_value(&iter, 1);
-                let bssid = val.get::<&str>().unwrap();
-                let mut clients = vec![];
-
-                for ap in aps.iter() {
-                    if ap.bssid == bssid {
-                        clients = ap.clients.to_vec();
-                        break;
-                    }
-                }
+                let bssid = list_store_get!(main_window_ref.aps_model, &iter, 1, String);
+                let clients = find_ap(&aps, &bssid).unwrap().clients;
 
                 for cli in clients.iter() {
-                    let it = match tools::list_store_find(
+                    let it = match list_store_find(
                         main_window_ref.cli_model.as_ref(),
                         0,
-                        &cli.mac,
+                        cli.mac.as_str(),
                     ) {
                         Some(it) => it,
                         None => main_window_ref.cli_model.append(),
                     };
 
-                    let background_color = match backend::get_attack_pool().get(bssid) {
+                    let background_color = match backend::get_attack_pool().get(&bssid) {
                         Some(attack_target) => match &attack_target.1 {
                             AttackedClients::All(_) => gdk::RGBA::RED,
                             AttackedClients::Selection(selection) => {
                                 let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+
                                 for sel in selection.iter() {
                                     if sel.0 == cli.mac.as_str() {
                                         color = gdk::RGBA::RED;
@@ -178,10 +172,9 @@ pub fn build_ui(app: &Application) {
             Some(iter) => iter,
             None => return,
         };
-        let val = interface_window_ref.model.get_value(&iter, 0);
-        let iface = val.get::<&str>().unwrap();
+        let iface = list_store_get!(interface_window_ref.model, &iter, 0, String);
 
-        match crate::backend::enable_monitor_mode(iface) {
+        match crate::backend::enable_monitor_mode(&iface) {
             Ok(res) => {
                 backend::set_iface(res);
                 interface_window_ref.window.hide();
@@ -271,9 +264,6 @@ pub fn build_ui(app: &Application) {
             args.push(&bssid_filter);
         }
 
-        this.set_icon_name("object-rotate-right");
-        main_window_ref.stop_but.set_sensitive(true);
-
         backend::set_scan_process(&args).unwrap_or_else(|e| {
             return ErrorDialog::spawn(
                 main_window_ref.window.as_ref(),
@@ -282,6 +272,10 @@ pub fn build_ui(app: &Application) {
                 false,
             );
         });
+
+        this.set_icon_name("object-rotate-right");
+
+        main_window_ref.stop_but.set_sensitive(true);
         main_window_ref.aps_model.clear();
         main_window_ref.cli_model.clear();
     });
@@ -296,18 +290,13 @@ pub fn build_ui(app: &Application) {
             None => return,
         };
 
-        let val = main_window_ref.aps_model.get_value(&iter, 1);
-        let bssid = val.get::<&str>().unwrap();
+        let bssid = list_store_get!(main_window_ref.aps_model, &iter, 1, String);
 
-        if backend::get_attack_pool().contains_key(bssid) {
-            return backend::stop_deauth_attack(bssid);
-        }
-
-        let aps: Vec<AP> = backend::get_aps().clone();
-
-        for ap in aps {
-            if ap.bssid == bssid {
-                return DeauthWindow::spawn(main_window_ref.window.as_ref(), ap);
+        match backend::get_attack_pool().contains_key(&bssid) {
+            true => backend::stop_deauth_attack(&bssid),
+            false => {
+                let ap = find_ap(&backend::get_aps(), &bssid).unwrap();
+                DeauthWindow::spawn(main_window_ref.window.as_ref(), ap);
             }
         }
     });

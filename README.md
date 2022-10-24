@@ -34,8 +34,19 @@ curl https://sh.rustup.rs -sSf | sh
 
 Then, you will need to install `airgorah` build and runtime dependencies:
 
+**APT**
 ```sh
-sudo apt install dbus-x11 aircrack-ng libgtk-4-dev
+sudo apt install dbus-x11 libgtk-4-dev aircrack-ng
+```
+
+**DNF**
+```sh
+sudo dnf install dbus-x11 gtk4-devel aircrack-ng
+```
+
+**PACMAN**
+```sh
+sudo pacman -S dbus gtk4 aircrack-ng
 ```
 
 ### 3. Install Airgorah

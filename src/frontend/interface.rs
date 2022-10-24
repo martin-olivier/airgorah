@@ -24,15 +24,14 @@ impl InterfaceWindow {
                 .modal(true)
                 .build(),
         );
-
         window.set_transient_for(app.active_window().as_ref());
 
         let model = Rc::new(ListStore::new(&[glib::Type::STRING]));
 
+        let cell = CellRendererText::new();
+
         let combo = Rc::new(ComboBox::with_model(model.as_ref()));
         combo.set_hexpand(true);
-
-        let cell = CellRendererText::new();
         combo.pack_start(&cell, false);
         combo.add_attribute(&cell, "text", 0);
 
@@ -49,10 +48,10 @@ impl InterfaceWindow {
         hbox.set_margin_start(10);
         hbox.set_margin_end(10);
 
-        vbox.set_margin_top(0);
-
         vbox.append(&hbox);
         vbox.append(&select_but);
+
+        vbox.set_margin_top(0);
 
         window.set_child(Some(&vbox));
         window.show();

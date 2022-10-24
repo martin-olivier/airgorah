@@ -5,10 +5,7 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::sync::MutexGuard;
 
-pub fn launch_deauth_attack(
-    ap: AP,
-    only_specific_clients: Option<Vec<String>>,
-) -> Result<(), Error> {
+pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Result<(), Error> {
     let iface = match super::get_iface() {
         Some(res) => res,
         None => return Err(Error::new("No interface set")),
@@ -16,7 +13,7 @@ pub fn launch_deauth_attack(
 
     let mut attack_pool = super::get_attack_pool();
 
-    let attack_targets = match only_specific_clients {
+    let attack_targets = match specific_clients {
         Some(specific_clients) => {
             let mut cli_attack_targets = vec![];
             for cli in specific_clients {
