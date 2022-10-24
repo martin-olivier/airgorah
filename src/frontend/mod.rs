@@ -4,9 +4,9 @@ mod dialog;
 mod interface;
 mod tools;
 
-use crate::types::*;
 use crate::backend;
 use crate::list_store_get;
+use crate::types::*;
 use dialog::*;
 use tools::*;
 
@@ -78,14 +78,12 @@ pub fn build_ui(app: &Application) {
 
         if let Some(mut aps) = backend::get_airodump_data() {
             for ap in aps.iter() {
-                let it = match list_store_find(
-                    main_window_ref.aps_model.as_ref(),
-                    1,
-                    ap.bssid.as_str(),
-                ) {
-                    Some(it) => it,
-                    None => main_window_ref.aps_model.append(),
-                };
+                let it =
+                    match list_store_find(main_window_ref.aps_model.as_ref(), 1, ap.bssid.as_str())
+                    {
+                        Some(it) => it,
+                        None => main_window_ref.aps_model.append(),
+                    };
 
                 let background_color = match backend::get_attack_pool().contains_key(&ap.bssid) {
                     true => gdk::RGBA::RED,
@@ -291,10 +289,12 @@ pub fn build_ui(app: &Application) {
         };
 
         let bssid = list_store_get!(main_window_ref.aps_model, &iter, 1, String);
+        let under_attack = backend::get_attack_pool().contains_key(&bssid);
 
-        match backend::get_attack_pool().contains_key(&bssid) {
+        match under_attack {
             true => backend::stop_deauth_attack(&bssid),
             false => {
+                main_window_ref.stop_but.emit_clicked();
                 let ap = find_ap(&backend::get_aps(), &bssid).unwrap();
                 DeauthWindow::spawn(main_window_ref.window.as_ref(), ap);
             }

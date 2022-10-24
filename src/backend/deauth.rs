@@ -42,6 +42,7 @@ pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Re
 
 pub fn stop_deauth_attack(ap_bssid: &str) {
     let mut attack_pool = super::get_attack_pool();
+
     if let Some(attack_target) = attack_pool.get_mut(ap_bssid) {
         match &mut attack_target.1 {
             AttackedClients::All(child) => {

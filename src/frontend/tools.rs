@@ -1,12 +1,12 @@
+use crate::types::*;
 use gtk4::prelude::*;
 use gtk4::*;
-use crate::types::*;
 
 #[macro_export]
 macro_rules! list_store_get {
     ($storage:expr,$iter:expr,$pos:expr,$typ:ty) => {
         $storage.get_value($iter, $pos).get::<$typ>().unwrap()
-    }
+    };
 }
 
 pub fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
