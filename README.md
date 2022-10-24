@@ -11,9 +11,6 @@
   <a href="https://www.rust-lang.org/">
     <img src="https://img.shields.io/badge/Language-Rust-orange.svg" alt="cppversion"/>
   </a>
-  <a href="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml">
-    <img src="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg" alt="CI"/>
-  </a>
 </p>
 
 This software is a WiFi pentest application that can performs deauth attacks and WPA/WPA2 passwords cracking
@@ -21,7 +18,7 @@ This software is a WiFi pentest application that can performs deauth attacks and
 `⭐ Don't forget to put a star if you like the project!`
 
 ## ⚠️ Requirements
-This software only works on `Linux` distributions (Ubuntu, Debian, Arch, etc.) and requires `root` privileges.
+This software only works on `Linux` distributions (Ubuntu, Debian, Arch, etc.) and requires `root` privileges to run.
 
 ## 💻 Installation
 
@@ -35,7 +32,7 @@ curl https://sh.rustup.rs -sSf | sh
 
 ### 2. Install Dependencies
 
-Then, you will need to install airgorah build and runtime dependencies:
+Then, you will need to install `airgorah` build and runtime dependencies:
 
 ```sh
 sudo apt install dbus-x11 aircrack-ng libgtk-4-dev
@@ -43,10 +40,10 @@ sudo apt install dbus-x11 aircrack-ng libgtk-4-dev
 
 ### 3. Install Airgorah
 
-Then, you will be able to build and install airgorah on your computer:
+Then, you will be able to build and install `airgorah` on your computer:
 
 ```sh
-git clone https://github.com/martin-olivier/airgorah
+git clone https://github.com/martin-olivier/airgorah -b feat/app
 cargo install --path airgorah
 ```
 
