@@ -9,7 +9,7 @@ mod types;
 
 fn main() {
     let application = Application::builder()
-        .application_id("com.martin-olivier.airgorah")
+        .application_id(globals::APP_ID)
         .build();
 
     application.connect_activate(frontend::build_ui);

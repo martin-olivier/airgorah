@@ -13,7 +13,7 @@
   </a>
 </p>
 
-This software is a WiFi pentest application that can performs deauth attacks and WPA/WPA2 passwords cracking
+Airgorah is a WiFi auditing software that can performs deauth attacks and WPA passwords recovery
 
 `⭐ Don't forget to put a star if you like the project!`
 

@@ -36,7 +36,7 @@ impl DeauthWindow {
         let window = Rc::new(
             Window::builder()
                 .title(&format!("Deauth \"{}\"", ap.essid))
-                .default_width(360)
+                .default_width(300)
                 .default_height(140)
                 .resizable(false)
                 .modal(true)

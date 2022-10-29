@@ -11,45 +11,77 @@ pub fn get_interfaces() -> Result<Vec<String>, Error> {
         return Err(Error::new("Failed to get interfaces"));
     }
 
-    let out = String::from_utf8(cmd.stdout).unwrap();
+    let out = String::from_utf8(cmd.stdout)?;
 
     Ok(out.split_terminator('\n').map(String::from).collect())
 }
 
-pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
+pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
+    let check_band_cmd = Command::new("iwlist").args([iface, "freq"]).output()?;
+
+    if !check_band_cmd.status.success() {
+        return Err(Error::new("No such interface"));
+    }
+
+    let check_band_output = String::from_utf8(check_band_cmd.stdout)?;
+
+    if check_band_output.contains("Channel 36 : 5.18 GHz") {
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
+pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
     if !check_monitor_cmd.status.success() {
         return Err(Error::new("No such interface"));
     }
 
-    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout).unwrap();
+    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
 
     if check_monitor_output.contains("type monitor") {
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
+pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
+    kill_network_manager().ok();
+
+    if is_monitor_mode(iface)? {
         return Ok(iface.to_string());
     }
 
+    let old_interface_list = get_interfaces()?;
     let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;
 
     if !enable_monitor_cmd.status.success() {
         return Err(Error::new("Failed to enable monitor mode"));
     }
 
-    let check_monitor_cmd = Command::new("iw")
-        .args(["dev", &(iface.to_string() + "mon"), "info"])
-        .output()?;
+    match is_monitor_mode(&(iface.to_string() + "mon")) {
+        Ok(res) => {
+            match res {
+                true => Ok(iface.to_string() + "mon"),
+                false => Err(Error::new("Failed to enable monitor mode")),
+            }
+        },
+        Err(_) => {
+            let new_interface_list = get_interfaces()?;
 
-    if !check_monitor_cmd.status.success() {
-        return Err(Error::new(
-            "Monitor mode has been enabled but the interface is not found",
-        ));
-    }
+            for iface_it in new_interface_list {
+                if !old_interface_list.contains(&iface_it) && is_monitor_mode(&iface_it)? {
+                    return Ok(iface_it);
+                }
+            }
 
-    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
-
-    match check_monitor_output.contains("type monitor") {
-        true => Ok(iface.to_string() + "mon"),
-        false => Err(Error::new("Failed to enable monitor mode")),
+            Err(Error::new(
+                "Monitor mode has been enabled but the new interface has not been found",
+            ))
+        }
     }
 }
 
@@ -82,4 +114,18 @@ pub fn get_iface() -> Option<String> {
 
 pub fn set_iface(iface: String) {
     IFACE.lock().unwrap().replace(iface);
+}
+
+pub fn kill_network_manager() -> Result<(), Error> {
+    Command::new("airmon-ng").args(["check", "kill"]).output()?;
+
+    Ok(())
+}
+
+pub fn restore_network_manager() -> Result<(), Error> {
+    Command::new("service").args(["NetworkManager", "restart"]).output()?;
+    Command::new("service").args(["network-manager", "restart"]).output()?;
+    Command::new("service").args(["wpa-supplicant", "restart"]).output()?;
+
+    Ok(())
 }

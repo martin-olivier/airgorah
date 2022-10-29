@@ -37,6 +37,7 @@ pub fn app_cleanup() {
 
     if let Some(iface) = IFACE.lock().unwrap().as_ref() {
         super::disable_monitor_mode(iface).ok();
+        super::restore_network_manager().ok();
     }
 
     std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();

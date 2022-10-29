@@ -12,9 +12,9 @@ impl ErrorDialog {
             .message_type(MessageType::Error)
             .buttons(ButtonsType::Close)
             .modal(true)
+            .transient_for(parent)
             .build();
 
-        dialog.set_transient_for(Some(parent));
         dialog.connect_response(move |this, _| {
             this.close();
             if terminate {
@@ -41,9 +41,9 @@ impl InfoDialog {
             .message_type(MessageType::Info)
             .buttons(ButtonsType::Ok)
             .modal(true)
+            .transient_for(parent)
             .build();
 
-        dialog.set_transient_for(Some(parent));
         dialog.connect_response(|this, _| {
             this.close();
         });

@@ -22,20 +22,24 @@ impl InterfaceWindow {
                 .default_height(70)
                 .resizable(false)
                 .modal(true)
+                .transient_for(&app.active_window().unwrap())
                 .build(),
         );
-        window.set_transient_for(app.active_window().as_ref());
 
         let model = Rc::new(ListStore::new(&[glib::Type::STRING]));
 
-        let cell = CellRendererText::new();
+        let text_renderer = CellRendererText::new();
+
+        let icon_renderer = CellRendererPixbuf::new();
+        icon_renderer.set_property("icon-name", "network-wired");
 
         let combo = Rc::new(ComboBox::with_model(model.as_ref()));
         combo.set_hexpand(true);
-        combo.pack_start(&cell, false);
-        combo.add_attribute(&cell, "text", 0);
+        combo.pack_start(&icon_renderer, false);
+        combo.pack_start(&text_renderer, false);
+        combo.add_attribute(&text_renderer, "text", 0);
 
-        let refresh_but = Button::builder().icon_name("object-rotate-right").build();
+        let refresh_but = Button::builder().icon_name("object-rotate-right-symbolic").build();
         let select_but = Button::with_label("Select");
 
         let hbox = Box::new(Orientation::Horizontal, 10);
@@ -54,7 +58,6 @@ impl InterfaceWindow {
         vbox.set_margin_top(0);
 
         window.set_child(Some(&vbox));
-        window.show();
 
         let window_ref = window.clone();
         let model_ref = model.clone();

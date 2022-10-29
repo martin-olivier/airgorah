@@ -39,7 +39,7 @@ pub fn app_setup(app: &Application) {
     }
 
     if let Err(e) =
-        backend::check_dependencies(&["sh", "iw", "awk", "airmon-ng", "airodump-ng", "aireplay-ng"])
+        backend::check_dependencies(&["sh", "iw", "iwlist", "awk", "airmon-ng", "airodump-ng", "aireplay-ng"])
     {
         ErrorDialog::spawn(
             &app.active_window().unwrap(),
@@ -199,9 +199,10 @@ pub fn build_ui(app: &Application) {
         let channel_filter;
         let bssid_filter;
 
-        if backend::get_iface().is_none() {
-            return interface_window.window.show();
-        }
+        let iface = match backend::get_iface() {
+            Some(iface) => iface,
+            None => return interface_window.window.show(),
+        };
 
         if !main_window_ref.ghz_2_4_but.is_active() && !main_window_ref.ghz_5_but.is_active() {
             return ErrorDialog::spawn(
@@ -213,8 +214,17 @@ pub fn build_ui(app: &Application) {
         }
 
         let mut bands = "".to_string();
+
         if main_window_ref.ghz_5_but.is_active() {
-            bands.push('a');
+            match backend::is_5ghz_supported(&iface).unwrap() {
+                true => bands.push('a'),
+                false => return ErrorDialog::spawn(
+                    main_window_ref.window.as_ref(),
+                    "Error",
+                    "Your network card doesn't support 5GHz",
+                    false,
+                ),
+            };
         }
         if main_window_ref.ghz_2_4_but.is_active() {
             bands.push_str("bg");
@@ -271,7 +281,7 @@ pub fn build_ui(app: &Application) {
             );
         });
 
-        this.set_icon_name("object-rotate-right");
+        this.set_icon_name("object-rotate-right-symbolic");
 
         main_window_ref.stop_but.set_sensitive(true);
         main_window_ref.aps_model.clear();

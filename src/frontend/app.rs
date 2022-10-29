@@ -2,6 +2,7 @@ use crate::backend;
 use crate::frontend::dialog::*;
 use crate::globals::*;
 use crate::types::*;
+use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
 use std::fs::File;
@@ -11,15 +12,17 @@ use std::rc::Rc;
 fn build_about_button() -> Button {
     let about_button = Button::builder().icon_name("dialog-information").build();
     about_button.connect_clicked(|_| {
+        let icon = Pixbuf::from_read(std::io::BufReader::new(APP_ICON)).unwrap();
         AboutDialog::builder()
             .program_name("Airgorah")
             .version(VERSION)
             .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
-            .comments("A WiFi pentest application that can performs deauth attacks and WPA/WPA2 passwords cracking")
-            .logo_icon_name("network-wireless-hotspot")
+            .logo(&Picture::for_pixbuf(&icon).paintable().unwrap())
+            .comments("A WiFi auditing software that can performs deauth attacks and WPA passwords recovery")
             .website_label("https://github.com/martin-olivier/airgorah")
+            .modal(true)
             .build()
             .show();
     });
@@ -27,9 +30,21 @@ fn build_about_button() -> Button {
     about_button
 }
 
+fn build_hs_decrypt_button() -> Button {
+    let decrypt_hs_but = Button::builder()
+        .icon_name("network-wireless-encrypted")
+        .tooltip_text("Open the Handshake decryption pannel")
+        .build();
+
+    decrypt_hs_but
+}
+
 pub fn build_header_bar() -> HeaderBar {
     let header_bar = HeaderBar::builder().show_title_buttons(true).build();
+
     header_bar.pack_start(&build_about_button());
+    header_bar.pack_end(&build_hs_decrypt_button());
+
     header_bar
 }
 
@@ -61,7 +76,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,
         glib::Type::STRING,
         glib::Type::STRING,
-        glib::Type::STRING,
+        glib::Type::STRING, // color
     ])
 }
 
@@ -89,6 +104,12 @@ fn build_aps_view() -> TreeView {
             .sort_column_id(pos as i32)
             .expand(true)
             .build();
+
+        if pos == 0 {
+            let icon_renderer = CellRendererPixbuf::new();
+            icon_renderer.set_property("icon-name", "network-wireless");
+            column.pack_start(&icon_renderer, false);
+        }
 
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
@@ -138,6 +159,12 @@ fn build_cli_view() -> TreeView {
             .sort_column_id(pos as i32)
             .expand(true)
             .build();
+
+        if pos == 0 {
+            let icon_renderer = CellRendererPixbuf::new();
+            icon_renderer.set_property("icon-name", "computer");
+            column.pack_start(&icon_renderer, false);
+        }
 
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
@@ -197,18 +224,16 @@ impl AppWindow {
 
         // Scan, Stop and Save Buttons
 
-        let top_but_box = CenterBox::new();
-
         let scan_but = Rc::new(
             Button::builder()
-                .icon_name("media-playback-start")
+                .icon_name("media-playback-start-symbolic")
                 .tooltip_text("Start a scan with the current settings")
                 .build(),
         );
 
         let stop_but = Rc::new(
             Button::builder()
-                .icon_name("media-playback-stop")
+                .icon_name("media-playback-stop-symbolic")
                 .sensitive(false)
                 .tooltip_text("Stop the scan")
                 .build(),
@@ -216,11 +241,12 @@ impl AppWindow {
 
         let export_but = Rc::new(
             Button::builder()
-                .icon_name("media-floppy")
+                .icon_name("media-floppy-symbolic")
                 .tooltip_text("Export the scan results to a JSON file")
                 .build(),
         );
 
+        let top_but_box = CenterBox::new();
         top_but_box.set_margin_start(20);
         top_but_box.set_margin_end(20);
         top_but_box.set_margin_top(15);
@@ -232,8 +258,8 @@ impl AppWindow {
 
         let scan_box = Box::new(Orientation::Vertical, 10);
 
-        let ghz_2_4_but = Rc::new(CheckButton::builder().active(true).label("2.4 GHZ").build());
-        let ghz_5_but = Rc::new(CheckButton::builder().active(true).label("5 GHZ").build());
+        let ghz_2_4_but = Rc::new(CheckButton::builder().active(true).label("2.4 GHz").build());
+        let ghz_5_but = Rc::new(CheckButton::builder().active(false).label("5 GHz").build());
 
         ghz_2_4_but.set_margin_start(6);
         ghz_5_but.set_margin_end(6);
@@ -241,6 +267,7 @@ impl AppWindow {
         let but_box = Box::new(Orientation::Horizontal, 10);
         but_box.append(ghz_2_4_but.as_ref());
         but_box.append(ghz_5_but.as_ref());
+        but_box.set_margin_bottom(4);
 
         let band_frame = Frame::new(Some("Band"));
         band_frame.set_child(Some(&but_box));
@@ -251,8 +278,8 @@ impl AppWindow {
                 .sensitive(false)
                 .build(),
         );
+
         let channel_filter_but = Rc::new(CheckButton::builder().active(false).build());
-        channel_filter_but.set_margin_start(10);
 
         let bssid_filter_entry = Rc::new(
             Entry::builder()
@@ -260,14 +287,20 @@ impl AppWindow {
                 .sensitive(false)
                 .build(),
         );
+
         let bssid_filter_but = Rc::new(CheckButton::builder().active(false).build());
-        bssid_filter_but.set_margin_start(10);
 
         let channel_box = Box::new(Orientation::Horizontal, 10);
+        channel_box.set_margin_start(10);
+        channel_box.set_margin_end(4);
+        channel_box.set_margin_bottom(4);
         channel_box.append(channel_filter_but.as_ref());
         channel_box.append(channel_filter_entry.as_ref());
 
         let bssid_box = Box::new(Orientation::Horizontal, 10);
+        bssid_box.set_margin_start(10);
+        bssid_box.set_margin_end(4);
+        bssid_box.set_margin_bottom(4);
         bssid_box.append(bssid_filter_but.as_ref());
         bssid_box.append(bssid_filter_entry.as_ref());
 
@@ -294,13 +327,6 @@ impl AppWindow {
                 .label("Handshake Capture")
                 .tooltip_text("Capture a handshake from the selected AP")
                 .sensitive(false)
-                .build(),
-        );
-
-        let decrypt_hs_but = Rc::new(
-            Button::builder()
-                .label("Handshake Decrypt")
-                .tooltip_text("Decrypt a captured handshake")
                 .margin_bottom(10)
                 .build(),
         );
@@ -312,7 +338,6 @@ impl AppWindow {
         scan_box.append(&separator);
         scan_box.append(deauth_but.as_ref());
         scan_box.append(capture_hs_but.as_ref());
-        scan_box.append(decrypt_hs_but.as_ref());
 
         scan_box.set_hexpand(false);
 
@@ -341,7 +366,7 @@ impl AppWindow {
         stop_but.connect_clicked(move |but| {
             backend::stop_scan_process();
             but.set_sensitive(false);
-            scan_but_ref.set_icon_name("media-playback-start");
+            scan_but_ref.set_icon_name("media-playback-start-symbolic");
         });
 
         let window_ref = window.clone();
@@ -419,15 +444,6 @@ impl AppWindow {
 
         let window_ref = window.clone();
         capture_hs_but.connect_clicked(move |_| {
-            InfoDialog::spawn(
-                window_ref.as_ref(),
-                "Comming Soon",
-                "This feature will be available in a future version",
-            );
-        });
-
-        let window_ref = window.clone();
-        decrypt_hs_but.connect_clicked(move |_| {
             InfoDialog::spawn(
                 window_ref.as_ref(),
                 "Comming Soon",
