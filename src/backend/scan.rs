@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::sync::MutexGuard;
+use regex::Regex;
 
 use crate::error::Error;
 use crate::globals::*;
@@ -58,6 +60,29 @@ struct RawClient {
     _probed_essids: String,
 }
 
+pub fn is_scan_process() -> bool {
+    match SCAN_PROC.lock().unwrap().as_ref() {
+        Some(_) => true,
+        None => false,
+    }
+}
+
+pub fn is_valid_channel_filter(channel_filter: &str) -> bool {
+    let channel_regex = Regex::new(r"^[1-9]+[0-9]*$").unwrap();
+    let channel_list: Vec<String> = channel_filter
+        .split_terminator(',')
+        .map(String::from)
+        .collect();
+
+    for chan in channel_list {
+        if !channel_regex.is_match(&chan) {
+            return false;
+        }
+    }
+
+    true
+}
+
 pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
     let iface = match super::get_iface().as_ref() {
         Some(res) => res.to_string(),
@@ -100,18 +125,27 @@ pub fn stop_scan_process() {
     }
 
     SCAN_PROC.lock().unwrap().take();
+
+    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
 }
 
-pub fn get_airodump_data() -> Option<Vec<AP>> {
-    let mut aps = vec![];
+pub fn get_airodump_data() -> HashMap<String, AP> {
+    let mut aps: HashMap<String, AP> = HashMap::new();
+
     for attacked_ap in super::get_attack_pool().iter() {
-        aps.push(attacked_ap.1 .0.clone());
+        aps.insert(attacked_ap.0.clone(), attacked_ap.1 .0.clone());
+    }
+
+    let mut glob_aps = super::get_aps();
+
+    for ap in glob_aps.iter() {
+        aps.insert(ap.0.clone(), ap.1.clone());
     }
 
     let full_path = SCAN_PATH.to_string() + "-01.csv";
     let csv_file = match std::fs::read_to_string(full_path) {
         Ok(file) => file,
-        Err(_) => return None,
+        Err(_) => return aps,
     };
 
     let file_parts: Vec<&str> = csv_file.split("\r\n\r\n").collect();
@@ -136,43 +170,51 @@ pub fn get_airodump_data() -> Option<Vec<AP>> {
         } else {
             "2.4 GHz".to_string()
         };
+
+        let bssid = result.bssid.trim_start().to_string();
+
         let mut essid = result.essid.trim_start().to_string();
 
         if essid.is_empty() {
             essid = format!("[Hidden ESSID] (length: {})", result.id_length.trim_start());
         }
 
-        aps.push(AP {
-            essid,
-            bssid: result.bssid.trim_start().to_string(),
-            band,
-            channel: result.channel.trim_start().to_string(),
-            speed: result.speed.trim_start().to_string(),
-            power: result.power.trim_start().to_string(),
-            privacy: result.privacy.trim_start().to_string(),
-            first_time_seen: result.first_time_seen.trim_start().to_string(),
-            last_time_seen: result.last_time_seen.trim_start().to_string(),
-            clients: vec![],
-        });
+        aps.insert(
+            bssid.clone(),
+            AP {
+                essid,
+                bssid,
+                band,
+                channel: result.channel.trim_start().to_string(),
+                speed: result.speed.trim_start().to_string(),
+                power: result.power.trim_start().to_string(),
+                privacy: result.privacy.trim_start().to_string(),
+                first_time_seen: result.first_time_seen.trim_start().to_string(),
+                last_time_seen: result.last_time_seen.trim_start().to_string(),
+                clients: vec![],
+            },
+        );
     }
 
     for result in cli_reader.deserialize::<RawClient>().flatten() {
-        for ap in aps.iter_mut() {
-            if ap.bssid == result.bssid.trim_start() {
-                ap.clients.push(Client {
-                    mac: result.station_mac.trim_start().to_string(),
-                    packets: result.packets.trim_start().to_string(),
-                    power: result.power.trim_start().to_string(),
-                    first_time_seen: result.first_time_seen.trim_start().to_string(),
-                    last_time_seen: result.last_time_seen.trim_start().to_string(),
-                })
-            }
+        if let Some(ap) = aps.get_mut(result.bssid.trim_start()) {
+            ap.clients.push(Client {
+                mac: result.station_mac.trim_start().to_string(),
+                packets: result.packets.trim_start().to_string(),
+                power: result.power.trim_start().to_string(),
+                first_time_seen: result.first_time_seen.trim_start().to_string(),
+                last_time_seen: result.last_time_seen.trim_start().to_string(),
+            })
         }
     }
 
-    Some(aps)
+    for ap in aps.iter() {
+        glob_aps.insert(ap.0.clone(), ap.1.clone());
+    }
+
+    aps
 }
 
-pub fn get_aps() -> MutexGuard<'static, Vec<AP>> {
+pub fn get_aps() -> MutexGuard<'static, HashMap<String, AP>> {
     APS.lock().unwrap()
 }

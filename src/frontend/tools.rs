@@ -1,4 +1,3 @@
-use crate::types::*;
 use gtk4::prelude::*;
 use gtk4::*;
 
@@ -25,14 +24,5 @@ pub fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<
         }
     }
 
-    None
-}
-
-pub fn find_ap(aps: &[AP], bssid: &str) -> Option<AP> {
-    for ap in aps.iter() {
-        if ap.bssid == bssid {
-            return Some(ap.clone());
-        }
-    }
     None
 }

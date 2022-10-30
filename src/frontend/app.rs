@@ -191,12 +191,9 @@ pub struct AppWindow {
     pub cli_view: Rc<TreeView>,
     pub ghz_2_4_but: Rc<CheckButton>,
     pub ghz_5_but: Rc<CheckButton>,
-    pub channel_filter_but: Rc<CheckButton>,
     pub channel_filter_entry: Rc<Entry>,
-    pub bssid_filter_but: Rc<CheckButton>,
-    pub bssid_filter_entry: Rc<Entry>,
     pub scan_but: Rc<Button>,
-    pub stop_but: Rc<Button>,
+    pub clear_but: Rc<Button>,
     pub export_but: Rc<Button>,
     pub deauth_but: Rc<Button>,
 }
@@ -227,15 +224,15 @@ impl AppWindow {
         let scan_but = Rc::new(
             Button::builder()
                 .icon_name("media-playback-start-symbolic")
-                .tooltip_text("Start a scan with the current settings")
+                .tooltip_text("Start / Pause the scan")
                 .build(),
         );
 
-        let stop_but = Rc::new(
+        let clear_but = Rc::new(
             Button::builder()
-                .icon_name("media-playback-stop-symbolic")
+                .icon_name("edit-delete-symbolic")
                 .sensitive(false)
-                .tooltip_text("Stop the scan")
+                .tooltip_text("Stop the scan and clear scan results")
                 .build(),
         );
 
@@ -247,11 +244,11 @@ impl AppWindow {
         );
 
         let top_but_box = CenterBox::new();
-        top_but_box.set_margin_start(20);
-        top_but_box.set_margin_end(20);
-        top_but_box.set_margin_top(15);
+        top_but_box.set_margin_start(10);
+        top_but_box.set_margin_end(10);
+        top_but_box.set_margin_top(10);
         top_but_box.set_start_widget(Some(scan_but.as_ref()));
-        top_but_box.set_center_widget(Some(stop_but.as_ref()));
+        top_but_box.set_center_widget(Some(clear_but.as_ref()));
         top_but_box.set_end_widget(Some(export_but.as_ref()));
 
         // Scan filters
@@ -269,46 +266,20 @@ impl AppWindow {
         but_box.append(ghz_5_but.as_ref());
         but_box.set_margin_bottom(4);
 
-        let band_frame = Frame::new(Some("Band"));
+        let band_frame = Frame::new(Some("Band focus"));
         band_frame.set_child(Some(&but_box));
 
         let channel_filter_entry = Rc::new(
             Entry::builder()
                 .placeholder_text("ex: 1,6,11")
-                .sensitive(false)
+                .margin_start(4)
+                .margin_end(4)
+                .margin_bottom(4)
                 .build(),
         );
 
-        let channel_filter_but = Rc::new(CheckButton::builder().active(false).build());
-
-        let bssid_filter_entry = Rc::new(
-            Entry::builder()
-                .placeholder_text("ex: 10:20:30:40:50")
-                .sensitive(false)
-                .build(),
-        );
-
-        let bssid_filter_but = Rc::new(CheckButton::builder().active(false).build());
-
-        let channel_box = Box::new(Orientation::Horizontal, 10);
-        channel_box.set_margin_start(10);
-        channel_box.set_margin_end(4);
-        channel_box.set_margin_bottom(4);
-        channel_box.append(channel_filter_but.as_ref());
-        channel_box.append(channel_filter_entry.as_ref());
-
-        let bssid_box = Box::new(Orientation::Horizontal, 10);
-        bssid_box.set_margin_start(10);
-        bssid_box.set_margin_end(4);
-        bssid_box.set_margin_bottom(4);
-        bssid_box.append(bssid_filter_but.as_ref());
-        bssid_box.append(bssid_filter_entry.as_ref());
-
-        let channel_frame = Frame::new(Some("Channel filter"));
-        channel_frame.set_child(Some(&channel_box));
-
-        let bssid_frame = Frame::new(Some("BSSID filter"));
-        bssid_frame.set_child(Some(&bssid_box));
+        let channel_frame = Frame::new(Some("Channel focus"));
+        channel_frame.set_child(Some(channel_filter_entry.as_ref()));
 
         let separator = Separator::new(Orientation::Vertical);
         separator.set_vexpand(true);
@@ -333,7 +304,6 @@ impl AppWindow {
 
         scan_box.append(&band_frame);
         scan_box.append(&channel_frame);
-        scan_box.append(&bssid_frame);
         scan_box.append(&top_but_box);
         scan_box.append(&separator);
         scan_box.append(deauth_but.as_ref());
@@ -361,14 +331,6 @@ impl AppWindow {
 
         // Set callbacks
 
-        let scan_but_ref = scan_but.clone();
-
-        stop_but.connect_clicked(move |but| {
-            backend::stop_scan_process();
-            but.set_sensitive(false);
-            scan_but_ref.set_icon_name("media-playback-start-symbolic");
-        });
-
         let window_ref = window.clone();
 
         export_but.connect_clicked(move |_| {
@@ -383,7 +345,7 @@ impl AppWindow {
                 );
             }
 
-            let json_data = serde_json::to_string::<Vec<AP>>(aps.as_ref()).unwrap();
+            let json_data = serde_json::to_string::<Vec<AP>>(&aps.values().cloned().collect::<Vec<AP>>()).unwrap();
 
             let file_chooser_dialog = Rc::new(FileChooserDialog::new(
                 Some("Save Capture"),
@@ -424,24 +386,6 @@ impl AppWindow {
             cli_model_ref.clear();
         });
 
-        let bssid_filter_entry_ref = bssid_filter_entry.clone();
-
-        bssid_filter_but.connect_toggled(move |this| {
-            match this.is_active() {
-                true => bssid_filter_entry_ref.set_sensitive(true),
-                false => bssid_filter_entry_ref.set_sensitive(false),
-            };
-        });
-
-        let channel_filter_entry_ref = channel_filter_entry.clone();
-
-        channel_filter_but.connect_toggled(move |this| {
-            match this.is_active() {
-                true => channel_filter_entry_ref.set_sensitive(true),
-                false => channel_filter_entry_ref.set_sensitive(false),
-            };
-        });
-
         let window_ref = window.clone();
         capture_hs_but.connect_clicked(move |_| {
             InfoDialog::spawn(
@@ -459,12 +403,9 @@ impl AppWindow {
             cli_view,
             ghz_2_4_but,
             ghz_5_but,
-            channel_filter_but,
             channel_filter_entry,
-            bssid_filter_but,
-            bssid_filter_entry,
             scan_but,
-            stop_but,
+            clear_but,
             export_but,
             deauth_but,
         }

@@ -12,7 +12,6 @@ use tools::*;
 
 use gtk4::prelude::*;
 use gtk4::*;
-use regex::Regex;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -38,9 +37,15 @@ pub fn app_setup(app: &Application) {
         );
     }
 
-    if let Err(e) =
-        backend::check_dependencies(&["sh", "iw", "iwlist", "awk", "airmon-ng", "airodump-ng", "aireplay-ng"])
-    {
+    if let Err(e) = backend::check_dependencies(&[
+        "sh",
+        "iw",
+        "iwlist",
+        "awk",
+        "airmon-ng",
+        "airodump-ng",
+        "aireplay-ng",
+    ]) {
         ErrorDialog::spawn(
             &app.active_window().unwrap(),
             "Missing dependencies",
@@ -76,86 +81,85 @@ pub fn build_ui(app: &Application) {
             }
         };
 
-        if let Some(mut aps) = backend::get_airodump_data() {
-            for ap in aps.iter() {
-                let it =
-                    match list_store_find(main_window_ref.aps_model.as_ref(), 1, ap.bssid.as_str())
-                    {
-                        Some(it) => it,
-                        None => main_window_ref.aps_model.append(),
-                    };
+        match backend::get_aps().is_empty() {
+            true => main_window_ref.clear_but.set_sensitive(false),
+            false => main_window_ref.clear_but.set_sensitive(true),
+        }
 
-                let background_color = match backend::get_attack_pool().contains_key(&ap.bssid) {
-                    true => gdk::RGBA::RED,
-                    false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+        let aps = backend::get_airodump_data();
+
+        for (bssid, ap) in aps.iter() {
+            let it = match list_store_find(main_window_ref.aps_model.as_ref(), 1, bssid.as_str()) {
+                Some(it) => it,
+                None => main_window_ref.aps_model.append(),
+            };
+
+            let background_color = match backend::get_attack_pool().contains_key(bssid) {
+                true => gdk::RGBA::RED,
+                false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+            };
+
+            main_window_ref.aps_model.set(
+                &it,
+                &[
+                    (0, &ap.essid),
+                    (1, &ap.bssid),
+                    (2, &ap.band),
+                    (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
+                    (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
+                    (5, &ap.power.parse::<i32>().unwrap_or(-1)),
+                    (6, &ap.privacy),
+                    (7, &(ap.clients.len() as i32)),
+                    (8, &ap.first_time_seen),
+                    (9, &ap.last_time_seen),
+                    (10, &background_color.to_str()),
+                ],
+            );
+        }
+
+        if let Some((_, iter)) = main_window_ref.aps_view.selection().selected() {
+            let bssid = list_store_get!(main_window_ref.aps_model, &iter, 1, String);
+            let clients = &aps[&bssid].clients;
+
+            for cli in clients.iter() {
+                let it = match list_store_find(
+                    main_window_ref.cli_model.as_ref(),
+                    0,
+                    cli.mac.as_str(),
+                ) {
+                    Some(it) => it,
+                    None => main_window_ref.cli_model.append(),
                 };
 
-                main_window_ref.aps_model.set(
+                let background_color = match backend::get_attack_pool().get(&bssid) {
+                    Some(attack_target) => match &attack_target.1 {
+                        AttackedClients::All(_) => gdk::RGBA::RED,
+                        AttackedClients::Selection(selection) => {
+                            let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+
+                            for sel in selection.iter() {
+                                if sel.0 == cli.mac.as_str() {
+                                    color = gdk::RGBA::RED;
+                                }
+                            }
+                            color
+                        }
+                    },
+                    None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                };
+
+                main_window_ref.cli_model.set(
                     &it,
                     &[
-                        (0, &ap.essid),
-                        (1, &ap.bssid),
-                        (2, &ap.band),
-                        (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
-                        (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
-                        (5, &ap.power.parse::<i32>().unwrap_or(-1)),
-                        (6, &ap.privacy),
-                        (7, &(ap.clients.len() as i32)),
-                        (8, &ap.first_time_seen),
-                        (9, &ap.last_time_seen),
-                        (10, &background_color.to_str()),
+                        (0, &cli.mac),
+                        (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                        (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                        (3, &cli.first_time_seen),
+                        (4, &cli.last_time_seen),
+                        (5, &background_color.to_str()),
                     ],
                 );
             }
-
-            if let Some((_, iter)) = main_window_ref.aps_view.selection().selected() {
-                let bssid = list_store_get!(main_window_ref.aps_model, &iter, 1, String);
-                let clients = find_ap(&aps, &bssid).unwrap().clients;
-
-                for cli in clients.iter() {
-                    let it = match list_store_find(
-                        main_window_ref.cli_model.as_ref(),
-                        0,
-                        cli.mac.as_str(),
-                    ) {
-                        Some(it) => it,
-                        None => main_window_ref.cli_model.append(),
-                    };
-
-                    let background_color = match backend::get_attack_pool().get(&bssid) {
-                        Some(attack_target) => match &attack_target.1 {
-                            AttackedClients::All(_) => gdk::RGBA::RED,
-                            AttackedClients::Selection(selection) => {
-                                let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
-
-                                for sel in selection.iter() {
-                                    if sel.0 == cli.mac.as_str() {
-                                        color = gdk::RGBA::RED;
-                                    }
-                                }
-                                color
-                            }
-                        },
-                        None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
-                    };
-
-                    main_window_ref.cli_model.set(
-                        &it,
-                        &[
-                            (0, &cli.mac),
-                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
-                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
-                            (3, &cli.first_time_seen),
-                            (4, &cli.last_time_seen),
-                            (5, &background_color.to_str()),
-                        ],
-                    );
-                }
-            }
-            let mut glob_aps = backend::get_aps();
-
-            glob_aps.clear();
-            glob_aps.append(&mut aps);
         }
         glib::Continue(true)
     });
@@ -192,12 +196,9 @@ pub fn build_ui(app: &Application) {
 
     // Scan button callback
 
-    let main_window_ref = main_window.clone();
-
-    main_window.scan_but.connect_clicked(move |this| {
+    let run_scan = |main_window_ref: &AppWindow, interface_window: &InterfaceWindow| {
         let mut args = vec![];
         let channel_filter;
-        let bssid_filter;
 
         let iface = match backend::get_iface() {
             Some(iface) => iface,
@@ -216,15 +217,16 @@ pub fn build_ui(app: &Application) {
         let mut bands = "".to_string();
 
         if main_window_ref.ghz_5_but.is_active() {
-            match backend::is_5ghz_supported(&iface).unwrap() {
-                true => bands.push('a'),
-                false => return ErrorDialog::spawn(
+            if !backend::is_5ghz_supported(&iface).unwrap() {
+                ErrorDialog::spawn(
                     main_window_ref.window.as_ref(),
                     "Error",
                     "Your network card doesn't support 5GHz",
                     false,
-                ),
-            };
+                );
+                return main_window_ref.ghz_5_but.set_active(false);
+            }
+            bands.push('a');
         }
         if main_window_ref.ghz_2_4_but.is_active() {
             bands.push_str("bg");
@@ -232,16 +234,19 @@ pub fn build_ui(app: &Application) {
         args.push("--band");
         args.push(&bands);
 
-        if main_window_ref.channel_filter_but.is_active() {
-            let channel_regex = Regex::new(r"^[1-9]+[0-9]*$").unwrap();
-            let channel_list: Vec<String> = main_window_ref
-                .channel_filter_entry
-                .text()
-                .split_terminator(',')
-                .map(String::from)
-                .collect();
-            for chan in channel_list {
-                if !channel_regex.is_match(&chan) {
+        channel_filter = main_window_ref
+            .channel_filter_entry
+            .text()
+            .as_str()
+            .replace(" ", "");
+
+        if !channel_filter.is_empty() {
+            match backend::is_valid_channel_filter(&channel_filter) {
+                true => {
+                    args.push("--channel");
+                    args.push(&channel_filter);
+                }
+                false => {
                     return ErrorDialog::spawn(
                         main_window_ref.window.as_ref(),
                         "Error",
@@ -250,26 +255,6 @@ pub fn build_ui(app: &Application) {
                     );
                 }
             }
-            channel_filter = main_window_ref.channel_filter_entry.text().to_string();
-            args.push("--channel");
-            args.push(&channel_filter);
-        }
-
-        if main_window_ref.bssid_filter_but.is_active() {
-            if !Regex::new(r"^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$")
-                .unwrap()
-                .is_match(&main_window_ref.bssid_filter_entry.text())
-            {
-                return ErrorDialog::spawn(
-                    main_window_ref.window.as_ref(),
-                    "Error",
-                    "You need to put a valid BSSID filter",
-                    false,
-                );
-            }
-            bssid_filter = main_window_ref.bssid_filter_entry.text().to_string();
-            args.push("--bssid");
-            args.push(&bssid_filter);
         }
 
         backend::set_scan_process(&args).unwrap_or_else(|e| {
@@ -281,11 +266,87 @@ pub fn build_ui(app: &Application) {
             );
         });
 
-        this.set_icon_name("object-rotate-right-symbolic");
+        main_window_ref.scan_but.set_icon_name("media-playback-pause-symbolic");
+    };
 
-        main_window_ref.stop_but.set_sensitive(true);
+    // Scan / Stop Callbacks
+
+    let main_window_ref = main_window.clone();
+    let interface_window_ref = interface_window.clone();
+
+    main_window.scan_but.connect_clicked(move |this| {
+        match backend::is_scan_process() {
+            true => {
+                backend::stop_scan_process();
+                this.set_icon_name("media-playback-start-symbolic");
+            }
+            false => {
+                run_scan(main_window_ref.as_ref(), interface_window_ref.as_ref());
+            }
+        }
+    });
+
+    let main_window_ref = main_window.clone();
+
+    main_window.clear_but.connect_clicked(move |this| {
+        backend::stop_scan_process();
+        backend::get_aps().clear();
+
         main_window_ref.aps_model.clear();
         main_window_ref.cli_model.clear();
+
+        this.set_sensitive(false);
+        main_window_ref.scan_but.set_icon_name("media-playback-start-symbolic");
+    });
+
+    // 2.4 / 5 GHz buttons callback
+
+    let main_window_ref = main_window.clone();
+    let interface_window_ref = interface_window.clone();
+    main_window.ghz_2_4_but.connect_toggled(move |_| {
+        if backend::is_scan_process() {
+            run_scan(main_window_ref.as_ref(), interface_window_ref.as_ref());
+        }
+    });
+
+    let main_window_ref = main_window.clone();
+    let interface_window_ref = interface_window.clone();
+    main_window.ghz_5_but.connect_toggled(move |this| {
+        let iface = match backend::get_iface() {
+            Some(iface) => iface,
+            None => return
+        };
+
+        if !backend::is_5ghz_supported(&iface).unwrap() {
+            ErrorDialog::spawn(
+                main_window_ref.window.as_ref(),
+                "Error",
+                "Your network card doesn't support 5GHz",
+                false,
+            );
+            return this.set_active(false);
+        }
+
+        if backend::is_scan_process() {
+            run_scan(main_window_ref.as_ref(), interface_window_ref.as_ref());
+        }
+    });
+
+    let main_window_ref = main_window.clone();
+    let interface_window_ref = interface_window.clone();
+    main_window.channel_filter_entry.connect_text_notify(move |this| {
+        let channel_filter = this
+            .text()
+            .as_str()
+            .replace(" ", "");
+    
+        if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter) {
+            return;
+        }
+
+        if backend::is_scan_process() {
+            run_scan(main_window_ref.as_ref(), interface_window_ref.as_ref());
+        }
     });
 
     // Deauth button callback
@@ -304,9 +365,13 @@ pub fn build_ui(app: &Application) {
         match under_attack {
             true => backend::stop_deauth_attack(&bssid),
             false => {
-                main_window_ref.stop_but.emit_clicked();
-                let ap = find_ap(&backend::get_aps(), &bssid).unwrap();
-                DeauthWindow::spawn(main_window_ref.window.as_ref(), ap);
+                if backend::is_scan_process() {
+                    main_window_ref.scan_but.emit_clicked();
+                }
+                DeauthWindow::spawn(
+                    main_window_ref.window.as_ref(),
+                    backend::get_aps()[&bssid].clone(),
+                );
             }
         }
     });

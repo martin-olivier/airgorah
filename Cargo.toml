@@ -15,7 +15,7 @@ exclude = ["/.github"]
 [package.metadata.deb]
 license-file = [ "LICENSE" ]
 extended-description = "A WiFi auditing software that can performs deauth attacks and WPA passwords recovery"
-depends = "pkexec, dbus-x11, aircrack-ng (>= 1.6)"
+depends = "pkexec, libgtk-4-1, dbus-x11, aircrack-ng (>= 1.6)"
 section = "Network"
 priority = "optional"
 assets = [
