@@ -154,8 +154,17 @@ pub fn connect_save_button(app_data: Rc<AppData>) {
 pub fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
     app_data
         .ghz_2_4_but
-        .connect_toggled(clone!(@strong app_data => move |_| {
+        .connect_toggled(clone!(@strong app_data => move |this| {
             if backend::is_scan_process() {
+                if !this.is_active() && !app_data.ghz_5_but.is_active() {
+                    ErrorDialog::spawn(
+                        &app_data.main_window,
+                        "Error",
+                        "You need to select at least one frequency band",
+                        false,
+                    );
+                    return this.set_active(true);
+                }
                 run_scan(&app_data);
             }
         }));
@@ -181,6 +190,15 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
             }
 
             if backend::is_scan_process() {
+                if !this.is_active() && !app_data.ghz_2_4_but.is_active() {
+                    ErrorDialog::spawn(
+                        &app_data.main_window,
+                        "Error",
+                        "You need to select at least one frequency band",
+                        false,
+                    );
+                    return this.set_active(true);
+                }
                 run_scan(&app_data);
             }
         }));

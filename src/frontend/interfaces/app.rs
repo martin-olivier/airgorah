@@ -295,7 +295,7 @@ impl AppData {
         but_box.append(&ghz_5_but);
         but_box.set_margin_bottom(4);
 
-        let band_frame = Frame::new(Some("Band focus"));
+        let band_frame = Frame::new(Some("Band"));
         band_frame.set_child(Some(&but_box));
 
         let channel_filter_entry = Entry::builder()
@@ -305,7 +305,7 @@ impl AppData {
             .margin_bottom(4)
             .build();
 
-        let channel_frame = Frame::new(Some("Channel focus"));
+        let channel_frame = Frame::new(Some("Channel"));
         channel_frame.set_child(Some(&channel_filter_entry));
 
         let separator = Separator::new(Orientation::Vertical);

@@ -1,6 +1,8 @@
-<h1 align="center">
-  Airgorah
-</h1>
+<div style="text-align:center; margin-bottom: 10px;">
+  <img src="icons/app_icon.png" style="vertical-align: middle; margin-right: 5px;" width="50px"/>
+  <span style="vertical-align: middle; font-size: 45px;"><B>Airgorah</B></span>
+</div>
+
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
     <img src="https://img.shields.io/badge/Version-0.1.0-blue.svg" alt="version"/>

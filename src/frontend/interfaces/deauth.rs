@@ -69,7 +69,7 @@ impl DeauthWindow {
         let view = Rc::new(TreeView::new());
         view.set_model(Some(store.as_ref()));
 
-        for cli in ap.clients.iter() {
+        for (_, cli) in ap.clients.iter() {
             store.set(&store.append(), &[(0, &false), (1, &cli.mac)]);
         }
 

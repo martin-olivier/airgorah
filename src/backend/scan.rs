@@ -176,11 +176,11 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
             essid = format!("[Hidden ESSID] (length: {})", result.id_length.trim_start());
         }
 
-        aps.insert(
+        let old_data = aps.insert(
             bssid.clone(),
             AP {
                 essid,
-                bssid,
+                bssid: bssid.clone(),
                 band,
                 channel: result.channel.trim_start().to_string(),
                 speed: result.speed.trim_start().to_string(),
@@ -188,20 +188,28 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                 privacy: result.privacy.trim_start().to_string(),
                 first_time_seen: result.first_time_seen.trim_start().to_string(),
                 last_time_seen: result.last_time_seen.trim_start().to_string(),
-                clients: vec![],
+                clients: HashMap::new(),
             },
         );
+
+        if let Some(ap) = old_data {
+            aps.get_mut(&bssid).unwrap().clients = ap.clients;
+        }
     }
 
     for result in cli_reader.deserialize::<RawClient>().flatten() {
         if let Some(ap) = aps.get_mut(result.bssid.trim_start()) {
-            ap.clients.push(Client {
-                mac: result.station_mac.trim_start().to_string(),
-                packets: result.packets.trim_start().to_string(),
-                power: result.power.trim_start().to_string(),
-                first_time_seen: result.first_time_seen.trim_start().to_string(),
-                last_time_seen: result.last_time_seen.trim_start().to_string(),
-            })
+            let mac = result.station_mac.trim_start().to_string();
+            ap.clients.insert(
+                mac.clone(),
+                Client {
+                    mac,
+                    packets: result.packets.trim_start().to_string(),
+                    power: result.power.trim_start().to_string(),
+                    first_time_seen: result.first_time_seen.trim_start().to_string(),
+                    last_time_seen: result.last_time_seen.trim_start().to_string(),
+                },
+            );
         }
     }
 

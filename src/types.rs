@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::process::Child;
 
 pub enum AttackedClients {
@@ -17,7 +18,7 @@ pub struct AP {
     pub privacy: String,
     pub first_time_seen: String,
     pub last_time_seen: String,
-    pub clients: Vec<Client>,
+    pub clients: HashMap<String, Client>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

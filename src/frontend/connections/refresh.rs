@@ -83,7 +83,7 @@ pub fn connect_app_refresh(app_data: Rc<AppData>) {
             let bssid = list_store_get!(app_data.aps_model, &iter, 1, String);
             let clients = &aps[&bssid].clients;
 
-            for cli in clients.iter() {
+            for (_, cli) in clients.iter() {
                 let it = match list_store_find(app_data.cli_model.as_ref(), 0, cli.mac.as_str()) {
                     Some(it) => it,
                     None => app_data.cli_model.append(),
