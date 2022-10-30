@@ -1,6 +1,6 @@
+use regex::Regex;
 use std::collections::HashMap;
 use std::sync::MutexGuard;
-use regex::Regex;
 
 use crate::error::Error;
 use crate::globals::*;
@@ -61,10 +61,7 @@ struct RawClient {
 }
 
 pub fn is_scan_process() -> bool {
-    match SCAN_PROC.lock().unwrap().as_ref() {
-        Some(_) => true,
-        None => false,
-    }
+    SCAN_PROC.lock().unwrap().as_ref().is_some()
 }
 
 pub fn is_valid_channel_filter(channel_filter: &str) -> bool {

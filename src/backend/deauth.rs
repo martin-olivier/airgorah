@@ -17,7 +17,7 @@ pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Re
         .args(["-c", &ap.channel, "--bssid", &ap.bssid, &iface])
         .stdout(std::process::Stdio::null())
         .spawn()?;
-    
+
     std::thread::sleep(std::time::Duration::from_millis(100));
 
     channel_select.kill()?;

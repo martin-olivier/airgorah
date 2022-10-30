@@ -2,16 +2,28 @@ use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
 
-pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {
-    for dep in deps {
-        if which::which(dep).is_err() {
-            return Err(Error::new(&format!(
-                "Missing dependency: \"{}\"\n{}",
-                dep, "Please install it using your package manager"
-            )));
-        }
+pub fn app_setup() -> Result<(), Error> {
+    app_cleanup();
+
+    ctrlc::set_handler(move || {
+        app_cleanup();
+        std::process::exit(1);
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    if sudo::check() != sudo::RunningAs::Root {
+        return Err(Error::new("Airgorah need root privilege to run"));
     }
-    Ok(())
+
+    check_dependencies(&[
+        "sh",
+        "iw",
+        "iwlist",
+        "awk",
+        "airmon-ng",
+        "airodump-ng",
+        "aireplay-ng",
+    ])
 }
 
 pub fn app_cleanup() {
@@ -41,4 +53,16 @@ pub fn app_cleanup() {
     }
 
     std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
+}
+
+pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {
+    for dep in deps {
+        if which::which(dep).is_err() {
+            return Err(Error::new(&format!(
+                "Missing dependency: \"{}\"\n{}",
+                dep, "Please install it using your package manager"
+            )));
+        }
+    }
+    Ok(())
 }

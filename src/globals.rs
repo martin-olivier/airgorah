@@ -8,7 +8,7 @@ pub static APP_ID: &str = "com.martin-olivier.airgorah";
 pub static VERSION: &str = "v0.1.0";
 pub static SCAN_PATH: &str = "/tmp/airgorah";
 
-pub static APP_ICON: &'static [u8] = include_bytes!("icons/app_icon.png");
+pub static APP_ICON: &[u8] = include_bytes!("../icons/app_icon.png");
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);

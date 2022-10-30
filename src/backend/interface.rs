@@ -63,11 +63,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     }
 
     match is_monitor_mode(&(iface.to_string() + "mon")) {
-        Ok(res) => {
-            match res {
-                true => Ok(iface.to_string() + "mon"),
-                false => Err(Error::new("Failed to enable monitor mode")),
-            }
+        Ok(res) => match res {
+            true => Ok(iface.to_string() + "mon"),
+            false => Err(Error::new("Failed to enable monitor mode")),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -123,9 +121,15 @@ pub fn kill_network_manager() -> Result<(), Error> {
 }
 
 pub fn restore_network_manager() -> Result<(), Error> {
-    Command::new("service").args(["NetworkManager", "restart"]).output()?;
-    Command::new("service").args(["network-manager", "restart"]).output()?;
-    Command::new("service").args(["wpa-supplicant", "restart"]).output()?;
+    Command::new("service")
+        .args(["NetworkManager", "restart"])
+        .output()?;
+    Command::new("service")
+        .args(["network-manager", "restart"])
+        .output()?;
+    Command::new("service")
+        .args(["wpa-supplicant", "restart"])
+        .output()?;
 
     Ok(())
 }
