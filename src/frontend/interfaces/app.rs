@@ -1,4 +1,5 @@
 use crate::backend;
+use crate::frontend::widgets::*;
 use crate::globals;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
@@ -26,10 +27,10 @@ fn build_about_button() -> Button {
 }
 
 fn build_hs_decrypt_button() -> Button {
-    Button::builder()
-        .icon_name("network-wireless-encrypted")
-        .tooltip_text("Open the Handshake decryption pannel")
-        .build()
+    let but = IconButton::new(globals::DECRYPT_ICON);
+    but.set_tooltip_text(Some("Open the Handshake decryption pannel"));
+
+    but.handle
 }
 
 pub fn build_header_bar() -> HeaderBar {
@@ -220,8 +221,8 @@ pub struct AppData {
     pub scan_but: Button,
     pub clear_but: Button,
     pub export_but: Button,
-    pub deauth_but: Button,
-    pub capture_but: Button,
+    pub deauth_but: IconTextButton,
+    pub capture_but: IconTextButton,
 
     // Interface window
     pub interface_window: Window,
@@ -312,25 +313,21 @@ impl AppData {
         separator.set_vexpand(true);
         separator.set_opacity(0.0);
 
-        let deauth_but = Button::builder()
-            .label("Deauth Attack")
-            .tooltip_text("Perform (or stop) a deauth attack on the selected AP")
-            .sensitive(false)
-            .build();
+        let deauth_but = IconTextButton::new(globals::DEAUTH_ICON, "Deauth Attack");
+        deauth_but.set_tooltip_text(Some("Perform (or stop) a deauth attack on the selected AP"));
+        deauth_but.set_sensitive(false);
 
-        let capture_but = Button::builder()
-            .label("Handshake Capture")
-            .tooltip_text("Capture a handshake from the selected AP")
-            .sensitive(false)
-            .margin_bottom(10)
-            .build();
+        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Password Capture");
+        capture_but.set_tooltip_text(Some("Capture a handshake from the selected AP"));
+        capture_but.set_sensitive(false);
+        capture_but.set_margin_bottom(10);
 
         scan_box.append(&band_frame);
         scan_box.append(&channel_frame);
         scan_box.append(&top_but_box);
         scan_box.append(&separator);
-        scan_box.append(&deauth_but);
-        scan_box.append(&capture_but);
+        scan_box.append(&deauth_but.handle);
+        scan_box.append(&capture_but.handle);
 
         scan_box.set_hexpand(false);
 

@@ -1,7 +1,10 @@
-<div style="text-align:center; margin-bottom: 10px;">
-  <img src="icons/app_icon.png" style="vertical-align: middle; margin-right: 5px;" width="50px"/>
-  <span style="vertical-align: middle; font-size: 45px;"><B>Airgorah</B></span>
-</div>
+<h1 align="center">
+  <img src="icons/app_icon.png" width=100 height=100/><br>
+  Airgorah
+  </a>
+</h1>
+
+<h4 align="center">A WiFi auditing software that can performs deauth attacks and WPA passwords recovery</h4>
 
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
@@ -13,57 +16,21 @@
   <a href="https://www.rust-lang.org/">
     <img src="https://img.shields.io/badge/Language-Rust-orange.svg" alt="cppversion"/>
   </a>
+  <a href="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml">
+    <img src="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg" alt="ci"/>
+  </a>
 </p>
 
-Airgorah is a WiFi auditing software that can performs deauth attacks and WPA passwords recovery
+Airgorah is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
+
+![illustration]()
 
 `⭐ Don't forget to put a star if you like the project!`
 
 ## ⚠️ Requirements
-This software only works on `Linux` distributions (Ubuntu, Debian, Arch, etc.) and requires `root` privileges to run.
+
+This software only works on `linux` distributions and requires `root` privileges to run.
 
 ## 💻 Installation
 
-### 1. Install Cargo
-
-To build the project, you will need to install [cargo](https://www.rust-lang.org/tools/install), the rust compiler:
-
-```sh
-curl https://sh.rustup.rs -sSf | sh
-```
-
-### 2. Install Dependencies
-
-Then, you will need to install `airgorah` build and runtime dependencies:
-
-**APT**
-```sh
-sudo apt install dbus-x11 libgtk-4-dev aircrack-ng
-```
-
-**DNF**
-```sh
-sudo dnf install dbus-x11 gtk4-devel aircrack-ng
-```
-
-**PACMAN**
-```sh
-sudo pacman -S dbus gtk4 aircrack-ng
-```
-
-### 3. Install Airgorah
-
-Then, you will be able to build and install `airgorah` on your computer:
-
-```sh
-git clone https://github.com/martin-olivier/airgorah -b feat/app
-cargo install --path airgorah
-```
-
-## 🚀 Usage
-
-To run the application, use the following command:
-
-```sh
-sudo airgorah
-```
+You can find pre-built releases for Debian or Fedora [here](https://github.com/martin-olivier/airgorah/releases/latest). If you'd like to compile from source, you can follow the [guide](docs/build_from_source.md).

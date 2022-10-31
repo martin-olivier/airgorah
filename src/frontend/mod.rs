@@ -1,5 +1,6 @@
 mod connections;
 mod interfaces;
+mod widgets;
 
 use crate::backend;
 use connections::*;

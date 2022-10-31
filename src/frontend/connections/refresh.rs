@@ -1,5 +1,6 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
+use crate::globals;
 use crate::list_store_get;
 use crate::types::*;
 use gtk4::prelude::*;
@@ -34,12 +35,19 @@ pub fn connect_app_refresh(app_data: Rc<AppData>) {
                 let attack_pool = backend::get_attack_pool();
 
                 match attack_pool.contains_key(&bssid) {
-                    true => app_data.deauth_but.set_label("Stop Attack"),
-                    false => app_data.deauth_but.set_label("Deauth Attack"),
+                    true => {
+                        app_data.deauth_but.set_label("Stop Attack");
+                        app_data.deauth_but.set_icon(globals::STOP_ICON);
+                    }
+                    false => {
+                        app_data.deauth_but.set_label("Deauth Attack");
+                        app_data.deauth_but.set_icon(globals::DEAUTH_ICON);
+                    }
                 }
             }
             None => {
                 app_data.deauth_but.set_label("Deauth Attack");
+                app_data.deauth_but.set_icon(globals::DEAUTH_ICON);
             }
         };
 

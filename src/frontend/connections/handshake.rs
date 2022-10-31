@@ -1,6 +1,5 @@
 use crate::frontend::interfaces::*;
 use glib::clone;
-use gtk4::prelude::*;
 use std::rc::Rc;
 
 pub fn connect_capture_button(app_data: Rc<AppData>) {
