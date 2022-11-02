@@ -23,14 +23,16 @@
 
 Airgorah is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
-![illustration]()
+![illustration](.github/assets/illustration.png)
 
 `⭐ Don't forget to put a star if you like the project!`
 
-## ⚠️ Requirements
+⚠️ DISCLAIMER: This software is for educational purposes only. It should not be used for illegal activity. The author is not responsible for its use.
+
+## Requirements
 
 This software only works on `linux` distributions and requires `root` privileges to run.
 
-## 💻 Installation
+## Installation
 
 You can find pre-built releases for Debian [here](https://github.com/martin-olivier/airgorah/releases/latest). If you'd like to compile from source, you can follow the [guide](docs/build_from_source.md).

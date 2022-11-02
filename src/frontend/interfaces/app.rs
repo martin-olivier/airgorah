@@ -259,7 +259,7 @@ impl AppData {
         let clear_but = Button::builder()
             .icon_name("edit-delete-symbolic")
             .sensitive(false)
-            .tooltip_text("Stop the scan and clear scan results")
+            .tooltip_text("Stop the scan and clear results")
             .build();
 
         let export_but = Button::builder()
@@ -311,8 +311,8 @@ impl AppData {
         deauth_but.set_tooltip_text(Some("Perform (or stop) a deauth attack on the selected AP"));
         deauth_but.set_sensitive(false);
 
-        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Password Capture");
-        capture_but.set_tooltip_text(Some("Capture a handshake from the selected AP"));
+        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Handshake Capture");
+        capture_but.set_tooltip_text(Some("Capture a WPA handshake from the selected AP"));
         capture_but.set_sensitive(false);
         capture_but.set_margin_bottom(10);
 
