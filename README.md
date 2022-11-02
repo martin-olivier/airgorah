@@ -4,7 +4,7 @@
   </a>
 </h1>
 
-<h4 align="center">A WiFi auditing software that can performs deauth attacks and WPA passwords recovery</h4>
+<h4 align="center">A WiFi auditing software that can perform deauth attacks and WPA password recovery</h4>
 
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
@@ -21,9 +21,11 @@
   </a>
 </p>
 
-Airgorah is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
+⚠️ Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. This software is only for educational purposes. The author is not responsible for any misuse of this software.
 
-⚠️ This software is for educational purposes only. It should not be used for illegal activity. The author is not responsible for its use.
+Airgorah is a WiFi auditing software that can perform deauth attacks and WPA password recovery. It can be used to audit a network and discover the devices connected to it, to perform a deauth attack against a specific device or all the devices connected to the network, and to recover the password of an access point.
+
+It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
 ![illustration](.github/assets/illustration.png)
 
@@ -37,7 +39,7 @@ This software only works on `linux` and requires `root` privileges to run.
 
 You can find pre-built releases for Debian [here](https://github.com/martin-olivier/airgorah/releases/latest).
 
-You will just have to download the debian package and install it with the following command:
+You will just need to download the debian package and install it with the following command:
 
 ```sh
 sudo apt install <path_to_deb_package>
@@ -45,13 +47,20 @@ sudo apt install <path_to_deb_package>
 
 Otherwise, if you'd like to compile from source, you can follow this [guide](docs/build_from_source.md).
 
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
 ## Future features
 
 - [ ] WPA handshake capture
 - [ ] WPA handshake decryption (dictionary / bruteforce)
 - [ ] WPS attack feature
 - [ ] WEP attack feature
-
 - [ ] Provide releases for other linux distributions (Arch, Fedora, ...)
 - [ ] Improve the code quality and the documentation
 - [ ] Improve the UI

@@ -18,7 +18,7 @@ fn build_about_button() -> Button {
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
             .logo(&Picture::for_pixbuf(&icon).paintable().unwrap())
-            .comments("A WiFi auditing software that can performs deauth attacks and WPA passwords recovery")
+            .comments("A WiFi auditing software that can perform deauth attacks and WPA password recovery")
             .website_label("https://github.com/martin-olivier/airgorah")
             .modal(true)
             .build()
