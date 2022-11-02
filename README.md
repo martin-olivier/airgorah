@@ -25,9 +25,9 @@
 
 Airgorah is a WiFi auditing software that can perform deauth attacks and WPA password recovery. It can be used to audit a network and discover the devices connected to it, to perform a deauth attack against a specific device or all the devices connected to the network, and to recover the password of an access point.
 
-⚠️ Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. This software is only for educational purposes. The author is not responsible for any misuse of this software.
-
 It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
+
+⚠️ Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. This software is only for educational purposes. The author is not responsible for any misuse of this software.
 
 `⭐ Don't forget to put a star if you like the project!`
 
@@ -55,7 +55,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT](LICENSE)
 
 ## Future features
 
