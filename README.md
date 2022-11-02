@@ -21,13 +21,13 @@
   </a>
 </p>
 
-⚠️ Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. This software is only for educational purposes. The author is not responsible for any misuse of this software.
+![illustration](.github/assets/illustration.png)
 
 Airgorah is a WiFi auditing software that can perform deauth attacks and WPA password recovery. It can be used to audit a network and discover the devices connected to it, to perform a deauth attack against a specific device or all the devices connected to the network, and to recover the password of an access point.
 
-It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
+⚠️ Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. This software is only for educational purposes. The author is not responsible for any misuse of this software.
 
-![illustration](.github/assets/illustration.png)
+It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
 `⭐ Don't forget to put a star if you like the project!`
 
@@ -41,7 +41,7 @@ You will also need a wireless network card that supports monitor mode and packet
 
 You can find pre-built releases for Debian distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali, etc.)
 
-You will just need to download the debian package and install it with the following command:
+You will just need to download the package and install it with the following command:
 
 ```sh
 sudo apt install <path_to_deb_package>
