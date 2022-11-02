@@ -6,13 +6,13 @@ To build and install `airgorah` from crates.io, you can use the following comman
 cargo install airgorah
 ```
 
-Then, you will be able to run `airgorah` on your computer:
+Then, you will be able to run `airgorah` on your computer by typing the following command:
 
 ```sh
 sudo airgorah
 ```
 
-To uninstall `airgorah` from your computer, you can use the following command:
+If you want to uninstall `airgorah` from your computer, enter the following command:
 
 ```sh
 cargo uninstall airgorah

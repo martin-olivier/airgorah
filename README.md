@@ -33,4 +33,4 @@ This software only works on `linux` distributions and requires `root` privileges
 
 ## 💻 Installation
 
-You can find pre-built releases for Debian or Fedora [here](https://github.com/martin-olivier/airgorah/releases/latest). If you'd like to compile from source, you can follow the [guide](docs/build_from_source.md).
+You can find pre-built releases for Debian [here](https://github.com/martin-olivier/airgorah/releases/latest). If you'd like to compile from source, you can follow the [guide](docs/build_from_source.md).

@@ -7,8 +7,10 @@ use gtk4::*;
 
 fn build_about_button() -> Button {
     let about_button = Button::builder().icon_name("dialog-information").build();
+
     about_button.connect_clicked(|_| {
         let icon = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
+
         AboutDialog::builder()
             .program_name("Airgorah")
             .version(globals::VERSION)
@@ -26,18 +28,10 @@ fn build_about_button() -> Button {
     about_button
 }
 
-fn build_hs_decrypt_button() -> Button {
-    let but = IconButton::new(globals::DECRYPT_ICON);
-    but.set_tooltip_text(Some("Open the Handshake decryption pannel"));
-
-    but.handle
-}
-
 pub fn build_header_bar() -> HeaderBar {
     let header_bar = HeaderBar::builder().show_title_buttons(true).build();
 
     header_bar.pack_start(&build_about_button());
-    header_bar.pack_end(&build_hs_decrypt_button());
 
     header_bar
 }

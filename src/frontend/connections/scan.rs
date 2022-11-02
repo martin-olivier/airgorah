@@ -126,8 +126,8 @@ pub fn connect_save_button(app_data: Rc<AppData>) {
             );
         }
 
-        let json_data =
-            serde_json::to_string::<Vec<AP>>(&aps.values().cloned().collect::<Vec<AP>>()).unwrap();
+        let aps = aps.values().cloned().collect::<Vec<AP>>();
+        let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
 
         let file_chooser_dialog = Rc::new(FileChooserDialog::new(
             Some("Save Capture"),
@@ -179,7 +179,7 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            if !backend::is_5ghz_supported(&iface).unwrap() {
+            if !backend::is_5ghz_supported(&iface).unwrap() && this.is_active() == true {
                 ErrorDialog::spawn(
                     &app_data.main_window,
                     "Error",

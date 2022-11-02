@@ -12,7 +12,6 @@ pub static APP_ICON: &[u8] = include_bytes!("../icons/app_icon.png");
 pub static DEAUTH_ICON: &[u8] = include_bytes!("../icons/deauth.png");
 pub static STOP_ICON: &[u8] = include_bytes!("../icons/stop.png");
 pub static CAPTURE_ICON: &[u8] = include_bytes!("../icons/capture.png");
-pub static DECRYPT_ICON: &[u8] = include_bytes!("../icons/decrypt.png");
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);

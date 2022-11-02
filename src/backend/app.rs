@@ -17,6 +17,7 @@ pub fn app_setup() -> Result<(), Error> {
 
     check_dependencies(&[
         "sh",
+        "service",
         "iw",
         "iwlist",
         "awk",
@@ -33,13 +34,13 @@ pub fn app_cleanup() {
     }
 
     for attacked_ap in ATTACK_POOL.lock().unwrap().iter_mut() {
-        match &mut attacked_ap.1 .1 {
+        match &mut attacked_ap.1.1 {
             AttackedClients::All(child) => {
                 child.kill().unwrap();
                 child.wait().unwrap();
             }
             AttackedClients::Selection(child_list) => {
-                for (_cli, child) in child_list {
+                for (_, child) in child_list {
                     child.kill().unwrap();
                     child.wait().unwrap();
                 }
