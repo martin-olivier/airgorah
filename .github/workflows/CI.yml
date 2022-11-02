@@ -23,14 +23,14 @@ defaults:
 jobs:
   conventional_commits:
     name: conventional commits
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: webiny/action-conventional-commits@v1.0.5
 
   linter:
     name: linter
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
             profile: release
 
     name: ${{ matrix.profile }} build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2
