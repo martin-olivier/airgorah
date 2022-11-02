@@ -35,9 +35,11 @@ It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs
 
 This software only works on `linux` and requires `root` privileges to run.
 
+You will also need a wireless network card that supports monitor mode and packet injection.
+
 ## Installation
 
-You can find pre-built releases for Debian [here](https://github.com/martin-olivier/airgorah/releases/latest).
+You can find pre-built releases for Debian distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali, etc.)
 
 You will just need to download the debian package and install it with the following command:
 
