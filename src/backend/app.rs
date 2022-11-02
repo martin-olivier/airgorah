@@ -34,7 +34,7 @@ pub fn app_cleanup() {
     }
 
     for attacked_ap in ATTACK_POOL.lock().unwrap().iter_mut() {
-        match &mut attacked_ap.1.1 {
+        match &mut attacked_ap.1 .1 {
             AttackedClients::All(child) => {
                 child.kill().unwrap();
                 child.wait().unwrap();

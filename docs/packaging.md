@@ -1,4 +1,4 @@
-# Create a package and install it
+# Build and install Airgorah - debian package
 
 First, you will need to clone the project using the following command:
 
@@ -18,4 +18,10 @@ After those commands, a `.deb` package will be created in the `target/debian` fo
 
 ```sh
 sudo apt install <path_to_deb_package>
+```
+
+If you want to uninstall `airgorah` from your computer, enter the following command:
+
+```sh
+sudo apt remove airgorah
 ```

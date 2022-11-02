@@ -33,7 +33,7 @@ copyright = "2022, Martin Olivier"
 maintainer = "Martin Olivier <martin.olivier@live.fr>"
 license-file = [ "LICENSE" ]
 extended-description = "A WiFi auditing software that can performs deauth attacks and WPA passwords recovery"
-depends = "pkexec, libgtk-4-1, dbus-x11, aircrack-ng (>= 1.6)"
+depends = "pkexec, libgtk-4-1, dbus-x11, wireless-tools, aircrack-ng (>= 1.6)"
 priority = "optional"
 section = "utility"
 assets = [

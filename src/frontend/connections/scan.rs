@@ -114,41 +114,43 @@ pub fn connect_clear_button(app_data: Rc<AppData>) {
 }
 
 pub fn connect_save_button(app_data: Rc<AppData>) {
-    app_data.export_but.connect_clicked(clone!(@strong app_data => move |_| {
-        let aps = backend::get_aps();
+    app_data
+        .export_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let aps = backend::get_aps();
 
-        if aps.is_empty() {
-            return ErrorDialog::spawn(
-                &app_data.main_window,
-                "Error",
-                "There is no data to export",
-                false,
-            );
-        }
-
-        let aps = aps.values().cloned().collect::<Vec<AP>>();
-        let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
-
-        let file_chooser_dialog = Rc::new(FileChooserDialog::new(
-            Some("Save Capture"),
-            Some(&app_data.main_window),
-            FileChooserAction::Save,
-            &[("Save", ResponseType::Accept)],
-        ));
-
-        file_chooser_dialog.set_current_name("capture.json");
-        file_chooser_dialog.run_async(move |this, response| {
-            if response == ResponseType::Accept {
-                let gio_file = match this.file() {
-                    Some(file) => file,
-                    None => return,
-                };
-                let mut file = File::create(gio_file.path().unwrap()).unwrap();
-                file.write_all(json_data.as_bytes()).unwrap();
+            if aps.is_empty() {
+                return ErrorDialog::spawn(
+                    &app_data.main_window,
+                    "Error",
+                    "There is no data to export",
+                    false,
+                );
             }
-            this.close();
-        });
-    }));
+
+            let aps = aps.values().cloned().collect::<Vec<AP>>();
+            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
+
+            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+                Some("Save Capture"),
+                Some(&app_data.main_window),
+                FileChooserAction::Save,
+                &[("Save", ResponseType::Accept)],
+            ));
+
+            file_chooser_dialog.set_current_name("capture.json");
+            file_chooser_dialog.run_async(move |this, response| {
+                if response == ResponseType::Accept {
+                    let gio_file = match this.file() {
+                        Some(file) => file,
+                        None => return,
+                    };
+                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
+                    file.write_all(json_data.as_bytes()).unwrap();
+                }
+                this.close();
+            });
+        }));
 }
 
 pub fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
@@ -179,7 +181,7 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            if !backend::is_5ghz_supported(&iface).unwrap() && this.is_active() == true {
+            if !backend::is_5ghz_supported(&iface).unwrap() && this.is_active() {
                 ErrorDialog::spawn(
                     &app_data.main_window,
                     "Error",

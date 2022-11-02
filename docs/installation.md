@@ -1,4 +1,4 @@
-# Build and install Airgorah from crates.io
+# Build and install Airgorah - crates.io
 
 To build and install `airgorah` from crates.io, you can use the following command:
 
