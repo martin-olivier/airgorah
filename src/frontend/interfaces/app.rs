@@ -9,7 +9,8 @@ fn build_about_button() -> Button {
     let about_button = Button::builder().icon_name("dialog-information").build();
 
     about_button.connect_clicked(|_| {
-        let icon = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
+        let ico = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
+        let des = "A WiFi auditing software that can perform deauth attacks and passwords recovery";
 
         AboutDialog::builder()
             .program_name("Airgorah")
@@ -17,8 +18,8 @@ fn build_about_button() -> Button {
             .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
-            .logo(&Picture::for_pixbuf(&icon).paintable().unwrap())
-            .comments("A WiFi auditing software that can perform deauth attacks and passwords recovery")
+            .logo(&Picture::for_pixbuf(&ico).paintable().unwrap())
+            .comments(des)
             .website_label("https://github.com/martin-olivier/airgorah")
             .modal(true)
             .build()

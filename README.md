@@ -39,7 +39,9 @@ This software only works on `linux` and requires `root` privileges to run.
 
 You will also need a wireless network card that supports `monitor mode` and `packet injection`.
 
-You can find pre-built releases for Debian based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the package and install it with the following command:
+## Installation
+
+You can find pre-built releases for `Debian` based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the package and install it with the following command:
 
 ```sh
 sudo apt install <path_to_deb_package>
@@ -62,5 +64,6 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 - [ ] WPS attack feature
 - [ ] WEP attack feature
 - [ ] Provide releases for other linux distributions (Arch, Fedora, ...)
+- [ ] Provide releases for other architectures (amd, arm, ...)
 - [ ] Improve the code quality and the documentation
 - [ ] Improve the UI
