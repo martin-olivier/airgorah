@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/*
+      - .github/workflows/CI.yml
+      - Cargo.toml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/*
+      - .github/workflows/CI.yml
+      - Cargo.toml
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  conventional_commits:
+    name: conventional commits
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: webiny/action-conventional-commits@v1.0.5
+
+  linter:
+    name: linter
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
+
+      - name: Clippy
+        run: cargo clippy --all --all-features -- -D warnings
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+  ci:
+    needs: linter
+    strategy:
+      fail-fast: false
+      matrix:
+        build: ['', --release]
+        include:
+          - build: ''
+            profile: debug
+          - build: --release
+            profile: release
+
+    name: ${{ matrix.profile }} build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
+
+      - name: Build project
+        run: cargo build ${{ matrix.build }}

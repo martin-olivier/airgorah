@@ -2,6 +2,44 @@
 name = "airgorah"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["Martin Olivier <martin.olivier@live.fr>"]
+homepage = "https://github.com/martin-olivier/airgorah"
+repository = "https://github.com/martin-olivier/airgorah"
+documentation = "https://github.com/martin-olivier/airgorah"
+description = "A WiFi auditing software that can perform deauth attacks and passwords recovery"
+keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
+readme = "README.md"
+exclude = ["/.github"]
 
 [dependencies]
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1.0.86"
+csv = "1.1.6"
+glib = "0.15.12"
+sudo = "0.6.0"
+ctrlc = "3.2.3"
+regex = "1.6.0"
+lazy_static = "1.4.0"
+which = "4.3.0"
 
+[dependencies.gtk4]
+version = "0.4.8"
+default-features = false
+features = ["v4_6"]
+
+[package.metadata.deb]
+copyright = "2022, Martin Olivier"
+maintainer = "Martin Olivier <martin.olivier@live.fr>"
+license-file = [ "LICENSE" ]
+extended-description = "A WiFi auditing software that can perform deauth attacks and passwords recovery"
+depends = "pkexec, libgtk-4-1, dbus-x11, wireless-tools, aircrack-ng (>= 1.6)"
+priority = "optional"
+section = "utility"
+assets = [
+    ["target/release/airgorah", "/usr/bin/", "755"],
+    ["README.md", "/usr/share/doc/airgorah/README", "644"],
+    ["icons/app_icon.png", "/usr/share/app-install/icons/airgorah.png", "644"],
+    ["package/.desktop", "/usr/share/applications/com.martin-olivier.airgorah.desktop", "644"],
+    ["package/.policy", "/usr/share/polkit-1/actions/org.freedesktop.policykit.airgorah.policy", "755"],
+]
