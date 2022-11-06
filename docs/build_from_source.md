@@ -12,7 +12,7 @@ curl https://sh.rustup.rs -sSf | sh
 
 Then, you will need to install `airgorah` dependencies:
 
-### Debian (Ubuntu, PopOS, Mint, Kali, etc.)
+### Debian (Ubuntu, PopOS, Mint, Kali)
 
 ```sh
 sudo apt install dbus-x11 libgtk-4-dev libglib2.0-dev aircrack-ng wireless-tools

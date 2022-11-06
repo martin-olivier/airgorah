@@ -4,7 +4,7 @@
   </a>
 </h1>
 
-<h4 align="center">A WiFi auditing software that can perform deauth attacks and WPA password recovery</h4>
+<h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords recovery</h4>
 
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
@@ -23,7 +23,7 @@
 
 ![illustration](.github/assets/illustration.png)
 
-`Airgorah` is a WiFi auditing software that can perform `deauth attacks` and `WPA password recovery`. It can be used to audit a network and discover the devices connected to it, to perform a deauth attack against a specific device or all the devices connected to the network, and to recover the password of an access point.
+`Airgorah` can be used to audit a WiFi network by discovering the clients connected to it, performing deauth attacks against specific clients or all the clients connected to the network, or by recovering the password of the access point.
 
 It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
@@ -31,7 +31,7 @@ It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs
 
 ## Legal
 
-⚠️ Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. The author is not responsible for any misuse of this software.
+⚠️ Airgorah is designed to be used in testing and discovering flaws in networks you are owner of. Performing attacks on WiFi networks you are not owner of is illegal in almost all countries. I am not responsible for whatever damage you may cause by using this software.
 
 ## Requirements
 
@@ -39,11 +39,7 @@ This software only works on `linux` and requires `root` privileges to run.
 
 You will also need a wireless network card that supports `monitor mode` and `packet injection`.
 
-## Installation
-
-You can find pre-built releases for Debian distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali, etc.)
-
-You will just need to download the package and install it with the following command:
+You can find pre-built releases for Debian based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the package and install it with the following command:
 
 ```sh
 sudo apt install <path_to_deb_package>
@@ -59,7 +55,7 @@ This project is released under [MIT](LICENSE) license.
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-## Future features
+## Future
 
 - [ ] WPA handshake capture
 - [ ] WPA handshake decryption (dictionary / bruteforce)

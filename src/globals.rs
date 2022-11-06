@@ -6,7 +6,7 @@ use std::sync::Mutex;
 
 pub static APP_ID: &str = "com.martin-olivier.airgorah";
 pub static VERSION: &str = "v0.1.0";
-pub static SCAN_PATH: &str = "/tmp/airgorah";
+pub static SCAN_PATH: &str = "/tmp/airgorah_scan";
 
 pub static APP_ICON: &[u8] = include_bytes!("../icons/app_icon.png");
 pub static DEAUTH_ICON: &[u8] = include_bytes!("../icons/deauth.png");

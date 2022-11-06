@@ -10,27 +10,6 @@ use crate::types::*;
 
 pub struct DeauthWindow;
 
-fn get_selected_clis(storage: &ListStore) -> Vec<String> {
-    let mut iter = storage.iter_first();
-    let mut selected_clis = vec![];
-
-    while let Some(it) = iter {
-        let check_val = list_store_get!(storage, &it, 0, bool);
-        let mac_val = list_store_get!(storage, &it, 1, String);
-
-        if check_val {
-            selected_clis.push(mac_val);
-        }
-
-        iter = match storage.iter_next(&it) {
-            true => Some(it),
-            false => None,
-        }
-    }
-
-    selected_clis
-}
-
 impl DeauthWindow {
     pub fn spawn(parent: &impl IsA<Window>, ap: AP) {
         let window = Rc::new(
@@ -163,4 +142,25 @@ impl DeauthWindow {
             window.close();
         });
     }
+}
+
+fn get_selected_clis(storage: &ListStore) -> Vec<String> {
+    let mut iter = storage.iter_first();
+    let mut selected_clis = vec![];
+
+    while let Some(it) = iter {
+        let check_val = list_store_get!(storage, &it, 0, bool);
+        let mac_val = list_store_get!(storage, &it, 1, String);
+
+        if check_val {
+            selected_clis.push(mac_val);
+        }
+
+        iter = match storage.iter_next(&it) {
+            true => Some(it),
+            false => None,
+        }
+    }
+
+    selected_clis
 }
