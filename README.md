@@ -4,7 +4,7 @@
   </a>
 </h1>
 
-<h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords recovery</h4>
+<h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
@@ -23,9 +23,11 @@
 
 ![illustration](.github/assets/illustration.png)
 
-`Airgorah` can be used to audit a WiFi network by discovering the clients connected to it, performing deauth attacks against specific clients or all the clients connected to the network, or by recovering the password of the access point.
+`Airgorah` can be used to audit a WiFi network by discovering the clients connected to it, performing deauth attacks against specific clients or all the clients connected to the network, or by cracking the password of the access point.
 
 It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
+
+> This project is still in beta version, for the moment only deauth attacks are implemented. The list of future implementations is available [here](#future).
 
 `⭐ Don't forget to put a star if you like the project!`
 

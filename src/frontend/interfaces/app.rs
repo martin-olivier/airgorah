@@ -10,7 +10,7 @@ fn build_about_button() -> Button {
 
     about_button.connect_clicked(|_| {
         let ico = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
-        let des = "A WiFi auditing software that can perform deauth attacks and passwords recovery";
+        let des = "A WiFi auditing software that can perform deauth attacks and passwords cracking";
 
         AboutDialog::builder()
             .program_name("Airgorah")
