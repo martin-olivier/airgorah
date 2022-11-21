@@ -2,6 +2,8 @@ use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
 
+use std::thread::JoinHandle;
+
 pub fn app_setup() -> Result<(), Error> {
     app_cleanup();
 
@@ -66,4 +68,17 @@ pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+pub fn spawn_update_checker() -> JoinHandle<bool> {
+    std::thread::spawn(|| {
+        let url = "https://api.github.com/repos/martin-olivier/airgorah/releases/latest";
+
+        if let Ok(response) = ureq::get(url).call() {
+            if let Ok(json) = response.into_json::<serde_json::Value>() {
+                return json["tag_name"] != VERSION;
+            }
+        }
+        false
+    })
 }

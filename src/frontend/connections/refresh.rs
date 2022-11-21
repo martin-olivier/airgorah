@@ -52,8 +52,14 @@ pub fn connect_app_refresh(app_data: Rc<AppData>) {
         };
 
         match backend::get_aps().is_empty() {
-            true => app_data.clear_but.set_sensitive(false),
-            false => app_data.clear_but.set_sensitive(true),
+            true => {
+                app_data.clear_but.set_sensitive(false);
+                app_data.export_but.set_sensitive(false);
+            }
+            false => {
+                app_data.clear_but.set_sensitive(true);
+                app_data.export_but.set_sensitive(true);
+            }
         }
 
         let aps = backend::get_airodump_data();

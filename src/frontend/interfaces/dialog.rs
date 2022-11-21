@@ -50,3 +50,25 @@ impl InfoDialog {
         dialog.show();
     }
 }
+
+pub struct YesNoDialog;
+
+impl YesNoDialog {
+    pub fn spawn<F>(parent: &impl IsA<Window>, title: &str, content: &str, callback: F)
+    where
+        F: Fn(&MessageDialog, ResponseType) + 'static,
+    {
+        let dialog = MessageDialog::builder()
+            .text(title)
+            .secondary_text(content)
+            .decorated(true)
+            .message_type(MessageType::Question)
+            .buttons(ButtonsType::YesNo)
+            .modal(true)
+            .transient_for(parent)
+            .build();
+
+        dialog.connect_response(callback);
+        dialog.show();
+    }
+}

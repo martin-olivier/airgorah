@@ -21,6 +21,7 @@ sudo = "0.6.0"
 ctrlc = "3.2.3"
 regex = "1.6.0"
 lazy_static = "1.4.0"
+ureq = { version = "2.5.0", features = ["json"] }
 which = "4.3.0"
 
 [dependencies.gtk4]
@@ -33,7 +34,7 @@ copyright = "2022, Martin Olivier"
 maintainer = "Martin Olivier <martin.olivier@live.fr>"
 license-file = [ "LICENSE" ]
 extended-description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
-depends = "pkexec, libgtk-4-1, dbus-x11, wireless-tools, aircrack-ng (>= 1.6)"
+depends = "pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, wireless-tools, aircrack-ng (>= 1.6)"
 priority = "optional"
 section = "utility"
 assets = [

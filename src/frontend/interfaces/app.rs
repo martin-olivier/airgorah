@@ -4,37 +4,33 @@ use crate::globals;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
+use std::time::Duration;
+
+use super::DecryptWindow;
 
 fn build_about_button() -> Button {
-    let about_button = Button::builder().icon_name("dialog-information").build();
+    Button::builder()
+        .icon_name("dialog-information")
+        .tooltip_text("About")
+        .build()
+}
 
-    about_button.connect_clicked(|_| {
-        let ico = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
-        let des = "A WiFi auditing software that can perform deauth attacks and passwords cracking";
+fn build_update_button() -> Button {
+    Button::builder()
+        .icon_name("emblem-downloads")
+        .tooltip_text("Update available")
+        .build()
+}
 
-        AboutDialog::builder()
-            .program_name("Airgorah")
-            .version(globals::VERSION)
-            .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
-            .copyright("Copyright (c) Martin OLIVIER")
-            .license_type(License::MitX11)
-            .logo(&Picture::for_pixbuf(&ico).paintable().unwrap())
-            .comments(des)
-            .website_label("https://github.com/martin-olivier/airgorah")
-            .modal(true)
-            .build()
-            .show();
-    });
-
-    about_button
+fn build_decrypt_button() -> Button {
+    Button::builder()
+        .icon_name("channel-insecure")
+        .tooltip_text("Open the decryption pannel")
+        .build()
 }
 
 pub fn build_header_bar() -> HeaderBar {
-    let header_bar = HeaderBar::builder().show_title_buttons(true).build();
-
-    header_bar.pack_start(&build_about_button());
-
-    header_bar
+    HeaderBar::builder().show_title_buttons(true).build()
 }
 
 fn build_main_window(app: &Application) -> ApplicationWindow {
@@ -204,12 +200,18 @@ fn build_cli_scroll() -> ScrolledWindow {
 }
 
 pub struct AppData {
+    // Header bar
+    pub about_button: Button,
+    pub update_button: Button,
+    pub decrypt_button: Button,
+
     // Main window
     pub main_window: ApplicationWindow,
     pub aps_model: ListStore,
     pub aps_view: TreeView,
     pub cli_model: ListStore,
     pub cli_view: TreeView,
+    pub iface_label: Label,
     pub ghz_2_4_but: CheckButton,
     pub ghz_5_but: CheckButton,
     pub channel_filter_entry: Entry,
@@ -232,7 +234,19 @@ impl AppData {
         // --- MAIN WINDOW ---
 
         let main_window = build_main_window(app);
-        main_window.set_titlebar(Some(&build_header_bar()));
+        let header_bar = build_header_bar();
+
+        main_window.set_titlebar(Some(&header_bar));
+
+        let about_button = build_about_button();
+        let update_button = build_update_button();
+        let decrypt_button = build_decrypt_button();
+
+        header_bar.pack_start(&about_button);
+        header_bar.pack_start(&update_button);
+        header_bar.pack_end(&decrypt_button);
+
+        update_button.hide();
 
         // Left Views (APs and Clients)
 
@@ -280,15 +294,34 @@ impl AppData {
 
         let scan_box = Box::new(Orientation::Vertical, 10);
 
+        //
+
+        let iface_ico = Image::from_icon_name("network-wired");
+        let iface_label = Label::new(Some("None"));
+
+        let iface_box = Box::new(Orientation::Horizontal, 6);
+        iface_box.append(&iface_ico);
+        iface_box.append(&iface_label);
+
+        iface_box.set_margin_top(4);
+        iface_box.set_margin_start(6);
+        iface_box.set_margin_end(6);
+        iface_box.set_margin_bottom(4);
+
+        let iface_frame = Frame::new(None);
+        iface_frame.set_child(Some(&iface_box));
+
+        //
+
         let ghz_2_4_but = CheckButton::builder().active(true).label("2.4 GHz").build();
         let ghz_5_but = CheckButton::builder().active(false).label("5 GHz").build();
-
-        ghz_2_4_but.set_margin_start(6);
-        ghz_5_but.set_margin_end(6);
 
         let but_box = Box::new(Orientation::Horizontal, 10);
         but_box.append(&ghz_2_4_but);
         but_box.append(&ghz_5_but);
+
+        but_box.set_margin_start(6);
+        but_box.set_margin_end(6);
         but_box.set_margin_bottom(4);
 
         let band_frame = Frame::new(Some("Band"));
@@ -313,10 +346,11 @@ impl AppData {
         deauth_but.set_sensitive(false);
 
         let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Handshake Capture");
-        capture_but.set_tooltip_text(Some("Capture a WPA handshake from the selected AP"));
+        capture_but.set_tooltip_text(Some("Capture a handshake from the selected AP"));
         capture_but.set_sensitive(false);
         capture_but.set_margin_bottom(10);
 
+        scan_box.append(&iface_frame);
         scan_box.append(&band_frame);
         scan_box.append(&channel_frame);
         scan_box.append(&top_but_box);
@@ -347,9 +381,7 @@ impl AppData {
         // --- INTERFACE WINDOW ---
 
         let interface_window = build_interface_window(app);
-
         let interface_model = build_interface_model();
-
         let interface_view = build_interface_view(&interface_model);
 
         let refresh_but = Button::builder()
@@ -376,12 +408,16 @@ impl AppData {
         interface_window.set_child(Some(&vbox));
 
         Self {
+            about_button,
+            update_button,
+            decrypt_button,
             // MAIN WINDOW
             main_window,
             aps_model,
             aps_view,
             cli_model,
             cli_view,
+            iface_label,
             ghz_2_4_but,
             ghz_5_but,
             channel_filter_entry,

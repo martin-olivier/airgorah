@@ -118,14 +118,8 @@ pub fn connect_save_button(app_data: Rc<AppData>) {
         .export_but
         .connect_clicked(clone!(@strong app_data => move |_| {
             let aps = backend::get_aps();
-
             if aps.is_empty() {
-                return ErrorDialog::spawn(
-                    &app_data.main_window,
-                    "Error",
-                    "There is no data to export",
-                    false,
-                );
+                return;
             }
 
             let aps = aps.values().cloned().collect::<Vec<AP>>();

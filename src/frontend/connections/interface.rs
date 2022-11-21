@@ -44,7 +44,9 @@ pub fn connect_interface_select(app_data: Rc<AppData>) {
 
             match crate::backend::enable_monitor_mode(&iface) {
                 Ok(res) => {
-                    backend::set_iface(res);
+                    backend::set_iface(res.clone());
+
+                    app_data.iface_label.set_text(&res);
                     app_data.interface_window.hide();
                     app_data.scan_but.emit_clicked();
                 }

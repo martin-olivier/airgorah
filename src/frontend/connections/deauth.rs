@@ -10,8 +10,8 @@ pub fn connect_deauth_button(app_data: Rc<AppData>) {
     app_data
         .deauth_but
         .connect_clicked(clone!(@strong app_data => move |_| {
-            let (_model, iter) = match app_data.aps_view.selection().selected() {
-                Some((selection, iter)) => (selection, iter),
+            let iter = match app_data.aps_view.selection().selected() {
+                Some((_, iter)) => iter,
                 None => return,
             };
 

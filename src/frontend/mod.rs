@@ -2,13 +2,15 @@ mod connections;
 mod interfaces;
 mod widgets;
 
-use crate::backend;
+use crate::{backend, globals};
 use connections::*;
 use interfaces::*;
 
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
+use glib::clone;
+use std::time::Duration;
 
 pub fn build_ui(app: &Application) {
     let gui_data = Rc::new(AppData::new(app));
@@ -16,6 +18,10 @@ pub fn build_ui(app: &Application) {
     if let Err(e) = backend::app_setup() {
         return ErrorDialog::spawn(&app.active_window().unwrap(), "Error", &e.to_string(), true);
     }
+
+    connect_about_button(gui_data.clone());
+    connect_update_button(gui_data.clone());
+    connect_decrypt_button(gui_data.clone());
 
     connect_app_refresh(gui_data.clone());
     connect_cursor_changed(gui_data.clone());
