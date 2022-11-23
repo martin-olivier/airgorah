@@ -38,7 +38,7 @@ depends = "pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, wireless-tools, aircrack-ng 
 priority = "optional"
 section = "utility"
 assets = [
-    ["target/release/airgorah", "/usr/bin/", "755"],
+    ["target/release/airgorah", "/usr/bin/airgorah", "755"],
     ["README.md", "/usr/share/doc/airgorah/README", "644"],
     ["icons/app_icon.png", "/usr/share/app-install/icons/airgorah.png", "644"],
     ["package/.desktop", "/usr/share/applications/com.martin-olivier.airgorah.desktop", "644"],

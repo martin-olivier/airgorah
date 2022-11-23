@@ -35,6 +35,11 @@ pub fn app_cleanup() {
         child.wait().unwrap();
     }
 
+    if let Some(child) = CAPTURE_PROC.lock().unwrap().as_mut() {
+        child.kill().unwrap();
+        child.wait().unwrap();
+    }
+
     for attacked_ap in ATTACK_POOL.lock().unwrap().iter_mut() {
         match &mut attacked_ap.1 .1 {
             AttackedClients::All(child) => {
