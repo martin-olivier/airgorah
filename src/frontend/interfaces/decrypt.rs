@@ -86,13 +86,13 @@ impl DecryptGui {
     }
 
     pub fn show(&self, capture_file: Option<String>) {
-        if let Some(path) = capture_file {
-            self.handshake_entry.set_text(&path);
-        }
-
         self.handshake_entry.set_text("");
         self.wordlist_entry.set_text("");
         self.decrypt_but.set_sensitive(false);
+
+        if let Some(path) = capture_file {
+            self.handshake_entry.set_text(&path);
+        }
 
         self.window.show();
     }

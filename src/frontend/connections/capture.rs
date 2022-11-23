@@ -83,19 +83,19 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 if backend::has_handshake().unwrap() {
                     let path = app_data.capture_gui.path_entry.text();
                     backend::save_capture(&path);
+                    backend::stop_capture_process();
+                    if app_data.capture_gui.deauth_but.is_active() {
+                        backend::stop_deauth_attack(&ap.bssid);
+                    }
+                    app_data.capture_gui.window.hide();
                     
-                    YesNoDialog::spawn(&app_data.capture_gui.window, "Handshake Captured", "Handshake has been captured!\nWould you like to decrypt the password now?", clone!(@strong app_data => move |this, response| {
+                    YesNoDialog::spawn(&app_data.app_gui.window, "Handshake Captured", "Handshake has been captured!\nWould you like to decrypt the password now?", clone!(@strong app_data => move |this, response| {
                         if response == ResponseType::Yes {
                             app_data.decrypt_gui.show(Some(path.to_string()));
                         }
                         this.close();
                     }));
 
-                    backend::stop_capture_process();
-                    if app_data.capture_gui.deauth_but.is_active() {
-                        backend::stop_deauth_attack(&ap.bssid);
-                    }
-                    app_data.capture_gui.window.hide();
                     return glib::Continue(false);
                 }
                 glib::Continue(true)
