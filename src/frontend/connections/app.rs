@@ -101,10 +101,12 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     true => {
                         app_data.app_gui.deauth_but.set_label("Stop Attack");
                         app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
+                        app_data.app_gui.capture_but.set_sensitive(false);
                     }
                     false => {
                         app_data.app_gui.deauth_but.set_label("Deauth Attack");
                         app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
+                        app_data.app_gui.capture_but.set_sensitive(true);
                     }
                 }
             }

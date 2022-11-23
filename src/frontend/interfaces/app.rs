@@ -33,8 +33,8 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
-        .default_width(1280)
-        .default_height(540)
+        .default_width(1400)
+        .default_height(640)
         .build();
 
     window.connect_close_request(|_| {
@@ -47,17 +47,17 @@ fn build_window(app: &Application) -> ApplicationWindow {
 
 fn build_aps_model() -> ListStore {
     ListStore::new(&[
-        glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::I32,
-        glib::Type::I32,
-        glib::Type::I32,
-        glib::Type::STRING,
-        glib::Type::I32,
-        glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING, // color
+        glib::Type::STRING, // ESSID
+        glib::Type::STRING, // BSSID
+        glib::Type::STRING, // Band
+        glib::Type::I32,    // Channel
+        glib::Type::I32,    // Speed
+        glib::Type::I32,    // Power
+        glib::Type::STRING, // Encryption
+        glib::Type::I32,    // Clients
+        glib::Type::STRING, // First time seen
+        glib::Type::STRING, // First time seen
+        glib::Type::STRING, // <color>
     ])
 }
 
@@ -112,12 +112,12 @@ fn build_aps_scroll() -> ScrolledWindow {
 
 fn build_cli_model() -> ListStore {
     ListStore::new(&[
-        glib::Type::STRING,
-        glib::Type::I32,
-        glib::Type::I32,
-        glib::Type::STRING,
-        glib::Type::STRING,
-        glib::Type::STRING,
+        glib::Type::STRING, // Station MAC
+        glib::Type::I32,    // Packets
+        glib::Type::I32,    // Power
+        glib::Type::STRING, // First time seen
+        glib::Type::STRING, // Last time seen
+        glib::Type::STRING, // <color>
     ])
 }
 
@@ -189,8 +189,6 @@ pub struct AppGui {
 
 impl AppGui {
     pub fn new(app: &Application) -> Self {
-        // --- MAIN WINDOW ---
-
         let window = build_window(app);
         let header_bar = build_header_bar();
 
@@ -206,7 +204,7 @@ impl AppGui {
 
         update_button.hide();
 
-        // Left Views (APs and Clients)
+        // Left View (Access Points and Clients)
 
         let aps_model = build_aps_model();
         let aps_view = build_aps_view();
@@ -248,11 +246,7 @@ impl AppGui {
         top_but_box.set_center_widget(Some(&clear_but));
         top_but_box.set_end_widget(Some(&export_but));
 
-        // Scan filters
-
-        let scan_box = Box::new(Orientation::Vertical, 10);
-
-        //
+        // Interface Display
 
         let iface_ico = Image::from_icon_name("network-wired");
         let iface_label = Label::new(Some("None"));
@@ -267,9 +261,10 @@ impl AppGui {
         iface_box.set_margin_bottom(4);
 
         let iface_frame = Frame::new(None);
+        iface_frame.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
         iface_frame.set_child(Some(&iface_box));
 
-        //
+        // Scan filters
 
         let ghz_2_4_but = CheckButton::builder().active(true).label("2.4 GHz").build();
         let ghz_5_but = CheckButton::builder().active(false).label("5 GHz").build();
@@ -300,14 +295,15 @@ impl AppGui {
         separator.set_opacity(0.0);
 
         let deauth_but = IconTextButton::new(globals::DEAUTH_ICON, "Deauth Attack");
-        deauth_but.set_tooltip_text(Some("Perform (or stop) a deauth attack on the selected AP"));
+        deauth_but.set_tooltip_text(Some("Perform (or stop) a deauth attack on the selected access point"));
         deauth_but.set_sensitive(false);
 
         let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Handshake Capture");
-        capture_but.set_tooltip_text(Some("Capture a handshake from the selected AP"));
+        capture_but.set_tooltip_text(Some("Capture a handshake from the selected access point"));
         capture_but.set_sensitive(false);
         capture_but.set_margin_bottom(10);
 
+        let scan_box = Box::new(Orientation::Vertical, 10);
         scan_box.append(&iface_frame);
         scan_box.append(&band_frame);
         scan_box.append(&channel_frame);
@@ -323,13 +319,12 @@ impl AppGui {
 
         // Set main window childs
 
-        let main_box = Box::new(Orientation::Horizontal, 10);
-
         let panned = Paned::new(Orientation::Vertical);
         panned.set_wide_handle(true);
         panned.set_start_child(Some(&aps_scroll));
         panned.set_end_child(Some(&cli_scroll));
 
+        let main_box = Box::new(Orientation::Horizontal, 10);
         main_box.append(&panned);
         main_box.append(&scan_box);
 
@@ -337,10 +332,11 @@ impl AppGui {
         window.show();
 
         Self {
+            // Header bar
             about_button,
             update_button,
             decrypt_button,
-            // MAIN WINDOW
+            // Main window
             window,
             aps_model,
             aps_view,

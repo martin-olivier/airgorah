@@ -2,6 +2,7 @@ use crate::backend;
 use crate::frontend::*;
 use crate::frontend::interfaces::*;
 use crate::types::*;
+
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
@@ -130,12 +131,12 @@ fn connect_save_button(app_data: Rc<AppData>) {
             let aps = aps.values().cloned().collect::<Vec<AP>>();
             let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
 
-            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+            let file_chooser_dialog = FileChooserDialog::new(
                 Some("Save Capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
                 &[("Save", ResponseType::Accept)],
-            ));
+            );
 
             file_chooser_dialog.set_current_name("capture.json");
             file_chooser_dialog.run_async(move |this, response| {

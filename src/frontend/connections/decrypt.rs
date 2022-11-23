@@ -1,4 +1,5 @@
 use crate::frontend::interfaces::*;
+
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
@@ -10,12 +11,12 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.handshake_but.connect_clicked(
         clone!(@strong app_data => move |_| {
 
-            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+            let file_chooser_dialog = FileChooserDialog::new(
                 Some("Load Capture"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
                 &[("Open", ResponseType::Accept)],
-            ));
+            );
 
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
@@ -37,12 +38,12 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
 fn connect_wordlist_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.wordlist_but.connect_clicked(
         clone!(@strong app_data => move |_| {
-            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+            let file_chooser_dialog = FileChooserDialog::new(
                 Some("Load Capture"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
                 &[("Open", ResponseType::Accept)],
-            ));
+            );
 
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {

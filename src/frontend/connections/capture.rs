@@ -2,6 +2,7 @@ use crate::backend;
 use crate::frontend::*;
 use crate::frontend::interfaces::*;
 use crate::list_store_get;
+
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
@@ -18,12 +19,12 @@ fn connect_path_button(app_data: Rc<AppData>) {
             
                 let network_name = list_store_get!(app_data.app_gui.aps_model, &iter, 0, String);
 
-                let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+                let file_chooser_dialog = FileChooserDialog::new(
                     Some("Save Capture"),
                     Some(&app_data.capture_gui.window),
                     FileChooserAction::Save,
                     &[("Save", ResponseType::Accept)],
-                ));
+                );
 
                 file_chooser_dialog.set_current_name(&(network_name.clone() + ".cap"));
                 file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
@@ -75,7 +76,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 backend::launch_deauth_attack(ap.clone(), None).unwrap();
             }
 
-            glib::timeout_add_local(Duration::from_secs(1), clone!(@strong app_data, @strong ap => move || {
+            glib::timeout_add_local(Duration::from_millis(500), clone!(@strong app_data, @strong ap => move || {
                 if !backend::is_capture_process() {
                     return glib::Continue(false);
                 }

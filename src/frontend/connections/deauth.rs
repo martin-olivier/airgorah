@@ -40,8 +40,8 @@ fn connect_all_cli_button(app_data: Rc<AppData>) {
 
 fn connect_sel_cli_button(app_data: Rc<AppData>) {
     app_data.deauth_gui.sel_cli_but.connect_toggled(clone!(@strong app_data => move |_| {
-        app_data.deauth_gui.scroll.show();
         app_data.deauth_gui.window.set_height_request(300);
+        app_data.deauth_gui.scroll.show();
 
         if get_selected_clis(&app_data.deauth_gui.store).is_empty() {
             app_data.deauth_gui.attack_but.set_sensitive(false);
