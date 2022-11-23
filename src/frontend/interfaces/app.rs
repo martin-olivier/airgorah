@@ -1,12 +1,8 @@
 use crate::backend;
 use crate::frontend::widgets::*;
 use crate::globals;
-use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::time::Duration;
-
-use super::DecryptWindow;
 
 fn build_about_button() -> Button {
     Button::builder()
@@ -33,7 +29,7 @@ pub fn build_header_bar() -> HeaderBar {
     HeaderBar::builder().show_title_buttons(true).build()
 }
 
-fn build_main_window(app: &Application) -> ApplicationWindow {
+fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
@@ -47,37 +43,6 @@ fn build_main_window(app: &Application) -> ApplicationWindow {
     });
 
     window
-}
-
-fn build_interface_window(app: &Application) -> Window {
-    Window::builder()
-        .title("Select a wireless interface")
-        .hide_on_close(true)
-        .default_width(280)
-        .default_height(70)
-        .resizable(false)
-        .modal(true)
-        .transient_for(&app.active_window().unwrap())
-        .build()
-}
-
-fn build_interface_model() -> ListStore {
-    ListStore::new(&[glib::Type::STRING])
-}
-
-fn build_interface_view(model: &ListStore) -> ComboBox {
-    let text_renderer = CellRendererText::new();
-
-    let icon_renderer = CellRendererPixbuf::new();
-    icon_renderer.set_property("icon-name", "network-wired");
-
-    let combo = ComboBox::with_model(model);
-    combo.set_hexpand(true);
-    combo.pack_start(&icon_renderer, false);
-    combo.pack_start(&text_renderer, false);
-    combo.add_attribute(&text_renderer, "text", 0);
-
-    combo
 }
 
 fn build_aps_model() -> ListStore {
@@ -199,14 +164,14 @@ fn build_cli_scroll() -> ScrolledWindow {
     aps_scroll
 }
 
-pub struct AppData {
+pub struct AppGui {
     // Header bar
     pub about_button: Button,
     pub update_button: Button,
     pub decrypt_button: Button,
 
     // Main window
-    pub main_window: ApplicationWindow,
+    pub window: ApplicationWindow,
     pub aps_model: ListStore,
     pub aps_view: TreeView,
     pub cli_model: ListStore,
@@ -220,23 +185,16 @@ pub struct AppData {
     pub export_but: Button,
     pub deauth_but: IconTextButton,
     pub capture_but: IconTextButton,
-
-    // Interface window
-    pub interface_window: Window,
-    pub select_but: Button,
-    pub refresh_but: Button,
-    pub interface_model: ListStore,
-    pub interface_view: ComboBox,
 }
 
-impl AppData {
+impl AppGui {
     pub fn new(app: &Application) -> Self {
         // --- MAIN WINDOW ---
 
-        let main_window = build_main_window(app);
+        let window = build_window(app);
         let header_bar = build_header_bar();
 
-        main_window.set_titlebar(Some(&header_bar));
+        window.set_titlebar(Some(&header_bar));
 
         let about_button = build_about_button();
         let update_button = build_update_button();
@@ -375,44 +333,15 @@ impl AppData {
         main_box.append(&panned);
         main_box.append(&scan_box);
 
-        main_window.set_child(Some(&main_box));
-        main_window.show();
-
-        // --- INTERFACE WINDOW ---
-
-        let interface_window = build_interface_window(app);
-        let interface_model = build_interface_model();
-        let interface_view = build_interface_view(&interface_model);
-
-        let refresh_but = Button::builder()
-            .icon_name("object-rotate-right-symbolic")
-            .build();
-
-        let select_but = Button::with_label("Select");
-
-        let hbox = Box::new(Orientation::Horizontal, 10);
-        let vbox = Box::new(Orientation::Vertical, 10);
-
-        hbox.append(&interface_view);
-        hbox.append(&refresh_but);
-
-        hbox.set_margin_top(10);
-        hbox.set_margin_start(10);
-        hbox.set_margin_end(10);
-
-        vbox.append(&hbox);
-        vbox.append(&select_but);
-
-        vbox.set_margin_top(0);
-
-        interface_window.set_child(Some(&vbox));
+        window.set_child(Some(&main_box));
+        window.show();
 
         Self {
             about_button,
             update_button,
             decrypt_button,
             // MAIN WINDOW
-            main_window,
+            window,
             aps_model,
             aps_view,
             cli_model,
@@ -426,12 +355,6 @@ impl AppData {
             export_but,
             deauth_but,
             capture_but,
-            // INTERFACE WINDOW
-            interface_window,
-            select_but,
-            refresh_but,
-            interface_model,
-            interface_view,
         }
     }
 }

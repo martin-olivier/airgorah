@@ -1,42 +1,32 @@
-use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::process::Stdio;
-use std::rc::Rc;
-use std::time::Duration;
-use std::process::Command;
 
-use super::dialog::*;
-use crate::backend;
-use crate::types::*;
+pub struct DecryptGui {
+    pub window: Window,
+    pub handshake_but: Button,
+    pub handshake_entry: Entry,
+    pub wordlist_but: Button,
+    pub wordlist_entry: Entry,
+    pub decrypt_but: Button,
+}
 
-pub struct DecryptWindow;
-
-impl DecryptWindow {
-    pub fn spawn(capture_file: Option<String>) {
-        let window = Rc::new(
-            Window::builder()
+impl DecryptGui {
+    pub fn new(parent: &impl IsA<Window>) -> Self {
+        let window = Window::builder()
                 .title("Decrypt Handshake")
+                .hide_on_close(true)
                 .default_width(500)
                 .default_height(200)
                 .resizable(false)
+                .transient_for(parent)
                 .modal(true)
-                .build(),
-        );
+                .build();
 
-        //
-
-        let handshake_entry = Rc::new(
-            Entry::builder()
+        let handshake_entry = Entry::builder()
                 .placeholder_text("ex: handshake.cap")
                 .hexpand(true)
                 .editable(false)
-                .build(),
-        );
-
-        if let Some(path) = capture_file {
-            handshake_entry.set_text(&path);
-        }
+                .build();
 
         let handshake_but = Button::from_icon_name("edit-find-symbolic");
 
@@ -46,20 +36,16 @@ impl DecryptWindow {
         handshake_box.set_margin_start(4);
         handshake_box.set_margin_end(4);
         handshake_box.set_margin_bottom(4);
-        handshake_box.append(handshake_entry.as_ref());
+        handshake_box.append(&handshake_entry);
         handshake_box.append(&handshake_but);
 
         handshake_frame.set_child(Some(&handshake_box));
 
-        //
-
-        let wordlist_entry = Rc::new(
-            Entry::builder()
+        let wordlist_entry = Entry::builder()
                 .placeholder_text("ex: rockyou.txt")
                 .hexpand(true)
                 .editable(false)
-                .build(),
-        );
+                .build();
 
         let wordlist_but = Button::from_icon_name("edit-find-symbolic");
 
@@ -69,17 +55,13 @@ impl DecryptWindow {
         wordlist_box.set_margin_start(4);
         wordlist_box.set_margin_end(4);
         wordlist_box.set_margin_bottom(4);
-        wordlist_box.append(wordlist_entry.as_ref());
+        wordlist_box.append(&wordlist_entry);
         wordlist_box.append(&wordlist_but);
 
         wordlist_frame.set_child(Some(&wordlist_box));
 
-        //
-
-        let decrypt_but = Rc::new(Button::with_label("Start Decryption"));
+        let decrypt_but = Button::with_label("Start Decryption");
         decrypt_but.set_sensitive(false);
-
-        //
 
         let vbox = Box::new(Orientation::Vertical, 10);
         vbox.set_margin_top(10);
@@ -89,70 +71,29 @@ impl DecryptWindow {
 
         vbox.append(&handshake_frame);
         vbox.append(&wordlist_frame);
-        vbox.append(&*decrypt_but);
+        vbox.append(&decrypt_but);
 
         window.set_child(Some(&vbox));
-        window.show();
 
-        // Callbacks
+        Self {
+            window,
+            handshake_but,
+            handshake_entry,
+            wordlist_but,
+            wordlist_entry,
+            decrypt_but,
+        }
+    }
 
-        handshake_but.connect_clicked(
-            clone!(@strong window, @strong decrypt_but, @strong handshake_entry, @strong wordlist_entry => move |_| {
-                let file_chooser_dialog = Rc::new(FileChooserDialog::new(
-                    Some("Load Capture"),
-                    Some(window.as_ref()),
-                    FileChooserAction::Open,
-                    &[("Open", ResponseType::Accept)],
-                ));
+    pub fn show(&self, capture_file: Option<String>) {
+        if let Some(path) = capture_file {
+            self.handshake_entry.set_text(&path);
+        }
 
-                file_chooser_dialog.run_async(clone!(@strong decrypt_but, @strong handshake_entry, @strong wordlist_entry => move |this, response| {
-                    if response == ResponseType::Accept {
-                        let gio_file = match this.file() {
-                            Some(file) => file,
-                            None => return,
-                        };
-                        handshake_entry.set_text(gio_file.path().unwrap().to_str().unwrap());
-                        if wordlist_entry.text_length() > 0 && handshake_entry.text_length() > 0 {
-                            decrypt_but.set_sensitive(true);
-                        }
-                    }
-                    this.close();
-                }));
-            }),
-        );
+        self.handshake_entry.set_text("");
+        self.wordlist_entry.set_text("");
+        self.decrypt_but.set_sensitive(false);
 
-        wordlist_but.connect_clicked(
-            clone!(@strong window, @strong decrypt_but, @strong handshake_entry, @strong wordlist_entry => move |_| {
-                let file_chooser_dialog = Rc::new(FileChooserDialog::new(
-                    Some("Load Capture"),
-                    Some(window.as_ref()),
-                    FileChooserAction::Open,
-                    &[("Open", ResponseType::Accept)],
-                ));
-
-                file_chooser_dialog.run_async(clone!(@strong decrypt_but, @strong handshake_entry, @strong wordlist_entry => move |this, response| {
-                    if response == ResponseType::Accept {
-                        let gio_file = match this.file() {
-                            Some(file) => file,
-                            None => return,
-                        };
-                        wordlist_entry.set_text(gio_file.path().unwrap().to_str().unwrap());
-                        if wordlist_entry.text_length() > 0 && handshake_entry.text_length() > 0 {
-                            decrypt_but.set_sensitive(true);
-                        }
-                    }
-                    this.close();
-                }));
-            }),
-        );
-
-        decrypt_but.connect_clicked(clone!(@strong window, @strong handshake_entry, @strong wordlist_entry => move |_| {
-            Command::new("sh")
-                .stdin(Stdio::piped())
-                .args(["-c", &format!("gnome-terminal --hide-menubar --title \"Handshake Decryption\" -- bash -c \"aircrack-ng '{}' -w '{}' ; exec bash\"", handshake_entry.text().as_str(), wordlist_entry.text().as_str())])
-                .output().ok();
-
-            window.close();
-        }));
+        self.window.show();
     }
 }

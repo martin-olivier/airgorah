@@ -7,8 +7,8 @@
 <h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
-    <img src="https://img.shields.io/badge/Version-0.1.0_(beta)-blue.svg" alt="version"/>
+  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.2.0">
+    <img src="https://img.shields.io/badge/Version-0.2.0_(beta)-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>

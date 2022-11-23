@@ -1,6 +1,6 @@
 [package]
 name = "airgorah"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["Martin Olivier <martin.olivier@live.fr>"]
@@ -10,7 +10,7 @@ documentation = "https://github.com/martin-olivier/airgorah"
 description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
 keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
 readme = "README.md"
-exclude = ["/.github"]
+exclude = ["/.github", "/package", "/docs"]
 
 [dependencies]
 serde = { version = "1.0.104", features = ["derive"] }
