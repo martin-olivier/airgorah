@@ -9,15 +9,15 @@ use std::rc::Rc;
 use std::time::Duration;
 
 fn connect_path_button(app_data: Rc<AppData>) {
-    let iter = match app_data.app_gui.aps_view.selection().selected() {
-        Some((_, iter)) => iter,
-        None => return,
-    };
-
-    let network_name = list_store_get!(app_data.app_gui.aps_model, &iter, 0, String);
-
     app_data.capture_gui.path_but.connect_clicked(
             clone!(@strong app_data => move |_| {
+                let iter = match app_data.app_gui.aps_view.selection().selected() {
+                    Some((_, iter)) => iter,
+                    None => return,
+                };
+            
+                let network_name = list_store_get!(app_data.app_gui.aps_model, &iter, 0, String);
+
                 let file_chooser_dialog = Rc::new(FileChooserDialog::new(
                     Some("Save Capture"),
                     Some(&app_data.capture_gui.window),
@@ -42,14 +42,14 @@ fn connect_path_button(app_data: Rc<AppData>) {
 }
 
 fn connect_capture_button(app_data: Rc<AppData>) {
-    let iter = match app_data.app_gui.aps_view.selection().selected() {
-        Some((_, iter)) => iter,
-        None => return,
-    };
-    let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
-    let ap = backend::get_aps()[&bssid].clone();
-
     app_data.capture_gui.capture_but.connect_clicked(clone!(@strong app_data => move |this| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+        let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+        let ap = backend::get_aps()[&bssid].clone();
+
         if backend::is_capture_process() {
             app_data.capture_gui.spinner.hide();
             app_data.capture_gui.spinner.stop();

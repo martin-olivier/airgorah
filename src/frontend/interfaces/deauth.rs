@@ -96,6 +96,10 @@ impl DeauthGui {
     pub fn show(&self, ap: AP) {
         self.window.set_title(Some(&format!("Deauth \"{}\"", ap.essid)));
 
+        self.sel_cli_but.set_active(false);
+        self.all_cli_but.set_active(true);
+        self.attack_but.set_sensitive(true);
+
         self.store.clear();
         for (_, cli) in ap.clients.iter() {
             self.store.set(&self.store.append(), &[(0, &false), (1, &cli.mac)]);
