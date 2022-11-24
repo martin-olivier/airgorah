@@ -55,14 +55,13 @@ impl InterfaceGui {
         hbox.append(&interface_view);
         hbox.append(&refresh_but);
 
-        hbox.set_margin_top(10);
-        hbox.set_margin_start(10);
-        hbox.set_margin_end(10);
+        vbox.set_margin_top(10);
+        vbox.set_margin_start(10);
+        vbox.set_margin_end(10);
+        vbox.set_margin_bottom(10);
 
         vbox.append(&hbox);
         vbox.append(&select_but);
-
-        vbox.set_margin_top(0);
 
         window.set_child(Some(&vbox));
 

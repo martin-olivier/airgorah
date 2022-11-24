@@ -33,8 +33,8 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
-        .default_width(1400)
-        .default_height(640)
+        .default_width(1280)
+        .default_height(620)
         .build();
 
     window.connect_close_request(|_| {
