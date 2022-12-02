@@ -19,7 +19,7 @@ impl DeauthGui {
                 .title("Deauth")
                 .hide_on_close(true)
                 .default_width(300)
-                .default_height(140)
+                .default_height(300)
                 .resizable(false)
                 .transient_for(parent)
                 .modal(true)
@@ -46,13 +46,14 @@ impl DeauthGui {
         let frame = Frame::new(None);
         frame.set_child(Some(&but_box));
 
-        let view = TreeView::new();
-        view.set_model(Some(&store));
-
         let column = TreeViewColumn::new();
         column.set_title("Clients");
-        view.append_column(&column);
+
+        let view = TreeView::new();
+        view.set_sensitive(false);
         view.set_vexpand(true);
+        view.set_model(Some(&store));
+        view.append_column(&column);
 
         let toggle = CellRendererToggle::new();
         column.pack_start(&toggle, false);
@@ -65,7 +66,6 @@ impl DeauthGui {
         let scroll = ScrolledWindow::new();
         scroll.set_policy(PolicyType::Never, PolicyType::Automatic);
         scroll.set_child(Some(&view));
-        scroll.hide();
 
         let attack_but = Button::with_label("Attack");
 
@@ -98,6 +98,7 @@ impl DeauthGui {
 
         self.sel_cli_but.set_active(false);
         self.all_cli_but.set_active(true);
+        self.view.set_sensitive(false);
         self.attack_but.set_sensitive(true);
 
         self.store.clear();

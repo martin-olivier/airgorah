@@ -26,6 +26,8 @@ pub fn app_setup() -> Result<(), Error> {
         "airmon-ng",
         "airodump-ng",
         "aireplay-ng",
+        "aircrack-ng",
+        "gnome-terminal",
     ])
 }
 

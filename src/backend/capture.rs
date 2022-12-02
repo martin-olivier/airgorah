@@ -17,7 +17,7 @@ pub fn set_capture_process(ap: AP) -> Result<(), Error> {
         child.wait().unwrap();
     }
 
-    std::fs::remove_file(CAPTURE_PATH.to_string() + "-01.cap").ok();
+    std::fs::remove_file(SCAN_PATH.to_string() + "-01.cap").ok();
 
     let proc_args = vec![
         iface.as_str(),
@@ -52,7 +52,7 @@ pub fn stop_capture_process() {
 
     CAPTURE_PROC.lock().unwrap().take();
 
-    std::fs::remove_file(CAPTURE_PATH.to_string() + "-01.cap").ok();
+    std::fs::remove_file(SCAN_PATH.to_string() + "-01.cap").ok();
 }
 
 pub fn has_handshake() -> Result<bool, Error> {

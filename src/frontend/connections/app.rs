@@ -213,14 +213,13 @@ fn connect_deauth_button(app_data: Rc<AppData>) {
             };
 
             let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+            let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
             let under_attack = backend::get_attack_pool().contains_key(&bssid);
 
             match under_attack {
                 true => backend::stop_deauth_attack(&bssid),
                 false => {
-                    if backend::is_scan_process() {
-                        app_data.app_gui.scan_but.emit_clicked();
-                    }
+                    app_data.app_gui.channel_filter_entry.set_text(&channel.to_string());
                     app_data.deauth_gui.show(backend::get_aps()[&bssid].clone());
                 }
             }

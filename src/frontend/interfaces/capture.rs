@@ -104,12 +104,14 @@ impl CaptureGui {
     pub fn show(&self, ap: AP) {
         self.window.set_title(Some(&format!("Capture Handshake on \"{}\"", ap.essid)));
         self.path_entry.set_text("");
-        self.deauth_but.set_active(false);
-        self.passive_but.set_active(true);
-        self.capture_but.set_sensitive(false);
-        self.spinner.hide();
         self.passive_but.set_sensitive(true);
+        self.passive_but.set_active(true);
         self.deauth_but.set_sensitive(true);
+        self.deauth_but.set_active(false);
+        self.capture_but.set_sensitive(false);
+        self.capture_but.set_label("Start Capture");
+        self.spinner.hide();
+        self.spinner.stop();
         self.path_but.set_sensitive(true);
         self.window.show();
     }

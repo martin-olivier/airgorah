@@ -20,7 +20,7 @@ fn build_update_button() -> Button {
 
 fn build_decrypt_button() -> Button {
     Button::builder()
-        .icon_name("channel-insecure")
+        .icon_name("utilities-terminal")
         .tooltip_text("Open the decryption pannel")
         .build()
 }

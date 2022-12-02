@@ -44,7 +44,7 @@ impl InterfaceGui {
         let interface_view = build_interface_view(&interface_model);
 
         let refresh_but = Button::builder()
-            .icon_name("object-rotate-right-symbolic")
+            .icon_name("view-refresh-symbolic")
             .build();
 
         let select_but = Button::with_label("Select");

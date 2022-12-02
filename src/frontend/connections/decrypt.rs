@@ -1,11 +1,10 @@
+use crate::backend;
 use crate::frontend::interfaces::*;
 
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::process::Stdio;
 use std::rc::Rc;
-use std::process::Command;
 
 fn connect_handshake_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.handshake_but.connect_clicked(
@@ -64,11 +63,7 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
 
 fn connect_decrypt_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.decrypt_but.connect_clicked(clone!(@strong app_data => move |_| {
-        Command::new("sh")
-            .stdin(Stdio::piped())
-            .args(["-c", &format!("gnome-terminal --hide-menubar --title \"Handshake Decryption\" -- sh -c \"aircrack-ng '{}' -w '{}' ; exec sh\"", app_data.decrypt_gui.handshake_entry.text().as_str(), app_data.decrypt_gui.wordlist_entry.text().as_str())])
-            .output().ok();
-
+        backend::run_decrypt_process(app_data.decrypt_gui.handshake_entry.text().as_str(), app_data.decrypt_gui.wordlist_entry.text().as_str());
         app_data.decrypt_gui.window.close();
     }));
 }
