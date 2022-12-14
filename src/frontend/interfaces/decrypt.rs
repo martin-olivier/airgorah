@@ -30,7 +30,7 @@ impl DecryptGui {
 
         let handshake_but = Button::from_icon_name("edit-find-symbolic");
 
-        let handshake_frame = Frame::new(Some("Handshake"));
+        let handshake_frame = Frame::new(Some("Capture"));
 
         let handshake_box = Box::new(Orientation::Horizontal, 4);
         handshake_box.set_margin_start(4);
