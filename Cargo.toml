@@ -13,21 +13,17 @@ readme = "README.md"
 exclude = ["/.github", "/package", "/docs"]
 
 [dependencies]
-serde = { version = "1.0.104", features = ["derive"] }
-serde_json = "1.0.86"
-csv = "1.1.6"
-glib = "0.15.12"
+gtk4 = { version = "0.6.2", features = ["v4_6"] }
+glib = "0.17.2"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.93"
+csv = "1.2.0"
 sudo = "0.6.0"
-ctrlc = "3.2.3"
-regex = "1.6.0"
+ctrlc = "3.2.5"
+regex = "1.7.1"
 lazy_static = "1.4.0"
-ureq = { version = "2.5.0", features = ["json"] }
-which = "4.3.0"
-
-[dependencies.gtk4]
-version = "0.4.8"
-default-features = false
-features = ["v4_6"]
+ureq = { version = "2.6.2", features = ["json"] }
+which = "4.4.0"
 
 [package.metadata.deb]
 copyright = "2022, Martin Olivier"

@@ -16,9 +16,7 @@ impl IconTextButton {
         but_box.set_halign(Align::Center);
 
         let pixbuf = Pixbuf::from_read(std::io::BufReader::new(icon)).unwrap();
-
         let image = Image::from_pixbuf(Some(&pixbuf));
-
         let label = Label::with_mnemonic(text);
 
         but_box.append(&image);
