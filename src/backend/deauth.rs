@@ -1,7 +1,6 @@
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
-use std::collections::HashMap;
 use std::process::Command;
 use std::sync::MutexGuard;
 
@@ -60,6 +59,6 @@ pub fn stop_deauth_attack(ap_bssid: &str) {
     attack_pool.remove(ap_bssid);
 }
 
-pub fn get_attack_pool() -> MutexGuard<'static, HashMap<String, (AP, AttackedClients)>> {
+pub fn get_attack_pool() -> MutexGuard<'static, AttackPool> {
     ATTACK_POOL.lock().unwrap()
 }
