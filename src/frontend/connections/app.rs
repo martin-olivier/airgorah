@@ -151,9 +151,10 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     (5, &ap.power.parse::<i32>().unwrap_or(-1)),
                     (6, &ap.privacy),
                     (7, &(ap.clients.len() as i32)),
-                    (8, &ap.first_time_seen),
-                    (9, &ap.last_time_seen),
-                    (10, &background_color.to_str()),
+                    (8, &false),
+                    (9, &ap.first_time_seen),
+                    (10, &ap.last_time_seen),
+                    (11, &background_color.to_str()),
                 ],
             );
         }
@@ -198,6 +199,9 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                 );
             }
         }
+
+        backend::update_handshakes();
+
         glib::Continue(true)
     });
 }
@@ -236,13 +240,13 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+            let _bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
 
-            if backend::is_scan_process() {
+            /*if backend::is_scan_process() {
                 app_data.app_gui.scan_but.emit_clicked();
             }
 
-            app_data.capture_gui.show(backend::get_aps()[&bssid].clone());
+            app_data.capture_gui.show(backend::get_aps()[&bssid].clone());*/
         }));
 }
 

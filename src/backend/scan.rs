@@ -86,20 +86,15 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
         None => return Err(Error::new("No interface set")),
     };
 
-    if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
-        child.kill().unwrap();
-        child.wait().unwrap();
-    }
-
-    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
+    stop_scan_process();
 
     let mut proc_args = vec![
         iface.as_str(),
         "-a",
         "--output-format",
-        "csv",
+        "csv,cap",
         "-w",
-        SCAN_PATH,
+        LIVE_SCAN_PATH,
         "--write-interval",
         "1",
     ];
@@ -117,13 +112,38 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
 
 pub fn stop_scan_process() {
     if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
-        child.kill().unwrap();
-        child.wait().unwrap();
+        std::process::Command::new("kill")
+            .arg(child.id().to_string())
+            .status()
+            .unwrap();
+        child.wait().ok();
     }
 
     SCAN_PROC.lock().unwrap().take();
 
-    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
+    let old_path_exists = std::path::Path::new(&(OLD_SCAN_PATH.to_string() + "-01.cap")).exists();
+    let live_path_exists = std::path::Path::new(&(LIVE_SCAN_PATH.to_string() + "-01.cap")).exists();
+
+    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.csv").ok();
+
+    if !live_path_exists {
+        return;
+    }
+
+    if !old_path_exists {
+        std::fs::rename(LIVE_SCAN_PATH.to_string() + "-01.cap", OLD_SCAN_PATH.to_string() + "-01.cap").ok();
+        return;
+    }
+
+    std::process::Command::new("mergecap")
+        .args(&["-w", &(MERGE_SCAN_PATH.to_string() + "-01.cap"), &(OLD_SCAN_PATH.to_string() + "-01.cap"), &(LIVE_SCAN_PATH.to_string() + "-01.cap")])
+        .status()
+        .unwrap();
+
+    
+    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
+    std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
+    std::fs::rename(MERGE_SCAN_PATH.to_string() + "-01.cap", OLD_SCAN_PATH.to_string() + "-01.cap").ok();
 }
 
 pub fn get_airodump_data() -> HashMap<String, AP> {
@@ -139,7 +159,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         aps.insert(ap.0.clone(), ap.1.clone());
     }
 
-    let full_path = SCAN_PATH.to_string() + "-01.csv";
+    let full_path = LIVE_SCAN_PATH.to_string() + "-01.csv";
     let csv_file = match std::fs::read_to_string(full_path) {
         Ok(file) => file,
         Err(_) => return aps,
@@ -186,6 +206,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                 speed: result.speed.trim_start().to_string(),
                 power: result.power.trim_start().to_string(),
                 privacy: result.privacy.trim_start().to_string(),
+                handshake: false,
                 first_time_seen: result.first_time_seen.trim_start().to_string(),
                 last_time_seen: result.last_time_seen.trim_start().to_string(),
                 clients: HashMap::new(),

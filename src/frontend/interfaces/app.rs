@@ -55,6 +55,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,    // Power
         glib::Type::STRING, // Encryption
         glib::Type::I32,    // Clients
+        glib::Type::BOOL,     // Handshake
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // <color>
@@ -72,6 +73,7 @@ fn build_aps_view() -> TreeView {
         "Power",
         "Encryption",
         "Clients",
+        "Handshake",
         "First time seen",
         "Last time seen",
     ];
@@ -95,7 +97,7 @@ fn build_aps_view() -> TreeView {
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos as i32);
-        column.add_attribute(&text_renderer, "background", 10);
+        column.add_attribute(&text_renderer, "background", 11);
 
         view.append_column(&column);
     }

@@ -1,13 +1,10 @@
 use crate::backend;
 use crate::frontend::*;
 use crate::frontend::interfaces::*;
-use crate::types::*;
 
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::fs::File;
-use std::io::Write;
 use std::rc::Rc;
 
 fn run_scan(app_data: &AppData) {
@@ -123,13 +120,13 @@ fn connect_save_button(app_data: Rc<AppData>) {
         .app_gui
         .export_but
         .connect_clicked(clone!(@strong app_data => move |_| {
-            let aps = backend::get_aps();
-            if aps.is_empty() {
+            if backend::get_aps().is_empty() {
                 return;
             }
 
-            let aps = aps.values().cloned().collect::<Vec<AP>>();
-            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
+            if backend::is_scan_process() {
+                app_data.app_gui.scan_but.emit_clicked();
+            }
 
             let file_chooser_dialog = FileChooserDialog::new(
                 Some("Save Capture"),
@@ -138,15 +135,14 @@ fn connect_save_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.set_current_name("capture.json");
+            file_chooser_dialog.set_current_name("capture.cap");
             file_chooser_dialog.run_async(move |this, response| {
                 if response == ResponseType::Accept {
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
-                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
-                    file.write_all(json_data.as_bytes()).unwrap();
+                    backend::save_capture(&gio_file.path().unwrap().to_str().unwrap());
                 }
                 this.close();
             });

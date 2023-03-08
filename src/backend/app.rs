@@ -28,19 +28,12 @@ pub fn app_setup() -> Result<(), Error> {
         "aireplay-ng",
         "aircrack-ng",
         "gnome-terminal",
+        "mergecap"
     ])
 }
 
 pub fn app_cleanup() {
-    if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
-        child.kill().unwrap();
-        child.wait().unwrap();
-    }
-
-    if let Some(child) = CAPTURE_PROC.lock().unwrap().as_mut() {
-        child.kill().unwrap();
-        child.wait().unwrap();
-    }
+    super::stop_scan_process();
 
     for attacked_ap in super::get_attack_pool().iter_mut() {
         match &mut attacked_ap.1 .1 {
@@ -62,7 +55,9 @@ pub fn app_cleanup() {
         super::restore_network_manager().ok();
     }
 
-    std::fs::remove_file(SCAN_PATH.to_string() + "-01.csv").ok();
+    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.csv").ok();
+    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
+    std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
 }
 
 pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {

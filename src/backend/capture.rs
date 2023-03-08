@@ -1,74 +1,31 @@
-use crate::error::Error;
 use crate::globals::*;
-use crate::types::*;
 
-pub fn is_capture_process() -> bool {
-    CAPTURE_PROC.lock().unwrap().as_ref().is_some()
-}
+pub fn update_handshakes() {
+    let live_scan_output = std::process::Command::new("aircrack-ng")
+        .args([&(LIVE_SCAN_PATH.to_string() + "-01.cap")])
+        .output()
+        .unwrap();
 
-pub fn set_capture_process(ap: AP) -> Result<(), Error> {
-    let iface = match super::get_iface().as_ref() {
-        Some(res) => res.to_string(),
-        None => return Err(Error::new("No interface set")),
-    };
+    let old_scan_output = std::process::Command::new("aircrack-ng")
+        .args([&(OLD_SCAN_PATH.to_string() + "-01.cap")])
+        .output()
+        .unwrap();
 
-    if let Some(child) = CAPTURE_PROC.lock().unwrap().as_mut() {
-        child.kill().unwrap();
-        child.wait().unwrap();
+    let mut stdout = String::from_utf8_lossy(&live_scan_output.stdout).to_string();
+    stdout.push_str(&String::from_utf8_lossy(&old_scan_output.stdout).to_string());
+
+    let mut lines = stdout.lines();
+    let mut aps = super::get_aps();
+
+    while let Some(data) = lines.next() {
+        for (bssid, ap) in aps.iter_mut() {
+            if data.find(bssid).is_some() && data.contains("WPA (") && !data.contains("WPA (0 handshake)") {
+                ap.handshake = true;
+            }
+        }
     }
-
-    std::fs::remove_file(SCAN_PATH.to_string() + "-01.cap").ok();
-
-    let proc_args = vec![
-        iface.as_str(),
-        "-a",
-        "--output-format",
-        "cap",
-        "-w",
-        CAPTURE_PATH,
-        "--write-interval",
-        "1",
-        "--channel",
-        &ap.channel,
-        "--bssid",
-        &ap.bssid,
-    ];
-
-    let child = std::process::Command::new("airodump-ng")
-        .args(proc_args)
-        .stdout(std::process::Stdio::null())
-        .spawn()?;
-
-    CAPTURE_PROC.lock().unwrap().replace(child);
-
-    Ok(())
-}
-
-pub fn stop_capture_process() {
-    if let Some(child) = CAPTURE_PROC.lock().unwrap().as_mut() {
-        child.kill().unwrap();
-        child.wait().unwrap();
-    }
-
-    CAPTURE_PROC.lock().unwrap().take();
-
-    std::fs::remove_file(SCAN_PATH.to_string() + "-01.cap").ok();
-}
-
-pub fn has_handshake() -> Result<bool, Error> {
-    let output = std::process::Command::new("aircrack-ng")
-        .args([&(CAPTURE_PATH.to_string() + "-01.cap")])
-        .output()?;
-
-    if !output.status.success() {
-        return Ok(false);
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    
-    Ok(stdout.contains("WPA (") && !stdout.contains("WPA (0 handshake)"))
 }
 
 pub fn save_capture(path: &str) {
-    std::fs::copy(CAPTURE_PATH.to_string() + "-01.cap", path).ok();
+    std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path).ok();
 }

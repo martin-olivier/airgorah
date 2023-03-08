@@ -1,5 +1,4 @@
 mod deauth;
-mod capture;
 mod interface;
 mod app;
 mod scan;
@@ -13,6 +12,5 @@ pub fn connect(app_data: Rc<AppData>) {
     scan::connect(app_data.clone());
     interface::connect(app_data.clone());
     deauth::connect(app_data.clone());
-    capture::connect(app_data.clone());
     decrypt::connect(app_data);
 }
