@@ -1,7 +1,6 @@
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
-use std::collections::HashMap;
 use std::process::Command;
 use std::sync::MutexGuard;
 
@@ -10,20 +9,6 @@ pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Re
         Some(res) => res,
         None => return Err(Error::new("No interface set")),
     };
-
-    // Set channel focus
-
-    let mut channel_select = Command::new("airodump-ng")
-        .args(["-c", &ap.channel, "--bssid", &ap.bssid, &iface])
-        .stdout(std::process::Stdio::null())
-        .spawn()?;
-
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
-    channel_select.kill()?;
-    channel_select.wait()?;
-
-    // Start deauth process
 
     let mut attack_pool = super::get_attack_pool();
 
@@ -74,6 +59,6 @@ pub fn stop_deauth_attack(ap_bssid: &str) {
     attack_pool.remove(ap_bssid);
 }
 
-pub fn get_attack_pool() -> MutexGuard<'static, HashMap<String, (AP, AttackedClients)>> {
+pub fn get_attack_pool() -> MutexGuard<'static, AttackPool> {
     ATTACK_POOL.lock().unwrap()
 }

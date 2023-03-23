@@ -12,9 +12,7 @@ pub struct IconButton {
 impl IconButton {
     pub fn new(icon: &'static [u8]) -> Self {
         let pixbuf = Pixbuf::from_read(std::io::BufReader::new(icon)).unwrap();
-
         let image = Image::from_pixbuf(Some(&pixbuf));
-
         let handle = Button::builder().child(&image).build();
 
         Self { handle, image }

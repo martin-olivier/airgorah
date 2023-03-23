@@ -1,11 +1,10 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
-use crate::types::*;
+use crate::frontend::*;
+
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::fs::File;
-use std::io::Write;
 use std::rc::Rc;
 
 fn run_scan(app_data: &AppData) {
@@ -13,12 +12,12 @@ fn run_scan(app_data: &AppData) {
 
     let iface = match backend::get_iface() {
         Some(iface) => iface,
-        None => return app_data.interface_window.show(),
+        None => return app_data.interface_gui.window.show(),
     };
 
-    if !app_data.ghz_2_4_but.is_active() && !app_data.ghz_5_but.is_active() {
+    if !app_data.app_gui.ghz_2_4_but.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
         return ErrorDialog::spawn(
-            &app_data.main_window,
+            &app_data.app_gui.window,
             "Error",
             "You need to select at least one frequency band",
             false,
@@ -27,25 +26,26 @@ fn run_scan(app_data: &AppData) {
 
     let mut bands = "".to_string();
 
-    if app_data.ghz_5_but.is_active() {
+    if app_data.app_gui.ghz_5_but.is_active() {
         if !backend::is_5ghz_supported(&iface).unwrap() {
             ErrorDialog::spawn(
-                &app_data.main_window,
+                &app_data.app_gui.window,
                 "Error",
                 "Your network card doesn't support 5GHz",
                 false,
             );
-            return app_data.ghz_5_but.set_active(false);
+            return app_data.app_gui.ghz_5_but.set_active(false);
         }
         bands.push('a');
     }
-    if app_data.ghz_2_4_but.is_active() {
+    if app_data.app_gui.ghz_2_4_but.is_active() {
         bands.push_str("bg");
     }
     args.push("--band");
     args.push(&bands);
 
     let channel_filter = app_data
+        .app_gui
         .channel_filter_entry
         .text()
         .as_str()
@@ -59,7 +59,7 @@ fn run_scan(app_data: &AppData) {
             }
             false => {
                 return ErrorDialog::spawn(
-                    &app_data.main_window,
+                    &app_data.app_gui.window,
                     "Error",
                     "You need to put a valid channel filter",
                     false,
@@ -70,7 +70,7 @@ fn run_scan(app_data: &AppData) {
 
     backend::set_scan_process(&args).unwrap_or_else(|e| {
         ErrorDialog::spawn(
-            &app_data.main_window,
+            &app_data.app_gui.window,
             "Error",
             &format!("Could not start scan process: {}", e),
             false,
@@ -78,12 +78,13 @@ fn run_scan(app_data: &AppData) {
     });
 
     app_data
+        .app_gui
         .scan_but
         .set_icon_name("media-playback-pause-symbolic");
 }
 
-pub fn connect_scan_button(app_data: Rc<AppData>) {
-    app_data.scan_but.connect_clicked(
+fn connect_scan_button(app_data: Rc<AppData>) {
+    app_data.app_gui.scan_but.connect_clicked(
         clone!(@strong app_data => move |this| match backend::is_scan_process() {
             true => {
                 backend::stop_scan_process();
@@ -96,71 +97,83 @@ pub fn connect_scan_button(app_data: Rc<AppData>) {
     );
 }
 
-pub fn connect_clear_button(app_data: Rc<AppData>) {
+fn connect_clear_button(app_data: Rc<AppData>) {
     app_data
+        .app_gui
         .clear_but
         .connect_clicked(clone!(@strong app_data => move |this| {
             backend::stop_scan_process();
             backend::get_aps().clear();
 
-            app_data.aps_model.clear();
-            app_data.cli_model.clear();
+            app_data.app_gui.aps_model.clear();
+            app_data.app_gui.cli_model.clear();
 
             this.set_sensitive(false);
             app_data
+                .app_gui
                 .scan_but
                 .set_icon_name("media-playback-start-symbolic");
         }));
 }
 
-pub fn connect_save_button(app_data: Rc<AppData>) {
+fn connect_save_button(app_data: Rc<AppData>) {
     app_data
+        .app_gui
         .export_but
         .connect_clicked(clone!(@strong app_data => move |_| {
-            let aps = backend::get_aps();
-
-            if aps.is_empty() {
-                return ErrorDialog::spawn(
-                    &app_data.main_window,
-                    "Error",
-                    "There is no data to export",
-                    false,
-                );
+            if backend::get_aps().is_empty() {
+                return;
             }
 
-            let aps = aps.values().cloned().collect::<Vec<AP>>();
-            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
+            let was_scanning = backend::is_scan_process();
 
-            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+            if was_scanning {
+                app_data.app_gui.scan_but.emit_clicked();
+            }
+
+            let file_chooser_dialog = FileChooserDialog::new(
                 Some("Save Capture"),
-                Some(&app_data.main_window),
+                Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
                 &[("Save", ResponseType::Accept)],
-            ));
+            );
 
-            file_chooser_dialog.set_current_name("capture.json");
-            file_chooser_dialog.run_async(move |this, response| {
+            file_chooser_dialog.set_current_name("capture.cap");
+            file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
-                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
-                    file.write_all(json_data.as_bytes()).unwrap();
+                    let path = gio_file.path().unwrap().to_str().unwrap().to_string();
+
+                    backend::save_capture(&path);
+
+                    for (_, ap) in backend::get_aps().iter_mut() {
+                        if ap.handshake {
+                            ap.saved_handshake = Some(path.to_owned());
+                        }
+                    }
                 }
+
                 this.close();
-            });
+
+                if was_scanning {
+                    app_data.app_gui.scan_but.emit_clicked();
+                }
+            }));
         }));
 }
 
-pub fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
+fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
     app_data
+        .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
             if backend::is_scan_process() {
-                if !this.is_active() && !app_data.ghz_5_but.is_active() {
+                if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
                     ErrorDialog::spawn(
-                        &app_data.main_window,
+                        &app_data.app_gui.window,
                         "Error",
                         "You need to select at least one frequency band",
                         false,
@@ -174,6 +187,7 @@ pub fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
 
 pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
     app_data
+        .app_gui
         .ghz_5_but
         .connect_toggled(clone!(@strong app_data => move |this| {
             let iface = match backend::get_iface() {
@@ -183,7 +197,7 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
 
             if !backend::is_5ghz_supported(&iface).unwrap() && this.is_active() {
                 ErrorDialog::spawn(
-                    &app_data.main_window,
+                    &app_data.app_gui.window,
                     "Error",
                     "Your network card doesn't support 5GHz",
                     false,
@@ -192,9 +206,9 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
             }
 
             if backend::is_scan_process() {
-                if !this.is_active() && !app_data.ghz_2_4_but.is_active() {
+                if !this.is_active() && !app_data.app_gui.ghz_2_4_but.is_active() {
                     ErrorDialog::spawn(
-                        &app_data.main_window,
+                        &app_data.app_gui.window,
                         "Error",
                         "You need to select at least one frequency band",
                         false,
@@ -206,10 +220,9 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
         }));
 }
 
-pub fn connect_channel_entry(app_data: Rc<AppData>) {
-    app_data
-        .channel_filter_entry
-        .connect_text_notify(clone!(@strong app_data => move |this| {
+fn connect_channel_entry(app_data: Rc<AppData>) {
+    app_data.app_gui.channel_filter_entry.connect_text_notify(
+        clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
                 .as_str()
@@ -222,23 +235,36 @@ pub fn connect_channel_entry(app_data: Rc<AppData>) {
             if backend::is_scan_process() {
                 run_scan(&app_data);
             }
-        }));
+        }),
+    );
 }
 
-pub fn connect_cursor_changed(app_data: Rc<AppData>) {
+fn connect_cursor_changed(app_data: Rc<AppData>) {
     app_data
+        .app_gui
         .aps_view
         .connect_cursor_changed(clone!(@strong app_data => move |this| {
             match this.selection().selected().is_some() {
                 true => {
-                    app_data.deauth_but.set_sensitive(true);
-                    app_data.capture_but.set_sensitive(true);
+                    app_data.app_gui.deauth_but.set_sensitive(true);
                 }
                 false => {
-                    app_data.deauth_but.set_sensitive(false);
-                    app_data.capture_but.set_sensitive(false);
+                    app_data.app_gui.deauth_but.set_sensitive(false);
+                    app_data.app_gui.capture_but.set_sensitive(false);
                 }
             };
-            app_data.cli_model.clear();
+            app_data.app_gui.cli_model.clear();
         }));
+}
+
+pub fn connect(app_data: Rc<AppData>) {
+    connect_scan_button(app_data.clone());
+    connect_clear_button(app_data.clone());
+    connect_save_button(app_data.clone());
+
+    connect_ghz_2_4_button(app_data.clone());
+    connect_ghz_5_button(app_data.clone());
+
+    connect_channel_entry(app_data.clone());
+    connect_cursor_changed(app_data);
 }

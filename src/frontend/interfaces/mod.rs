@@ -1,7 +1,32 @@
 pub mod app;
 pub mod deauth;
-pub mod dialog;
+pub mod decrypt;
+pub mod interface;
 
-pub use app::AppData;
-pub use deauth::DeauthWindow;
-pub use dialog::{ErrorDialog, InfoDialog};
+pub use app::AppGui;
+pub use deauth::DeauthGui;
+pub use decrypt::DecryptGui;
+pub use interface::InterfaceGui;
+
+pub struct AppData {
+    pub app_gui: AppGui,
+    pub interface_gui: InterfaceGui,
+    pub deauth_gui: DeauthGui,
+    pub decrypt_gui: DecryptGui,
+}
+
+impl AppData {
+    pub fn new(app: &gtk4::Application) -> Self {
+        let app_gui = AppGui::new(app);
+        let interface_gui = InterfaceGui::new(&app_gui.window);
+        let deauth_gui = DeauthGui::new(&app_gui.window);
+        let decrypt_gui = DecryptGui::new(&app_gui.window);
+
+        Self {
+            app_gui,
+            interface_gui,
+            deauth_gui,
+            decrypt_gui,
+        }
+    }
+}

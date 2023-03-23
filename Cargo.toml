@@ -1,6 +1,6 @@
 [package]
 name = "airgorah"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["Martin Olivier <martin.olivier@live.fr>"]
@@ -10,34 +10,31 @@ documentation = "https://github.com/martin-olivier/airgorah"
 description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
 keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
 readme = "README.md"
-exclude = ["/.github"]
+exclude = ["/.github", "/package", "/docs"]
 
 [dependencies]
-serde = { version = "1.0.104", features = ["derive"] }
-serde_json = "1.0.86"
-csv = "1.1.6"
-glib = "0.15.12"
+gtk4 = { version = "0.6.4", features = ["v4_6"] }
+glib = "0.17.5"
+serde = { version = "1.0.158", features = ["derive"] }
+serde_json = "1.0.94"
+csv = "1.2.1"
 sudo = "0.6.0"
-ctrlc = "3.2.3"
-regex = "1.6.0"
+ctrlc = "3.2.5"
+regex = "1.7.2"
 lazy_static = "1.4.0"
-which = "4.3.0"
-
-[dependencies.gtk4]
-version = "0.4.8"
-default-features = false
-features = ["v4_6"]
+ureq = { version = "2.6.2", features = ["json"] }
+which = "4.4.0"
 
 [package.metadata.deb]
 copyright = "2022, Martin Olivier"
 maintainer = "Martin Olivier <martin.olivier@live.fr>"
 license-file = [ "LICENSE" ]
 extended-description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
-depends = "pkexec, libgtk-4-1, dbus-x11, wireless-tools, aircrack-ng (>= 1.6)"
+depends = "gnome-terminal, pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, wireless-tools, aircrack-ng (>= 1.6), wireshark-common"
 priority = "optional"
 section = "utility"
 assets = [
-    ["target/release/airgorah", "/usr/bin/", "755"],
+    ["target/release/airgorah", "/usr/bin/airgorah", "755"],
     ["README.md", "/usr/share/doc/airgorah/README", "644"],
     ["icons/app_icon.png", "/usr/share/app-install/icons/airgorah.png", "644"],
     ["package/.desktop", "/usr/share/applications/com.martin-olivier.airgorah.desktop", "644"],

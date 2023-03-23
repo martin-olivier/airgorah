@@ -7,8 +7,8 @@
 <h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.1.0">
-    <img src="https://img.shields.io/badge/Version-0.1.0_(beta)-blue.svg" alt="version"/>
+  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.2.0">
+    <img src="https://img.shields.io/badge/Version-0.2.0_(beta)-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
@@ -27,8 +27,6 @@
 
 It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
-> This project is still in beta version, for the moment only deauth attacks are implemented. The list of future implementations is available [here](#future).
-
 `⭐ Don't forget to put a star if you like the project!`
 
 ## Legal
@@ -43,10 +41,12 @@ You will also need a wireless network card that supports `monitor mode` and `pac
 
 ## Installation
 
-You can find pre-built releases for `Debian` based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the package and install it with the following command:
+You can find pre-built releases for `Debian` based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the debian package and install it with the following command:
 
-```sh
-sudo apt install <path_to_deb_package>
+```
+wget https://github.com/martin-olivier/airgorah/releases/download/v0.2.0/airgorah_0.2.0_amd64.deb
+sudo apt update
+sudo apt install ./airgorah_0.2.0_amd64.deb
 ```
 
 Otherwise, if you'd like to compile from source, you can follow this [guide](docs/build_from_source.md).
@@ -61,11 +61,9 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## Future
 
-- [ ] WPA handshake capture
-- [ ] WPA handshake decryption (dictionary / bruteforce)
-- [ ] WPS attack feature
-- [ ] WEP attack feature
-- [ ] Provide releases for other linux distributions (Arch, Fedora, ...)
-- [ ] Provide releases for other architectures (amd, arm, ...)
+- [ ] Implement the setting page
+- [ ] Provide usage documentation
 - [ ] Improve the code quality and the documentation
 - [ ] Improve the UI
+- [ ] Provide releases for other linux distributions (Arch, Fedora, ...)
+- [ ] Provide releases for other architectures (arm, ...)

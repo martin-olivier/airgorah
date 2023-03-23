@@ -16,6 +16,8 @@ pub struct AP {
     pub speed: String,
     pub power: String,
     pub privacy: String,
+    pub handshake: bool,
+    pub saved_handshake: Option<String>,
     pub first_time_seen: String,
     pub last_time_seen: String,
     pub clients: HashMap<String, Client>,
