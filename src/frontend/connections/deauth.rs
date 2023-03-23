@@ -86,7 +86,7 @@ fn connect_attack_but(app_data: Rc<AppData>) {
         let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
 
         backend::launch_deauth_attack(backend::get_aps()[&bssid].clone(), params).unwrap_or_else(|e| {
-            return ErrorDialog::spawn(
+            ErrorDialog::spawn(
                 &app_data.app_gui.window,
                 "Error",
                 &format!("Could not start deauth process: {}", e),
