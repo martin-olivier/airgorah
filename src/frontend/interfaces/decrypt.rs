@@ -13,20 +13,20 @@ pub struct DecryptGui {
 impl DecryptGui {
     pub fn new(parent: &impl IsA<Window>) -> Self {
         let window = Window::builder()
-                .title("Decrypt Handshake")
-                .hide_on_close(true)
-                .default_width(500)
-                .default_height(200)
-                .resizable(false)
-                .transient_for(parent)
-                .modal(true)
-                .build();
+            .title("Decrypt Handshake")
+            .hide_on_close(true)
+            .default_width(500)
+            .default_height(200)
+            .resizable(false)
+            .transient_for(parent)
+            .modal(true)
+            .build();
 
         let handshake_entry = Entry::builder()
-                .placeholder_text("ex: handshake.cap")
-                .hexpand(true)
-                .editable(false)
-                .build();
+            .placeholder_text("ex: handshake.cap")
+            .hexpand(true)
+            .editable(false)
+            .build();
 
         let handshake_but = Button::from_icon_name("edit-find-symbolic");
 
@@ -42,10 +42,10 @@ impl DecryptGui {
         handshake_frame.set_child(Some(&handshake_box));
 
         let wordlist_entry = Entry::builder()
-                .placeholder_text("ex: rockyou.txt")
-                .hexpand(true)
-                .editable(false)
-                .build();
+            .placeholder_text("ex: rockyou.txt")
+            .hexpand(true)
+            .editable(false)
+            .build();
 
         let wordlist_but = Button::from_icon_name("edit-find-symbolic");
 

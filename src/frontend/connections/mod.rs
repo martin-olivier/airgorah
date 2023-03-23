@@ -1,8 +1,8 @@
-mod deauth;
-mod interface;
 mod app;
-mod scan;
+mod deauth;
 mod decrypt;
+mod interface;
+mod scan;
 
 use crate::frontend::interfaces::AppData;
 use std::rc::Rc;

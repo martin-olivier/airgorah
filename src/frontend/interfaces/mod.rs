@@ -1,12 +1,12 @@
 pub mod app;
-pub mod interface;
 pub mod deauth;
 pub mod decrypt;
+pub mod interface;
 
 pub use app::AppGui;
-pub use interface::InterfaceGui;
 pub use deauth::DeauthGui;
 pub use decrypt::DecryptGui;
+pub use interface::InterfaceGui;
 
 pub struct AppData {
     pub app_gui: AppGui,

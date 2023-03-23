@@ -131,18 +131,34 @@ pub fn stop_scan_process() {
     }
 
     if !old_path_exists {
-        std::fs::rename(LIVE_SCAN_PATH.to_string() + "-01.cap", OLD_SCAN_PATH.to_string() + "-01.cap").ok();
+        std::fs::rename(
+            LIVE_SCAN_PATH.to_string() + "-01.cap",
+            OLD_SCAN_PATH.to_string() + "-01.cap",
+        )
+        .ok();
         return;
     }
 
     std::process::Command::new("mergecap")
-        .args(&["-a", "-F", "pcap", "-w", &(MERGE_SCAN_PATH.to_string() + "-01.cap"), &(OLD_SCAN_PATH.to_string() + "-01.cap"), &(LIVE_SCAN_PATH.to_string() + "-01.cap")])
+        .args([
+            "-a",
+            "-F",
+            "pcap",
+            "-w",
+            &(MERGE_SCAN_PATH.to_string() + "-01.cap"),
+            &(OLD_SCAN_PATH.to_string() + "-01.cap"),
+            &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
+        ])
         .status()
         .unwrap();
-    
+
     std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
     std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
-    std::fs::rename(MERGE_SCAN_PATH.to_string() + "-01.cap", OLD_SCAN_PATH.to_string() + "-01.cap").ok();
+    std::fs::rename(
+        MERGE_SCAN_PATH.to_string() + "-01.cap",
+        OLD_SCAN_PATH.to_string() + "-01.cap",
+    )
+    .ok();
 }
 
 pub fn get_airodump_data() -> HashMap<String, AP> {
@@ -192,7 +208,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         let mut essid = result.essid.trim_start().to_string();
 
         if essid.is_empty() {
-            essid = format!("[Hidden ESSID] (length: {})", result.id_length.trim_start());
+            essid = format!("[Hidden] (len: {})", result.id_length.trim_start());
         }
 
         let old_data = aps.insert(
@@ -210,6 +226,10 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                         Some(ap) => ap.handshake,
                         None => false,
                     }
+                },
+                saved_handshake: match glob_aps.get(&bssid) {
+                    Some(ap) => ap.saved_handshake.clone(),
+                    None => None,
                 },
                 first_time_seen: result.first_time_seen.trim_start().to_string(),
                 last_time_seen: result.last_time_seen.trim_start().to_string(),

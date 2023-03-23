@@ -21,7 +21,14 @@ fn build_update_button() -> Button {
 fn build_decrypt_button() -> Button {
     Button::builder()
         .icon_name("utilities-terminal")
-        .tooltip_text("Open the decryption pannel")
+        .tooltip_text("Open the handshake decryption pannel")
+        .build()
+}
+
+fn build_settings_button() -> Button {
+    Button::builder()
+        .icon_name("preferences-system")
+        .tooltip_text("Open the settings pannel")
         .build()
 }
 
@@ -55,7 +62,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,    // Power
         glib::Type::STRING, // Encryption
         glib::Type::I32,    // Clients
-        glib::Type::BOOL,     // Handshake
+        glib::Type::STRING, // Handshake
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // <color>
@@ -95,7 +102,7 @@ fn build_aps_view() -> TreeView {
         }
 
         let text_renderer = CellRendererText::new();
-        column.pack_start(&text_renderer, true);
+        column.pack_start(&text_renderer, false);
         column.add_attribute(&text_renderer, "text", pos as i32);
         column.add_attribute(&text_renderer, "background", 11);
 
@@ -171,6 +178,7 @@ pub struct AppGui {
     pub about_button: Button,
     pub update_button: Button,
     pub decrypt_button: Button,
+    pub settings_button: Button,
 
     // Main window
     pub window: ApplicationWindow,
@@ -199,9 +207,11 @@ impl AppGui {
         let about_button = build_about_button();
         let update_button = build_update_button();
         let decrypt_button = build_decrypt_button();
+        let settings_button = build_settings_button();
 
         header_bar.pack_start(&about_button);
         header_bar.pack_start(&update_button);
+        header_bar.pack_end(&settings_button);
         header_bar.pack_end(&decrypt_button);
 
         update_button.hide();
@@ -237,7 +247,7 @@ impl AppGui {
 
         let export_but = Button::builder()
             .icon_name("media-floppy-symbolic")
-            .tooltip_text("Export the scan results to a JSON file")
+            .tooltip_text("Save the capture")
             .build();
 
         let top_but_box = CenterBox::new();
@@ -297,11 +307,15 @@ impl AppGui {
         separator.set_opacity(0.0);
 
         let deauth_but = IconTextButton::new(globals::DEAUTH_ICON, "Deauth Attack");
-        deauth_but.set_tooltip_text(Some("Perform (or stop) a deauth attack on the selected access point"));
+        deauth_but.set_tooltip_text(Some(
+            "Perform (or stop) a deauth attack on the selected access point",
+        ));
         deauth_but.set_sensitive(false);
 
-        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Handshake Capture");
-        capture_but.set_tooltip_text(Some("Capture a handshake from the selected access point"));
+        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Handshake Decryption");
+        capture_but.set_tooltip_text(Some(
+            "Decrypt a handshake captured on the selected access point",
+        ));
         capture_but.set_sensitive(false);
         capture_but.set_margin_bottom(10);
 
@@ -338,6 +352,7 @@ impl AppGui {
             about_button,
             update_button,
             decrypt_button,
+            settings_button,
             // Main window
             window,
             aps_model,

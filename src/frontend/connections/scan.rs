@@ -1,6 +1,6 @@
 use crate::backend;
-use crate::frontend::*;
 use crate::frontend::interfaces::*;
+use crate::frontend::*;
 
 use glib::clone;
 use gtk4::prelude::*;
@@ -45,7 +45,8 @@ fn run_scan(app_data: &AppData) {
     args.push(&bands);
 
     let channel_filter = app_data
-        .app_gui.channel_filter_entry
+        .app_gui
+        .channel_filter_entry
         .text()
         .as_str()
         .replace(' ', "");
@@ -124,7 +125,9 @@ fn connect_save_button(app_data: Rc<AppData>) {
                 return;
             }
 
-            if backend::is_scan_process() {
+            let was_scanning = backend::is_scan_process();
+
+            if was_scanning {
                 app_data.app_gui.scan_but.emit_clicked();
             }
 
@@ -136,16 +139,29 @@ fn connect_save_button(app_data: Rc<AppData>) {
             );
 
             file_chooser_dialog.set_current_name("capture.cap");
-            file_chooser_dialog.run_async(move |this, response| {
+            file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
-                    backend::save_capture(&gio_file.path().unwrap().to_str().unwrap());
+                    let path = gio_file.path().unwrap().to_str().unwrap().to_string();
+
+                    backend::save_capture(&path);
+
+                    for (_, ap) in backend::get_aps().iter_mut() {
+                        if ap.handshake {
+                            ap.saved_handshake = Some(path.to_owned());
+                        }
+                    }
                 }
+
                 this.close();
-            });
+
+                if was_scanning {
+                    app_data.app_gui.scan_but.emit_clicked();
+                }
+            }));
         }));
 }
 
@@ -205,10 +221,8 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
 }
 
 fn connect_channel_entry(app_data: Rc<AppData>) {
-    app_data
-        .app_gui
-        .channel_filter_entry
-        .connect_text_notify(clone!(@strong app_data => move |this| {
+    app_data.app_gui.channel_filter_entry.connect_text_notify(
+        clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
                 .as_str()
@@ -221,7 +235,8 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
             if backend::is_scan_process() {
                 run_scan(&app_data);
             }
-        }));
+        }),
+    );
 }
 
 fn connect_cursor_changed(app_data: Rc<AppData>) {
@@ -232,7 +247,6 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
             match this.selection().selected().is_some() {
                 true => {
                     app_data.app_gui.deauth_but.set_sensitive(true);
-                    app_data.app_gui.capture_but.set_sensitive(true);
                 }
                 false => {
                     app_data.app_gui.deauth_but.set_sensitive(false);
@@ -252,5 +266,5 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_ghz_5_button(app_data.clone());
 
     connect_channel_entry(app_data.clone());
-    connect_cursor_changed(app_data.clone());
+    connect_cursor_changed(app_data);
 }

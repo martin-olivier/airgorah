@@ -28,7 +28,7 @@ pub fn app_setup() -> Result<(), Error> {
         "aireplay-ng",
         "aircrack-ng",
         "gnome-terminal",
-        "mergecap"
+        "mergecap",
     ])
 }
 

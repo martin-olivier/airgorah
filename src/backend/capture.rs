@@ -12,14 +12,15 @@ pub fn update_handshakes() {
         .unwrap();
 
     let mut stdout = String::from_utf8_lossy(&live_scan_output.stdout).to_string();
-    stdout.push_str(&String::from_utf8_lossy(&old_scan_output.stdout).to_string());
+    stdout.push_str(&String::from_utf8_lossy(&old_scan_output.stdout));
 
-    let mut lines = stdout.lines();
+    let lines = stdout.lines();
     let mut aps = super::get_aps();
 
-    while let Some(data) = lines.next() {
+    for data in lines {
         for (bssid, ap) in aps.iter_mut() {
-            if data.contains(bssid) && data.contains("WPA (") && !data.contains("WPA (0 handshake)") {
+            if data.contains(bssid) && data.contains("WPA (") && !data.contains("WPA (0 handshake)")
+            {
                 ap.handshake = true;
             }
         }

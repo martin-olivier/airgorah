@@ -1,6 +1,6 @@
 use crate::backend;
-use crate::frontend::*;
 use crate::frontend::interfaces::*;
+use crate::frontend::*;
 use crate::list_store_get;
 
 use glib::clone;
@@ -69,5 +69,5 @@ fn connect_interface_select(app_data: Rc<AppData>) {
 
 pub fn connect(app_data: Rc<AppData>) {
     connect_interface_refresh(app_data.clone());
-    connect_interface_select(app_data.clone());
+    connect_interface_select(app_data);
 }

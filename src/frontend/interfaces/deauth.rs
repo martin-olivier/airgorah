@@ -1,6 +1,6 @@
+use crate::types::*;
 use gtk4::prelude::*;
 use gtk4::*;
-use crate::types::*;
 
 pub struct DeauthGui {
     pub window: Window,
@@ -16,14 +16,14 @@ pub struct DeauthGui {
 impl DeauthGui {
     pub fn new(parent: &impl IsA<Window>) -> Self {
         let window = Window::builder()
-                .title("Deauth")
-                .hide_on_close(true)
-                .default_width(300)
-                .default_height(300)
-                .resizable(false)
-                .transient_for(parent)
-                .modal(true)
-                .build();
+            .title("Deauth")
+            .hide_on_close(true)
+            .default_width(300)
+            .default_height(300)
+            .resizable(false)
+            .transient_for(parent)
+            .modal(true)
+            .build();
 
         let all_cli_but = CheckButton::with_label("Deauth all clients");
         let sel_cli_but = CheckButton::with_label("Deauth selected clients");
@@ -94,7 +94,8 @@ impl DeauthGui {
     }
 
     pub fn show(&self, ap: AP) {
-        self.window.set_title(Some(&format!("Deauth \"{}\"", ap.essid)));
+        self.window
+            .set_title(Some(&format!("Deauth \"{}\"", ap.essid)));
 
         self.sel_cli_but.set_active(false);
         self.all_cli_but.set_active(true);
@@ -103,7 +104,8 @@ impl DeauthGui {
 
         self.store.clear();
         for (_, cli) in ap.clients.iter() {
-            self.store.set(&self.store.append(), &[(0, &false), (1, &cli.mac)]);
+            self.store
+                .set(&self.store.append(), &[(0, &false), (1, &cli.mac)]);
         }
 
         self.window.show();

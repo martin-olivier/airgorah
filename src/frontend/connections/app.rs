@@ -1,16 +1,16 @@
 use crate::backend;
-use crate::frontend::*;
 use crate::frontend::interfaces::*;
+use crate::frontend::*;
 use crate::globals;
 use crate::list_store_get;
 use crate::types::*;
 
+use glib::clone;
+use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
 use std::time::Duration;
-use glib::clone;
-use gtk4::gdk_pixbuf::Pixbuf;
 
 fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
     let mut iter = storage.iter_first();
@@ -56,22 +56,25 @@ fn connect_about_button(app_data: Rc<AppData>) {
 }
 
 fn connect_update_button(app_data: Rc<AppData>) {
+    globals::UPDATE_PROC
+        .lock()
+        .unwrap()
+        .replace(backend::spawn_update_checker());
 
-    globals::UPDATE_PROC.lock().unwrap().replace(backend::spawn_update_checker());
+    glib::timeout_add_local(
+        Duration::from_millis(1000),
+        clone!(@strong app_data => move || {
+            let mut updater = globals::UPDATE_PROC.lock().unwrap();
 
-    glib::timeout_add_local(Duration::from_millis(1000), clone!(@strong app_data => move || {
-        let mut updater = globals::UPDATE_PROC.lock().unwrap();
-
-        if let Some(proc) = updater.as_mut() {
-            if proc.is_finished() {
-                if updater.take().unwrap().join().unwrap_or(false) == true {
-                    app_data.app_gui.update_button.show();
-                    return glib::Continue(false);
+            if let Some(proc) = updater.as_mut() {
+                if proc.is_finished() && updater.take().unwrap().join().unwrap_or(false) {
+                        app_data.app_gui.update_button.show();
+                        return glib::Continue(false);
                 }
             }
-        }
-        return glib::Continue(true);
-    }));
+            glib::Continue(true)
+        }),
+    );
 
     app_data
         .app_gui
@@ -90,6 +93,15 @@ fn connect_decrypt_button(app_data: Rc<AppData>) {
         }));
 }
 
+fn connect_settings_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .settings_button
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            InfoDialog::spawn(&app_data.app_gui.window, "Coming Soon", "The settings page will be available in a future release");
+        }));
+}
+
 fn connect_app_refresh(app_data: Rc<AppData>) {
     glib::timeout_add_local(Duration::from_millis(100), move || {
         match app_data.app_gui.aps_view.selection().selected() {
@@ -101,13 +113,16 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     true => {
                         app_data.app_gui.deauth_but.set_label("Stop Attack");
                         app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
-                        app_data.app_gui.capture_but.set_sensitive(false);
                     }
                     false => {
                         app_data.app_gui.deauth_but.set_label("Deauth Attack");
                         app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
-                        app_data.app_gui.capture_but.set_sensitive(true);
                     }
+                }
+
+                match backend::get_aps()[&bssid].handshake {
+                    true => app_data.app_gui.capture_but.set_sensitive(true),
+                    false => app_data.app_gui.capture_but.set_sensitive(false),
                 }
             }
             None => {
@@ -151,7 +166,13 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     (5, &ap.power.parse::<i32>().unwrap_or(-1)),
                     (6, &ap.privacy),
                     (7, &(ap.clients.len() as i32)),
-                    (8, &ap.handshake),
+                    (
+                        8,
+                        &match ap.handshake {
+                            true => "Captured",
+                            false => "",
+                        },
+                    ),
                     (9, &ap.first_time_seen),
                     (10, &ap.last_time_seen),
                     (11, &background_color.to_str()),
@@ -164,19 +185,21 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
             let clients = &aps[&bssid].clients;
 
             for (_, cli) in clients.iter() {
-                let it = match list_store_find(app_data.app_gui.cli_model.as_ref(), 0, cli.mac.as_str()) {
-                    Some(it) => it,
-                    None => app_data.app_gui.cli_model.append(),
-                };
+                let it =
+                    match list_store_find(app_data.app_gui.cli_model.as_ref(), 0, cli.mac.as_str())
+                    {
+                        Some(it) => it,
+                        None => app_data.app_gui.cli_model.append(),
+                    };
 
                 let background_color = match backend::get_attack_pool().get(&bssid) {
-                    Some(attack_target) => match &attack_target.1 {
+                    Some((_, attack_target)) => match &attack_target {
                         AttackedClients::All(_) => gdk::RGBA::RED,
                         AttackedClients::Selection(selection) => {
                             let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
 
-                            for sel in selection.iter() {
-                                if sel.0 == cli.mac.as_str() {
+                            for (sel, _) in selection.iter() {
+                                if sel == cli.mac.as_str() {
                                     color = gdk::RGBA::RED;
                                 }
                             }
@@ -240,13 +263,61 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            let _bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+            let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
 
-            /*if backend::is_scan_process() {
+            let ap = match backend::get_aps().get(&bssid) {
+                Some(ap) => ap.clone(),
+                None => return,
+            };
+
+            if !ap.handshake {
+                return;
+            }
+
+            if let Some(ref cap) = ap.saved_handshake {
+                return app_data.decrypt_gui.show(Some(cap.clone()));
+            }
+
+            let was_scanning = backend::is_scan_process();
+
+            if was_scanning {
                 app_data.app_gui.scan_but.emit_clicked();
             }
 
-            app_data.capture_gui.show(backend::get_aps()[&bssid].clone());*/
+            let file_chooser_dialog = FileChooserDialog::new(
+                Some("Save Capture"),
+                Some(&app_data.app_gui.window),
+                FileChooserAction::Save,
+                &[("Save", ResponseType::Accept)],
+            );
+
+            file_chooser_dialog.set_current_name("capture.cap");
+            file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
+                if response == ResponseType::Accept {
+                    let gio_file = match this.file() {
+                        Some(file) => file,
+                        None => return,
+                    };
+                    let path = gio_file.path().unwrap().to_str().unwrap().to_string();
+
+                    backend::save_capture(&path);
+
+                    for (_, ap) in backend::get_aps().iter_mut() {
+                        if ap.handshake {
+                            ap.saved_handshake = Some(path.to_owned());
+                        }
+                    }
+
+                    app_data.decrypt_gui.show(Some(path))
+                }
+
+                this.close();
+
+                if was_scanning {
+                    app_data.app_gui.scan_but.emit_clicked();
+                }
+            }));
+            //
         }));
 }
 
@@ -254,9 +325,10 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_about_button(app_data.clone());
     connect_update_button(app_data.clone());
     connect_decrypt_button(app_data.clone());
+    connect_settings_button(app_data.clone());
 
     connect_app_refresh(app_data.clone());
 
     connect_deauth_button(app_data.clone());
-    connect_capture_button(app_data.clone());
+    connect_capture_button(app_data);
 }
