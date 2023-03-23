@@ -208,7 +208,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         let mut essid = result.essid.trim_start().to_string();
 
         if essid.is_empty() {
-            essid = format!("[Hidden] (len: {})", result.id_length.trim_start());
+            essid = format!("[Hidden] (length: {})", result.id_length.trim_start());
         }
 
         let old_data = aps.insert(

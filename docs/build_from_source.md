@@ -15,13 +15,13 @@ Then, you will need to install `airgorah` dependencies:
 ### Debian (Ubuntu, PopOS, Mint, Kali)
 
 ```sh
-sudo apt install dbus-x11 libgtk-4-dev libglib2.0-dev aircrack-ng wireless-tools
+sudo apt install dbus-x11 libgtk-4-dev libglib2.0-dev aircrack-ng wireless-tools gnome-terminal wireshark-common
 ```
 
 ### Fedora
 
 ```sh
-sudo dnf install dbus-x11 gtk4-devel glib2-devel aircrack-ng wireless-tools-1
+sudo dnf install dbus-x11 gtk4-devel glib2-devel aircrack-ng wireless-tools-1 gnome-terminal wireshark-cli
 ```
 
 ## 3. Install Airgorah
