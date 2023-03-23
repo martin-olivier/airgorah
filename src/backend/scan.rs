@@ -136,10 +136,9 @@ pub fn stop_scan_process() {
     }
 
     std::process::Command::new("mergecap")
-        .args(&["-w", &(MERGE_SCAN_PATH.to_string() + "-01.cap"), &(OLD_SCAN_PATH.to_string() + "-01.cap"), &(LIVE_SCAN_PATH.to_string() + "-01.cap")])
+        .args(&["-a", "-F", "pcap", "-w", &(MERGE_SCAN_PATH.to_string() + "-01.cap"), &(OLD_SCAN_PATH.to_string() + "-01.cap"), &(LIVE_SCAN_PATH.to_string() + "-01.cap")])
         .status()
         .unwrap();
-
     
     std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
     std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
@@ -206,7 +205,12 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                 speed: result.speed.trim_start().to_string(),
                 power: result.power.trim_start().to_string(),
                 privacy: result.privacy.trim_start().to_string(),
-                handshake: false,
+                handshake: {
+                    match glob_aps.get(&bssid) {
+                        Some(ap) => ap.handshake,
+                        None => false,
+                    }
+                },
                 first_time_seen: result.first_time_seen.trim_start().to_string(),
                 last_time_seen: result.last_time_seen.trim_start().to_string(),
                 clients: HashMap::new(),

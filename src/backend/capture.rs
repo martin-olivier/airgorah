@@ -19,7 +19,7 @@ pub fn update_handshakes() {
 
     while let Some(data) = lines.next() {
         for (bssid, ap) in aps.iter_mut() {
-            if data.find(bssid).is_some() && data.contains("WPA (") && !data.contains("WPA (0 handshake)") {
+            if data.contains(bssid) && data.contains("WPA (") && !data.contains("WPA (0 handshake)") {
                 ap.handshake = true;
             }
         }

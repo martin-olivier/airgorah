@@ -151,7 +151,7 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     (5, &ap.power.parse::<i32>().unwrap_or(-1)),
                     (6, &ap.privacy),
                     (7, &(ap.clients.len() as i32)),
-                    (8, &false),
+                    (8, &ap.handshake),
                     (9, &ap.first_time_seen),
                     (10, &ap.last_time_seen),
                     (11, &background_color.to_str()),
