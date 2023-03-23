@@ -312,7 +312,7 @@ impl AppGui {
         ));
         deauth_but.set_sensitive(false);
 
-        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Decrypt handshake");
+        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Decrypt Handshake");
         capture_but.set_tooltip_text(Some(
             "Decrypt a handshake captured on the selected access point",
         ));
