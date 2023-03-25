@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::globals::*;
 use std::process::Command;
 
+/// Get the available interfaces
 pub fn get_interfaces() -> Result<Vec<String>, Error> {
     let cmd = Command::new("sh")
         .args(["-c", "iw dev | awk \'$1==\"Interface\"{print $2}\'"])
@@ -16,6 +17,7 @@ pub fn get_interfaces() -> Result<Vec<String>, Error> {
     Ok(out.split_terminator('\n').map(String::from).collect())
 }
 
+/// Check if an interface supports 5GHz
 pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
     let check_band_cmd = Command::new("iwlist").args([iface, "freq"]).output()?;
 
@@ -32,6 +34,7 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
     Ok(false)
 }
 
+/// Check if an interface is in monitor mode
 pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
@@ -48,6 +51,7 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     Ok(false)
 }
 
+/// enable monitor mode on an interface
 pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     kill_network_manager().ok();
 
@@ -83,6 +87,7 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     }
 }
 
+/// disable monitor mode on an interface
 pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
@@ -106,20 +111,24 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
     }
 }
 
+/// Get the current interface
 pub fn get_iface() -> Option<String> {
     IFACE.lock().unwrap().clone()
 }
 
+/// Set the current interface
 pub fn set_iface(iface: String) {
     IFACE.lock().unwrap().replace(iface);
 }
 
+/// Kill the network manager to avoid channel hopping conflicts
 pub fn kill_network_manager() -> Result<(), Error> {
     Command::new("airmon-ng").args(["check", "kill"]).output()?;
 
     Ok(())
 }
 
+/// Restore the network manager
 pub fn restore_network_manager() -> Result<(), Error> {
     Command::new("service")
         .args(["NetworkManager", "restart"])

@@ -9,6 +9,7 @@ use glib::clone;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
+use std::io::BufReader;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -36,7 +37,7 @@ fn connect_about_button(app_data: Rc<AppData>) {
         .app_gui
         .about_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-        let ico = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
+        let ico = Pixbuf::from_read(BufReader::new(globals::APP_ICON)).unwrap();
         let des = "A WiFi auditing software that can perform deauth attacks and passwords cracking";
 
         AboutDialog::builder()
