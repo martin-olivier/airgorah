@@ -60,13 +60,13 @@ impl DeauthGui {
         scroll.set_policy(PolicyType::Never, PolicyType::Automatic);
         scroll.set_child(Some(&view));
 
-        let but_box = Box::new(Orientation::Vertical, 10);
-        but_box.append(&all_cli_but);
-        but_box.append(&sel_cli_but);
-        but_box.append(&scroll);
+        let deauth_box = Box::new(Orientation::Vertical, 2);
+        deauth_box.append(&all_cli_but);
+        deauth_box.append(&sel_cli_but);
+        deauth_box.append(&scroll);
 
         let frame = Frame::new(None);
-        frame.set_child(Some(&but_box));
+        frame.set_child(Some(&deauth_box));
 
         let attack_but = Button::with_label("Attack");
 

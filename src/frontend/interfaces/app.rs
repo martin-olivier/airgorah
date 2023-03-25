@@ -71,34 +71,37 @@ fn build_aps_model() -> ListStore {
 
 fn build_aps_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
-    let colomn_names = [
-        "ESSID",
-        "BSSID",
-        "Band",
-        "Channel",
-        "Speed",
-        "Power",
-        "Encryption",
-        "Clients",
-        "First time seen",
-        "Last time seen",
-        "Handshake",
+    let colomns = [
+        ("ESSID", 68),
+        ("BSSID", 130),
+        ("Band", 62),
+        ("Channel", 80),
+        ("Speed", 68),
+        ("Power", 68),
+        ("Encryption", 94),
+        ("Clients", 72),
+        ("First time seen", 140),
+        ("Last time seen", 140),
+        ("Handshake", 96),
     ];
 
-    for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
+    for (pos, (colomn_name, colomn_size)) in colomns.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(colomn_name)
-            .resizable(true)
-            .min_width(50)
+            .resizable(false)
+            .fixed_width(colomn_size)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
-            .expand(true)
+            .expand(false)
             .build();
 
         if pos == 0 {
             let icon_renderer = CellRendererPixbuf::new();
             icon_renderer.set_property("icon-name", "network-wireless");
+
             column.pack_start(&icon_renderer, false);
+            column.set_expand(true);
+            column.set_min_width(colomn_size);
         }
 
         let text_renderer = CellRendererText::new();
@@ -143,7 +146,7 @@ fn build_cli_view() -> TreeView {
     for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(colomn_name)
-            .resizable(true)
+            .resizable(false)
             .min_width(50)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
