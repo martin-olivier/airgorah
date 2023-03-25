@@ -37,14 +37,7 @@ impl DeauthGui {
         sel_cli_but.set_margin_start(15);
         sel_cli_but.set_margin_bottom(15);
 
-        let but_box = Box::new(Orientation::Vertical, 10);
-        but_box.append(&all_cli_but);
-        but_box.append(&sel_cli_but);
-
         let store = ListStore::new(&[glib::Type::BOOL, glib::Type::STRING]);
-
-        let frame = Frame::new(None);
-        frame.set_child(Some(&but_box));
 
         let column = TreeViewColumn::new();
         column.set_title("Clients");
@@ -67,11 +60,18 @@ impl DeauthGui {
         scroll.set_policy(PolicyType::Never, PolicyType::Automatic);
         scroll.set_child(Some(&view));
 
+        let but_box = Box::new(Orientation::Vertical, 10);
+        but_box.append(&all_cli_but);
+        but_box.append(&sel_cli_but);
+        but_box.append(&scroll);
+
+        let frame = Frame::new(None);
+        frame.set_child(Some(&but_box));
+
         let attack_but = Button::with_label("Attack");
 
         let main_box = Box::new(Orientation::Vertical, 10);
         main_box.append(&frame);
-        main_box.append(&scroll);
         main_box.append(&attack_but);
 
         main_box.set_margin_bottom(10);

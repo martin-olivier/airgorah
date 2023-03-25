@@ -7,8 +7,8 @@
 <h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.2.0">
-    <img src="https://img.shields.io/badge/Version-0.2.0_(beta)-blue.svg" alt="version"/>
+  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.3.0">
+    <img src="https://img.shields.io/badge/Version-0.3.0_(beta)-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
@@ -44,9 +44,9 @@ You will also need a wireless network card that supports `monitor mode` and `pac
 You can find pre-built releases for `Debian` based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the debian package and install it with the following command:
 
 ```
-wget https://github.com/martin-olivier/airgorah/releases/download/v0.2.0/airgorah_0.2.0_amd64.deb
+wget https://github.com/martin-olivier/airgorah/releases/download/v0.3.0/airgorah_0.3.0_amd64.deb
 sudo apt update
-sudo apt install ./airgorah_0.2.0_amd64.deb
+sudo apt install ./airgorah_0.3.0_amd64.deb
 ```
 
 Otherwise, if you'd like to compile from source, you can follow this [guide](docs/build_from_source.md).
