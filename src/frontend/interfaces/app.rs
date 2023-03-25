@@ -62,9 +62,9 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,    // Power
         glib::Type::STRING, // Encryption
         glib::Type::I32,    // Clients
+        glib::Type::STRING, // First time seen
+        glib::Type::STRING, // First time seen
         glib::Type::STRING, // Handshake
-        glib::Type::STRING, // First time seen
-        glib::Type::STRING, // First time seen
         glib::Type::STRING, // <color>
     ])
 }
@@ -80,9 +80,9 @@ fn build_aps_view() -> TreeView {
         "Power",
         "Encryption",
         "Clients",
-        "Handshake",
         "First time seen",
         "Last time seen",
+        "Handshake",
     ];
 
     for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
@@ -210,9 +210,9 @@ impl AppGui {
         let settings_button = build_settings_button();
 
         header_bar.pack_start(&about_button);
+        header_bar.pack_start(&decrypt_button);
+        header_bar.pack_start(&settings_button);
         header_bar.pack_start(&update_button);
-        header_bar.pack_end(&settings_button);
-        header_bar.pack_end(&decrypt_button);
 
         update_button.hide();
 

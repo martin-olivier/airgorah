@@ -155,6 +155,11 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                 false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
             };
 
+            let handshake_status = match ap.handshake {
+                true => "Captured",
+                false => "",
+            };
+
             app_data.app_gui.aps_model.set(
                 &it,
                 &[
@@ -166,15 +171,9 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     (5, &ap.power.parse::<i32>().unwrap_or(-1)),
                     (6, &ap.privacy),
                     (7, &(ap.clients.len() as i32)),
-                    (
-                        8,
-                        &match ap.handshake {
-                            true => "Captured",
-                            false => "",
-                        },
-                    ),
-                    (9, &ap.first_time_seen),
-                    (10, &ap.last_time_seen),
+                    (8, &ap.first_time_seen),
+                    (9, &ap.last_time_seen),
+                    (10, &handshake_status),
                     (11, &background_color.to_str()),
                 ],
             );
@@ -223,6 +222,10 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
             }
         }
 
+        glib::Continue(true)
+    });
+
+    glib::timeout_add_local(Duration::from_millis(1500), || {
         backend::update_handshakes();
 
         glib::Continue(true)
@@ -317,7 +320,6 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                     app_data.app_gui.scan_but.emit_clicked();
                 }
             }));
-            //
         }));
 }
 
