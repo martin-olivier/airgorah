@@ -1,6 +1,5 @@
 #![allow(unused)]
 
-use clipboard::{ClipboardContext, ClipboardProvider};
 use gtk4::prelude::*;
 use gtk4::*;
 
@@ -75,11 +74,9 @@ impl UpdateDialog {
         dialog.add_button("Copy Link", ResponseType::Other(42));
 
         dialog.connect_response(|this, response| {
-            if response == ResponseType::Other(42) {
-                let clip: Result<ClipboardContext, _> = ClipboardProvider::new();
-
-                if let Ok(mut clip) = clip {
-                    clip.set_contents(link.to_string()).ok();
+            if response == ResponseType::Other(42) {     
+                if let Some(display) = gdk::Display::default() {
+                    display.clipboard().set_text(link);
                 }
             }
             this.close();
