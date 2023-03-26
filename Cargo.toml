@@ -25,6 +25,7 @@ regex = "1.7.2"
 lazy_static = "1.4.0"
 ureq = { version = "2.6.2", features = ["json"] }
 which = "4.4.0"
+clipboard = "0.5.0"
 
 [package.metadata.deb]
 copyright = "2023, Martin Olivier"

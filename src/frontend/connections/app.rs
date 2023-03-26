@@ -69,8 +69,8 @@ fn connect_update_button(app_data: Rc<AppData>) {
 
             if let Some(proc) = updater.as_mut() {
                 if proc.is_finished() && updater.take().unwrap().join().unwrap_or(false) {
-                        app_data.app_gui.update_button.show();
-                        return glib::Continue(false);
+                    app_data.app_gui.update_button.show();
+                    return glib::Continue(false);
                 }
             }
             glib::Continue(true)
@@ -81,7 +81,15 @@ fn connect_update_button(app_data: Rc<AppData>) {
         .app_gui
         .update_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-            InfoDialog::spawn(&app_data.app_gui.window, "Update available", "An update is available, you can download it on the following page:\n\nhttps://github.com/martin-olivier/airgorah/releases/latest");
+            let version = globals::VERSION;
+            let new_version = globals::NEW_VERSION.lock().unwrap();
+
+            let new_version = match new_version.as_ref() {
+                Some(result) => result.clone(),
+                None => "unknown".to_string(),
+            };
+
+            UpdateDialog::spawn(&app_data.app_gui.window, version, &new_version);
         }));
 }
 

@@ -28,4 +28,5 @@ lazy_static! {
     pub static ref APS: Mutex<HashMap<String, AP>> = Mutex::new(HashMap::new());
     pub static ref ATTACK_POOL: Mutex<AttackPool> = Mutex::new(HashMap::new());
     pub static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
+    pub static ref NEW_VERSION: Mutex<Option<String>> = Mutex::new(None);
 }
