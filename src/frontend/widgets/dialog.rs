@@ -59,7 +59,7 @@ impl UpdateDialog {
     pub fn spawn(parent: &impl IsA<Window>, version: &str, new_version: &str) {
         let link = "https://github.com/martin-olivier/airgorah/releases/latest";
         let title = format!("Update available ({} -> {})", version, new_version);
-        let body = format!("\nYou can download it on the following page:\n\n{}", link);
+        let body = format!("\nYou can download it from the following page:\n\n{}", link);
 
         let dialog = MessageDialog::builder()
             .text(title)

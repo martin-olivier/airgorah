@@ -4,19 +4,12 @@ use std::process::Command;
 
 /// Update the handshake capture status of all APs
 pub fn update_handshakes() {
-    let live_scan_output = Command::new("aircrack-ng")
-        .args([&(LIVE_SCAN_PATH.to_string() + "-01.cap")])
+    let capture_output = Command::new("aircrack-ng")
+        .args([&(LIVE_SCAN_PATH.to_string() + "-01.cap"), &(OLD_SCAN_PATH.to_string() + "-01.cap")])
         .output()
         .unwrap();
 
-    let old_scan_output = Command::new("aircrack-ng")
-        .args([&(OLD_SCAN_PATH.to_string() + "-01.cap")])
-        .output()
-        .unwrap();
-
-    let mut stdout = String::from_utf8_lossy(&live_scan_output.stdout).to_string();
-    stdout.push_str(&String::from_utf8_lossy(&old_scan_output.stdout));
-
+    let stdout = String::from_utf8_lossy(&capture_output.stdout).to_string();
     let lines = stdout.lines();
     let mut aps = get_aps();
 
