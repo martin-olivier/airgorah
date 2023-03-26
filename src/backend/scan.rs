@@ -212,12 +212,12 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         } else {
             "2.4 GHz".to_string()
         };
-
         let bssid = result.bssid.trim_start().to_string();
-
         let mut essid = result.essid.trim_start().to_string();
+        let mut hidden = false;
 
         if essid.is_empty() {
+            hidden = true;
             essid = format!("[Hidden] (length: {})", result.id_length.trim_start());
         }
 
@@ -231,6 +231,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                 speed: result.speed.trim_start().to_string(),
                 power: result.power.trim_start().to_string(),
                 privacy: result.privacy.trim_start().to_string(),
+                hidden,
                 handshake: {
                     match glob_aps.get(&bssid) {
                         Some(ap) => ap.handshake,
@@ -268,8 +269,8 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         }
     }
 
-    for ap in aps.iter() {
-        glob_aps.insert(ap.0.clone(), ap.1.clone());
+    for (bssid, ap) in aps.iter() {
+        glob_aps.insert(bssid.clone(), ap.clone());
     }
 
     aps

@@ -16,6 +16,7 @@ pub struct AP {
     pub speed: String,
     pub power: String,
     pub privacy: String,
+    pub hidden: bool,
     pub handshake: bool,
     pub saved_handshake: Option<String>,
     pub first_time_seen: String,

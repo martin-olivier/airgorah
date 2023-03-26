@@ -146,6 +146,13 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
         let aps = backend::get_airodump_data();
 
         for (bssid, ap) in aps.iter() {
+            if !backend::get_settings().display_hidden_ap && ap.hidden {
+                if let Some(iter) = list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str()) {
+                    app_data.app_gui.aps_model.remove(&iter);
+                }
+                continue;
+            }
+
             let it = match list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str()) {
                 Some(it) => it,
                 None => app_data.app_gui.aps_model.append(),

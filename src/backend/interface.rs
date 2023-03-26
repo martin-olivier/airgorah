@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::globals::*;
+use super::*;
 use std::process::Command;
 
 /// Get the available interfaces
@@ -58,6 +59,16 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     if is_monitor_mode(iface)? {
         return Ok(iface.to_string());
     }
+
+    Command::new("ifconfig").args([iface, "down"]).output()?;
+
+    match get_settings().mac_address.as_str() {
+        "random" => Command::new("macchanger").args(["-A", iface]).output()?,
+        "default" => Command::new("macchanger").args(["-p", iface]).output()?,
+        mac => Command::new("macchanger").args(["-m", mac, iface]).output()?,
+    };
+
+    Command::new("ifconfig").args([iface, "up"]).output()?;
 
     let old_interface_list = get_interfaces()?;
     let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;
@@ -123,7 +134,9 @@ pub fn set_iface(iface: String) {
 
 /// Kill the network manager to avoid channel hopping conflicts
 pub fn kill_network_manager() -> Result<(), Error> {
-    Command::new("airmon-ng").args(["check", "kill"]).output()?;
+    if get_settings().kill_network_manager {
+        Command::new("airmon-ng").args(["check", "kill"]).output()?;
+    }
 
     Ok(())
 }

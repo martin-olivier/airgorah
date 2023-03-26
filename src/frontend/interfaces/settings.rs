@@ -19,7 +19,7 @@ impl SettingsGui {
         let window = Window::builder()
             .title("Settings")
             .hide_on_close(true)
-            .default_width(200)
+            .default_width(250)
             .default_height(200)
             .resizable(false)
             .transient_for(parent)
