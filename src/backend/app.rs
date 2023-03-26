@@ -87,7 +87,8 @@ pub fn spawn_update_checker() -> JoinHandle<bool> {
         if let Ok(response) = ureq::get(url).call() {
             if let Ok(json) = response.into_json::<serde_json::Value>() {
                 if json["tag_name"] != VERSION {
-                    *NEW_VERSION.lock().unwrap() = Some(json["tag_name"].to_string());
+                    let new_version = json["tag_name"].as_str().unwrap_or("unknown");
+                    *NEW_VERSION.lock().unwrap() = Some(new_version.to_string());
                     return true;
                 }
             }
