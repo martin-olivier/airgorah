@@ -61,7 +61,7 @@ impl SettingsGui {
         let kill_network_manager = CheckButton::with_label("Kill NetworkManager");
         kill_network_manager.set_active(true);
 
-        let process_frame = Frame::new(Some("Processs"));
+        let process_frame = Frame::new(Some("Process"));
         process_frame.set_child(Some(&kill_network_manager));
 
         let save_but = Button::with_label("Save");
