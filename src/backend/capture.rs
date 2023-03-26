@@ -1,4 +1,5 @@
 use crate::globals::*;
+use super::*;
 use std::process::Command;
 
 /// Update the handshake capture status of all APs
@@ -17,7 +18,7 @@ pub fn update_handshakes() {
     stdout.push_str(&String::from_utf8_lossy(&old_scan_output.stdout));
 
     let lines = stdout.lines();
-    let mut aps = super::get_aps();
+    let mut aps = get_aps();
 
     for data in lines {
         for (bssid, ap) in aps.iter_mut() {

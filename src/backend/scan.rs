@@ -7,6 +7,7 @@ use std::sync::MutexGuard;
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
+use super::*;
 
 use serde::Deserialize;
 
@@ -88,7 +89,7 @@ pub fn is_valid_channel_filter(channel_filter: &str) -> bool {
 
 /// Set the scan process
 pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
-    let iface = match super::get_iface().as_ref() {
+    let iface = match get_iface().as_ref() {
         Some(res) => res.to_string(),
         None => return Err(Error::new("No interface set")),
     };
@@ -173,11 +174,11 @@ pub fn stop_scan_process() {
 pub fn get_airodump_data() -> HashMap<String, AP> {
     let mut aps: HashMap<String, AP> = HashMap::new();
 
-    for attacked_ap in super::get_attack_pool().iter() {
+    for attacked_ap in get_attack_pool().iter() {
         aps.insert(attacked_ap.0.clone(), attacked_ap.1 .0.clone());
     }
 
-    let mut glob_aps = super::get_aps();
+    let mut glob_aps = get_aps();
 
     for ap in glob_aps.iter() {
         aps.insert(ap.0.clone(), ap.1.clone());

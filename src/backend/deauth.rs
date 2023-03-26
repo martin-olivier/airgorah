@@ -1,17 +1,18 @@
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
+use super::*;
 use std::process::{Command, Stdio};
 use std::sync::MutexGuard;
 
 /// Launch a deauth attack on a specific AP
 pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Result<(), Error> {
-    let iface = match super::get_iface() {
+    let iface = match get_iface() {
         Some(res) => res,
         None => return Err(Error::new("No interface set")),
     };
 
-    let mut attack_pool = super::get_attack_pool();
+    let mut attack_pool = get_attack_pool();
 
     let attack_targets = match specific_clients {
         Some(specific_clients) => {
@@ -42,7 +43,7 @@ pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Re
 
 /// Stop a deauth attack on a specific AP
 pub fn stop_deauth_attack(ap_bssid: &str) {
-    let mut attack_pool = super::get_attack_pool();
+    let mut attack_pool = get_attack_pool();
 
     if let Some(attack_target) = attack_pool.get_mut(ap_bssid) {
         match &mut attack_target.1 {

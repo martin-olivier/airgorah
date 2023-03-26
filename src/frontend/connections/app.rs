@@ -99,7 +99,7 @@ fn connect_settings_button(app_data: Rc<AppData>) {
         .app_gui
         .settings_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-            InfoDialog::spawn(&app_data.app_gui.window, "Coming Soon", "The settings page will be available in a future release");
+            app_data.settings_gui.show();
         }));
 }
 

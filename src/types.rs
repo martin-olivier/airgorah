@@ -31,3 +31,20 @@ pub struct Client {
     pub first_time_seen: String,
     pub last_time_seen: String,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Settings {
+    pub mac_address: String,
+    pub display_hidden_ap: bool,
+    pub kill_network_manager: bool,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            mac_address: "random".to_string(),
+            display_hidden_ap: true,
+            kill_network_manager: true,
+        }
+    }
+}

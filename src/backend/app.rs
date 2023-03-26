@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
+use super::*;
 
 use std::thread::JoinHandle;
 
@@ -18,6 +19,8 @@ pub fn app_setup() -> Result<(), Error> {
         return Err(Error::new("Airgorah need root privilege to run"));
     }
 
+    load_settings();
+
     check_dependencies(&[
         "sh",
         "service",
@@ -30,14 +33,15 @@ pub fn app_setup() -> Result<(), Error> {
         "aircrack-ng",
         "gnome-terminal",
         "mergecap",
+        "macchanger",
     ])
 }
 
 /// Stop the scan process, kill all the attack process, and remove all the files created by the app
 pub fn app_cleanup() {
-    super::stop_scan_process();
+    stop_scan_process();
 
-    for attacked_ap in super::get_attack_pool().iter_mut() {
+    for attacked_ap in get_attack_pool().iter_mut() {
         match &mut attacked_ap.1 .1 {
             AttackedClients::All(child) => {
                 child.kill().unwrap();
@@ -53,8 +57,8 @@ pub fn app_cleanup() {
     }
 
     if let Some(iface) = IFACE.lock().unwrap().as_ref() {
-        super::disable_monitor_mode(iface).ok();
-        super::restore_network_manager().ok();
+        disable_monitor_mode(iface).ok();
+        restore_network_manager().ok();
     }
 
     std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.csv").ok();

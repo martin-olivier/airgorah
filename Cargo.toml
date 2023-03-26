@@ -17,6 +17,7 @@ gtk4 = { version = "0.6.4", features = ["v4_6"] }
 glib = "0.17.5"
 serde = { version = "1.0.158", features = ["derive"] }
 serde_json = "1.0.94"
+toml = "0.7.3"
 csv = "1.2.1"
 sudo = "0.6.0"
 ctrlc = "3.2.5"
@@ -30,13 +31,14 @@ copyright = "2023, Martin Olivier"
 maintainer = "Martin Olivier <martin.olivier@live.fr>"
 license-file = ["LICENSE"]
 extended-description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
-depends = "gnome-terminal, pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, wireless-tools, aircrack-ng (>= 1.6), wireshark-common"
+depends = "gnome-terminal, pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, wireless-tools, aircrack-ng (>= 1.6), wireshark-common, macchanger"
 priority = "optional"
 section = "utility"
 assets = [
     ["target/release/airgorah", "/usr/bin/airgorah", "755"],
     ["README.md", "/usr/share/doc/airgorah/README", "644"],
     ["icons/app_icon.png", "/usr/share/app-install/icons/airgorah.png", "644"],
+    ["package/config.toml", "/etc/airgorah/config.toml", "644"],
     ["package/.desktop", "/usr/share/applications/com.martin-olivier.airgorah.desktop", "644"],
     ["package/.policy", "/usr/share/polkit-1/actions/org.freedesktop.policykit.airgorah.policy", "755"],
 ]

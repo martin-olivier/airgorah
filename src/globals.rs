@@ -12,6 +12,8 @@ pub static LIVE_SCAN_PATH: &str = "/tmp/airgorah_live_scan";
 pub static OLD_SCAN_PATH: &str = "/tmp/airgorah_old_scan";
 pub static MERGE_SCAN_PATH: &str = "/tmp/airgorah_merge_scan";
 
+pub static CONFIG_PATH: &str = "/etc/airgorah/config.toml";
+
 pub static APP_ICON: &[u8] = include_bytes!("../icons/app_icon.png");
 pub static DEAUTH_ICON: &[u8] = include_bytes!("../icons/deauth.png");
 pub static STOP_ICON: &[u8] = include_bytes!("../icons/stop.png");
@@ -25,4 +27,5 @@ lazy_static! {
     pub static ref SCAN_PROC: Mutex<Option<Child>> = Mutex::new(None);
     pub static ref APS: Mutex<HashMap<String, AP>> = Mutex::new(HashMap::new());
     pub static ref ATTACK_POOL: Mutex<AttackPool> = Mutex::new(HashMap::new());
+    pub static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
 }

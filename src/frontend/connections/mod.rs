@@ -3,6 +3,7 @@ mod deauth;
 mod decrypt;
 mod interface;
 mod scan;
+mod settings;
 
 use crate::frontend::interfaces::AppData;
 use std::rc::Rc;
@@ -12,5 +13,6 @@ pub fn connect(app_data: Rc<AppData>) {
     scan::connect(app_data.clone());
     interface::connect(app_data.clone());
     deauth::connect(app_data.clone());
-    decrypt::connect(app_data);
+    decrypt::connect(app_data.clone());
+    settings::connect(app_data);
 }
