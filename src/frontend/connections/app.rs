@@ -155,7 +155,9 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
 
         for (bssid, ap) in aps.iter() {
             if !backend::get_settings().display_hidden_ap && ap.hidden {
-                if let Some(iter) = list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str()) {
+                if let Some(iter) =
+                    list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str())
+                {
                     app_data.app_gui.aps_model.remove(&iter);
                 }
                 continue;
@@ -313,13 +315,17 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             file_chooser_dialog.set_current_name("capture.cap");
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
+                    this.close();
+
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
                     let path = gio_file.path().unwrap().to_str().unwrap().to_string();
 
-                    backend::save_capture(&path);
+                    backend::save_capture(&path).unwrap_or_else(|e| {
+                        ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string(), false)
+                    });
 
                     for (_, ap) in backend::get_aps().iter_mut() {
                         if ap.handshake {
@@ -329,8 +335,6 @@ fn connect_capture_button(app_data: Rc<AppData>) {
 
                     app_data.decrypt_gui.show(Some(path))
                 }
-
-                this.close();
 
                 if was_scanning {
                     app_data.app_gui.scan_but.emit_clicked();

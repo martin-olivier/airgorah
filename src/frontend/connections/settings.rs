@@ -4,8 +4,8 @@ use crate::frontend::interfaces::*;
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::rc::Rc;
 use regex::Regex;
+use std::rc::Rc;
 
 fn connect_random_mac_button(app_data: Rc<AppData>) {
     app_data
@@ -52,30 +52,33 @@ fn connect_mac_entry(app_data: Rc<AppData>) {
 }
 
 fn connect_save_but(app_data: Rc<AppData>) {
-    app_data.settings_gui.save_but.connect_clicked(clone!(@strong app_data => move |_| {
-        let mut mac_address = crate::types::Settings::default().mac_address;
-        
-        if app_data.settings_gui.random_mac.is_active() {
-            mac_address = "random".to_string()
-        } else if app_data.settings_gui.default_mac.is_active() {
-            mac_address = "default".to_string()
-        } else if app_data.settings_gui.specific_mac.is_active() {
-            mac_address = app_data.settings_gui.mac_entry.text().to_string()
-        }
+    app_data
+        .settings_gui
+        .save_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let mut mac_address = crate::types::Settings::default().mac_address;
 
-        let display_hidden_ap = app_data.settings_gui.display_hidden_ap.is_active();
-        let kill_network_manager = app_data.settings_gui.kill_network_manager.is_active();
+            if app_data.settings_gui.random_mac.is_active() {
+                mac_address = "random".to_string()
+            } else if app_data.settings_gui.default_mac.is_active() {
+                mac_address = "default".to_string()
+            } else if app_data.settings_gui.specific_mac.is_active() {
+                mac_address = app_data.settings_gui.mac_entry.text().to_string()
+            }
 
-        let settings = crate::types::Settings {
-            mac_address,
-            display_hidden_ap,
-            kill_network_manager,
-        };
+            let display_hidden_ap = app_data.settings_gui.display_hidden_ap.is_active();
+            let kill_network_manager = app_data.settings_gui.kill_network_manager.is_active();
 
-        backend::save_settings(settings);
+            let settings = crate::types::Settings {
+                mac_address,
+                display_hidden_ap,
+                kill_network_manager,
+            };
 
-        app_data.settings_gui.window.hide();
-    }));
+            backend::save_settings(settings);
+
+            app_data.settings_gui.window.hide();
+        }));
 }
 
 pub fn connect(app_data: Rc<AppData>) {

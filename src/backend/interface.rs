@@ -1,6 +1,6 @@
+use super::*;
 use crate::error::Error;
 use crate::globals::*;
-use super::*;
 use std::process::Command;
 
 /// Get the available interfaces
@@ -65,7 +65,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     match get_settings().mac_address.as_str() {
         "random" => Command::new("macchanger").args(["-A", iface]).output()?,
         "default" => Command::new("macchanger").args(["-p", iface]).output()?,
-        mac => Command::new("macchanger").args(["-m", mac, iface]).output()?,
+        mac => Command::new("macchanger")
+            .args(["-m", mac, iface])
+            .output()?,
     };
 
     Command::new("ifconfig").args([iface, "up"]).output()?;

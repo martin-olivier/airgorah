@@ -61,9 +61,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## Future
 
-- [ ] Implement the setting page
 - [ ] Provide usage documentation
 - [ ] Improve the code quality and the documentation
-- [ ] Improve the UI
 - [ ] Provide releases for other linux distributions (Arch, Fedora, ...)
 - [ ] Provide releases for other architectures (arm, ...)

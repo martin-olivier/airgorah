@@ -1,6 +1,7 @@
 use crate::backend;
 use crate::frontend::widgets::*;
 use crate::globals;
+
 use gtk4::prelude::*;
 use gtk4::*;
 
@@ -71,7 +72,7 @@ fn build_aps_model() -> ListStore {
 
 fn build_aps_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
-    let colomns = [
+    let columns = [
         ("ESSID", 68),
         ("BSSID", 130),
         ("Band", 62),
@@ -85,11 +86,11 @@ fn build_aps_view() -> TreeView {
         ("Handshake", 96),
     ];
 
-    for (pos, (colomn_name, colomn_size)) in colomns.into_iter().enumerate() {
+    for (pos, (column_name, column_size)) in columns.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
-            .title(colomn_name)
+            .title(column_name)
             .resizable(false)
-            .fixed_width(colomn_size)
+            .fixed_width(column_size)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
             .expand(false)
@@ -101,7 +102,7 @@ fn build_aps_view() -> TreeView {
 
             column.pack_start(&icon_renderer, false);
             column.set_expand(true);
-            column.set_min_width(colomn_size);
+            column.set_min_width(column_size);
         }
 
         let text_renderer = CellRendererText::new();
@@ -135,7 +136,7 @@ fn build_cli_model() -> ListStore {
 
 fn build_cli_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
-    let colomn_names = [
+    let column_names = [
         "Station MAC",
         "Packets",
         "Power",
@@ -143,9 +144,9 @@ fn build_cli_view() -> TreeView {
         "Last time seen",
     ];
 
-    for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
+    for (pos, column_name) in column_names.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
-            .title(colomn_name)
+            .title(column_name)
             .resizable(false)
             .min_width(50)
             .sort_indicator(true)

@@ -141,13 +141,17 @@ fn connect_save_button(app_data: Rc<AppData>) {
             file_chooser_dialog.set_current_name("capture.cap");
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
+                    this.close();
+
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
                     let path = gio_file.path().unwrap().to_str().unwrap().to_string();
 
-                    backend::save_capture(&path);
+                    backend::save_capture(&path).unwrap_or_else(|e| {
+                        ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string(), false)
+                    });
 
                     for (_, ap) in backend::get_aps().iter_mut() {
                         if ap.handshake {
@@ -155,8 +159,6 @@ fn connect_save_button(app_data: Rc<AppData>) {
                         }
                     }
                 }
-
-                this.close();
 
                 if was_scanning {
                     app_data.app_gui.scan_but.emit_clicked();
@@ -225,7 +227,7 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
-                .replace(" ", "")
+                .replace(' ', "")
                 .chars()
                 .filter(|c| c.is_numeric() || *c == ',')
                 .collect::<String>();

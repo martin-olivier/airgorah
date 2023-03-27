@@ -74,7 +74,7 @@ impl UpdateDialog {
         dialog.add_button("Copy Link", ResponseType::Other(42));
 
         dialog.connect_response(|this, response| {
-            if response == ResponseType::Other(42) {     
+            if response == ResponseType::Other(42) {
                 if let Some(display) = gdk::Display::default() {
                     display.clipboard().set_text(link);
                 }

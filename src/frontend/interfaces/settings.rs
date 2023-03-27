@@ -1,7 +1,7 @@
+use crate::backend;
+
 use gtk4::prelude::*;
 use gtk4::*;
-
-use crate::backend;
 
 pub struct SettingsGui {
     pub window: Window,
@@ -106,8 +106,10 @@ impl SettingsGui {
             }
         };
 
-        self.display_hidden_ap.set_active(settings.display_hidden_ap);
-        self.kill_network_manager.set_active(settings.kill_network_manager);
+        self.display_hidden_ap
+            .set_active(settings.display_hidden_ap);
+        self.kill_network_manager
+            .set_active(settings.kill_network_manager);
 
         self.window.show();
     }

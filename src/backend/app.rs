@@ -1,7 +1,7 @@
+use super::*;
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
-use super::*;
 
 use std::thread::JoinHandle;
 
@@ -44,13 +44,13 @@ pub fn app_cleanup() {
     for attacked_ap in get_attack_pool().iter_mut() {
         match &mut attacked_ap.1 .1 {
             AttackedClients::All(child) => {
-                child.kill().unwrap();
-                child.wait().unwrap();
+                child.kill().ok();
+                child.wait().ok();
             }
             AttackedClients::Selection(child_list) => {
                 for (_, child) in child_list {
-                    child.kill().unwrap();
-                    child.wait().unwrap();
+                    child.kill().ok();
+                    child.wait().ok();
                 }
             }
         }

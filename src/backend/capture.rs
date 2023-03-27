@@ -1,11 +1,16 @@
-use crate::globals::*;
 use super::*;
+use crate::error::Error;
+use crate::globals::*;
+
 use std::process::Command;
 
 /// Update the handshake capture status of all APs
 pub fn update_handshakes() {
     let capture_output = Command::new("aircrack-ng")
-        .args([&(LIVE_SCAN_PATH.to_string() + "-01.cap"), &(OLD_SCAN_PATH.to_string() + "-01.cap")])
+        .args([
+            &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
+            &(OLD_SCAN_PATH.to_string() + "-01.cap"),
+        ])
         .output()
         .unwrap();
 
@@ -24,6 +29,7 @@ pub fn update_handshakes() {
 }
 
 /// Save the current capture to a file
-pub fn save_capture(path: &str) {
-    std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path).ok();
+pub fn save_capture(path: &str) -> Result<(), Error> {
+    std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path)?;
+    Ok(())
 }

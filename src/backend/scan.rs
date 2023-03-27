@@ -4,10 +4,10 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::MutexGuard;
 
+use super::*;
 use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
-use super::*;
 
 use serde::Deserialize;
 
