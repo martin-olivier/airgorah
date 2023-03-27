@@ -52,12 +52,9 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     Ok(false)
 }
 
-/// enable monitor mode on an interface
-pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
-    kill_network_manager().ok();
-
-    if is_monitor_mode(iface)? {
-        return Ok(iface.to_string());
+pub fn set_mac_address(iface: &str) -> Result<(), Error> {
+    if !is_monitor_mode(iface)? {
+        return Err(Error::new("Can't change MAC address, interface is not in monitor mode"));
     }
 
     Command::new("ifconfig").args([iface, "down"]).output()?;
@@ -71,6 +68,17 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     };
 
     Command::new("ifconfig").args([iface, "up"]).output()?;
+
+    Ok(())
+}
+
+/// enable monitor mode on an interface
+pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
+    kill_network_manager()?;
+
+    if is_monitor_mode(iface)? {
+        return Ok(iface.to_string());
+    }
 
     let old_interface_list = get_interfaces()?;
     let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;

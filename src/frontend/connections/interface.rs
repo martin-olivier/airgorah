@@ -47,8 +47,16 @@ fn connect_interface_select(app_data: Rc<AppData>) {
             };
             let iface = list_store_get!(app_data.interface_gui.interface_model, &iter, 0, String);
 
-            match crate::backend::enable_monitor_mode(&iface) {
+            match backend::enable_monitor_mode(&iface) {
                 Ok(res) => {
+                    backend::set_mac_address(&res).unwrap_or_else(|e| {
+                        ErrorDialog::spawn(
+                            &app_data.interface_gui.window,
+                            "Failed to set MAC address",
+                            &e.to_string(),
+                            false,
+                        );
+                    });
                     backend::set_iface(res.clone());
 
                     app_data.app_gui.iface_label.set_text(&res);
