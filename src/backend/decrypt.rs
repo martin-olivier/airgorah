@@ -5,14 +5,14 @@ use std::process::{Command, Stdio};
 /// Launch a new terminal window to run aircrack-ng to decrypt a handshake with the specified wordlist
 pub fn run_decrypt_process(handshake: &str, wordlist: &str) -> Result<(), Error> {
     let cmd = format!(
-        "gnome-terminal --hide-menubar --title \"Handshake Decryption\" -- sh -c \"aircrack-ng '{}' -w '{}' ; exec sh\"",
+        "aircrack-ng '{}' -w '{}' ; exec sh",
         handshake,
         wordlist
     );
 
-    Command::new("sh")
+    Command::new("gnome-terminal")
         .stdin(Stdio::piped())
-        .args(["-c", &cmd])
+        .args(["--hide-menubar", "--title", "Handshake Decryption", "--", "sh", "-c", &cmd])
         .output()?;
 
     Ok(())

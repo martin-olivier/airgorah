@@ -41,7 +41,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
-        .default_width(1280)
+        .default_width(1320)
         .default_height(620)
         .build();
 
