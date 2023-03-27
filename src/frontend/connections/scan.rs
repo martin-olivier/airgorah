@@ -225,8 +225,14 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
-                .as_str()
-                .replace(' ', "");
+                .replace(" ", "")
+                .chars()
+                .filter(|c| c.is_numeric() || *c == ',')
+                .collect::<String>();
+
+            if channel_filter != this.text() {
+                return this.set_text(&channel_filter);
+            }
 
             if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter) {
                 return;
