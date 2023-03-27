@@ -59,13 +59,17 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
 
     Command::new("ifconfig").args([iface, "down"]).output()?;
 
-    match get_settings().mac_address.as_str() {
+    let output = match get_settings().mac_address.as_str() {
         "random" => Command::new("macchanger").args(["-A", iface]).output()?,
         "default" => Command::new("macchanger").args(["-p", iface]).output()?,
         mac => Command::new("macchanger")
             .args(["-m", mac, iface])
             .output()?,
     };
+
+    if !output.status.success() {
+        return Err(Error::new("The MAC address is invalid. Change the value in the settings page."));
+    }
 
     Command::new("ifconfig").args([iface, "up"]).output()?;
 

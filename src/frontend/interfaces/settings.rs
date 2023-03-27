@@ -30,7 +30,7 @@ impl SettingsGui {
         let default_mac = CheckButton::with_label("Default MAC address");
         let specific_mac = CheckButton::with_label("Specific MAC address");
         let mac_entry = Entry::builder()
-            .placeholder_text("ex: A1:B2:C3:D4:E5:F6")
+            .placeholder_text("ex: 00:00:01:02:03:04")
             .hexpand(true)
             .editable(true)
             .sensitive(false)
