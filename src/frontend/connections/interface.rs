@@ -49,14 +49,19 @@ fn connect_interface_select(app_data: Rc<AppData>) {
 
             match backend::enable_monitor_mode(&iface) {
                 Ok(res) => {
-                    backend::set_mac_address(&res).unwrap_or_else(|e| {
-                        ErrorDialog::spawn(
+                    if let Err(e) = backend::set_mac_address(&res) {
+                        backend::disable_monitor_mode(&iface).ok();
+                        backend::restore_network_manager().ok();
+
+                        app_data.interface_gui.refresh_but.emit_clicked();
+
+                        return ErrorDialog::spawn(
                             &app_data.interface_gui.window,
                             "Failed to set MAC address",
                             &e.to_string(),
                             false,
                         );
-                    });
+                    }
                     backend::set_iface(res.clone());
 
                     app_data.app_gui.iface_label.set_text(&res);
@@ -64,13 +69,14 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     app_data.app_gui.scan_but.emit_clicked();
                 }
                 Err(e) => {
+                    app_data.interface_gui.refresh_but.emit_clicked();
+
                     ErrorDialog::spawn(
                         &app_data.interface_gui.window,
                         "Monitor mode failed",
                         &format!("Could not enable monitor mode on \"{}\":\n{}", iface, e),
                         false,
                     );
-                    app_data.interface_gui.refresh_but.emit_clicked();
                 }
             };
         }));

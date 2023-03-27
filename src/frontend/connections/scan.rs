@@ -68,14 +68,14 @@ fn run_scan(app_data: &AppData) {
         }
     }
 
-    backend::set_scan_process(&args).unwrap_or_else(|e| {
-        ErrorDialog::spawn(
+    if let Err(e) = backend::set_scan_process(&args) {
+        return ErrorDialog::spawn(
             &app_data.app_gui.window,
             "Error",
-            &format!("Could not start scan process: {}", e),
+            &format!("Could not start scan process:\n\n{}", e),
             false,
         )
-    });
+    }
 
     app_data
         .app_gui
@@ -149,9 +149,12 @@ fn connect_save_button(app_data: Rc<AppData>) {
                     };
                     let path = gio_file.path().unwrap().to_str().unwrap().to_string();
 
-                    backend::save_capture(&path).unwrap_or_else(|e| {
-                        ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string(), false)
-                    });
+                    if let Err(e) = backend::save_capture(&path) {
+                        if was_scanning {
+                            app_data.app_gui.scan_but.emit_clicked();
+                        }
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string(), false);
+                    }
 
                     for (_, ap) in backend::get_aps().iter_mut() {
                         if ap.handshake {

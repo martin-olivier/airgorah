@@ -52,6 +52,7 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     Ok(false)
 }
 
+// Set the MAC address of an interface
 pub fn set_mac_address(iface: &str) -> Result<(), Error> {
     if !is_monitor_mode(iface)? {
         return Err(Error::new("Can't change MAC address, interface is not in monitor mode"));
@@ -59,19 +60,29 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
 
     Command::new("ifconfig").args([iface, "down"]).output()?;
 
-    let output = match get_settings().mac_address.as_str() {
-        "random" => Command::new("macchanger").args(["-A", iface]).output()?,
-        "default" => Command::new("macchanger").args(["-p", iface]).output()?,
-        mac => Command::new("macchanger")
-            .args(["-m", mac, iface])
-            .output()?,
+    let success = match get_settings().mac_address.as_str() {
+        "random" => {
+            Command::new("macchanger").args(["-A", iface]).output()?;
+            true
+        }
+        "default" => {
+            Command::new("macchanger").args(["-p", iface]).output()?;
+            true
+        }
+        mac => {
+            Command::new("macchanger")
+                .args(["-m", mac, iface])
+                .output()?
+                .status
+                .success()
+        }
     };
 
-    if !output.status.success() {
+    Command::new("ifconfig").args([iface, "up"]).output()?;
+
+    if !success {
         return Err(Error::new("The MAC address is invalid. Change the value in the settings page."));
     }
-
-    Command::new("ifconfig").args([iface, "up"]).output()?;
 
     Ok(())
 }

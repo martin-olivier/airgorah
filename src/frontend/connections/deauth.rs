@@ -89,7 +89,7 @@ fn connect_attack_but(app_data: Rc<AppData>) {
             ErrorDialog::spawn(
                 &app_data.app_gui.window,
                 "Error",
-                &format!("Could not start deauth process: {}", e),
+                &format!("Could not start deauth process:\n\n{}", e),
                 false,
             );
         });
