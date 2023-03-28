@@ -170,6 +170,10 @@ pub fn kill_network_manager() -> Result<(), Error> {
 
 /// Restore the network manager
 pub fn restore_network_manager() -> Result<(), Error> {
+    if !get_settings().kill_network_manager {
+        return Ok(());
+    }
+
     Command::new("service")
         .args(["NetworkManager", "restart"])
         .output()?;
