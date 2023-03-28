@@ -9,9 +9,10 @@ jobs:
   release:
     name: "Deploy"
     runs-on: "ubuntu-22.04"
+    permissions: write-all
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
@@ -22,8 +23,9 @@ jobs:
       - name: Build project
         run: cargo deb
 
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Deploy release
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
           files: ./target/debian/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
