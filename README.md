@@ -44,9 +44,7 @@ You will also need a wireless network card that supports `monitor mode` and `pac
 You can find pre-built releases for `Debian` based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the debian package and install it with the following command:
 
 ```
-wget https://github.com/martin-olivier/airgorah/releases/download/v0.3.0/airgorah_0.3.0_amd64.deb
-sudo apt update
-sudo apt install ./airgorah_0.3.0_amd64.deb
+sudo apt install ~/Downloads/airgorah_0.3.0_amd64.deb
 ```
 
 Otherwise, if you'd like to compile from source, you can follow this [guide](docs/build_from_source.md).

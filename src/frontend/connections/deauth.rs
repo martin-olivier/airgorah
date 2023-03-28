@@ -9,16 +9,16 @@ use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
 
-fn get_selected_clis(storage: &ListStore) -> Vec<String> {
+fn get_selected_clients(storage: &ListStore) -> Vec<String> {
     let mut iter = storage.iter_first();
-    let mut selected_clis = vec![];
+    let mut selected_clients = vec![];
 
     while let Some(it) = iter {
         let check_val = list_store_get!(storage, &it, 0, bool);
         let mac_val = list_store_get!(storage, &it, 1, String);
 
         if check_val {
-            selected_clis.push(mac_val);
+            selected_clients.push(mac_val);
         }
 
         iter = match storage.iter_next(&it) {
@@ -27,7 +27,7 @@ fn get_selected_clis(storage: &ListStore) -> Vec<String> {
         }
     }
 
-    selected_clis
+    selected_clients
 }
 
 fn connect_all_cli_button(app_data: Rc<AppData>) {
@@ -48,7 +48,7 @@ fn connect_sel_cli_button(app_data: Rc<AppData>) {
         .connect_toggled(clone!(@strong app_data => move |_| {
             app_data.deauth_gui.view.set_sensitive(true);
 
-            if get_selected_clis(&app_data.deauth_gui.store).is_empty() {
+            if get_selected_clients(&app_data.deauth_gui.store).is_empty() {
                 app_data.deauth_gui.attack_but.set_sensitive(false);
             }
         }));
@@ -64,7 +64,7 @@ fn connect_toggle(app_data: Rc<AppData>) {
 
             app_data.deauth_gui.store.set_value(&iter, 0, &Value::from(&(!old_val)));
 
-            match get_selected_clis(&app_data.deauth_gui.store).is_empty() {
+            match get_selected_clients(&app_data.deauth_gui.store).is_empty() {
                 true => app_data.deauth_gui.attack_but.set_sensitive(false),
                 false => app_data.deauth_gui.attack_but.set_sensitive(true),
             };
@@ -74,7 +74,7 @@ fn connect_toggle(app_data: Rc<AppData>) {
 fn connect_attack_but(app_data: Rc<AppData>) {
     app_data.deauth_gui.attack_but.connect_clicked(clone!(@strong app_data => move |_| {
         let params = match app_data.deauth_gui.sel_cli_but.is_active() {
-            true => Some(get_selected_clis(&app_data.deauth_gui.store)),
+            true => Some(get_selected_clients(&app_data.deauth_gui.store)),
             false => None,
         };
 

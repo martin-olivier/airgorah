@@ -22,14 +22,14 @@ fn build_update_button() -> Button {
 fn build_decrypt_button() -> Button {
     Button::builder()
         .icon_name("utilities-terminal")
-        .tooltip_text("Open the handshake decryption pannel")
+        .tooltip_text("Open the handshake decryption panel")
         .build()
 }
 
 fn build_settings_button() -> Button {
     Button::builder()
         .icon_name("preferences-system")
-        .tooltip_text("Open the settings pannel")
+        .tooltip_text("Open the settings panel")
         .build()
 }
 
@@ -337,7 +337,7 @@ impl AppGui {
         scan_box.set_margin_top(10);
         scan_box.set_margin_end(10);
 
-        // Set main window childs
+        // Set main window child
 
         let panned = Paned::new(Orientation::Vertical);
         panned.set_wide_handle(true);
