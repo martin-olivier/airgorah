@@ -244,7 +244,7 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
     });
 
     glib::timeout_add_local(Duration::from_millis(1500), || {
-        backend::update_handshakes();
+        backend::update_handshakes().ok();
 
         glib::Continue(true)
     });

@@ -5,14 +5,13 @@ use crate::globals::*;
 use std::process::Command;
 
 /// Update the handshake capture status of all APs
-pub fn update_handshakes() {
+pub fn update_handshakes() -> Result<(), Error> {
     let capture_output = Command::new("aircrack-ng")
         .args([
             &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
             &(OLD_SCAN_PATH.to_string() + "-01.cap"),
         ])
-        .output()
-        .unwrap();
+        .output()?;
 
     let stdout = String::from_utf8_lossy(&capture_output.stdout).to_string();
     let lines = stdout.lines();
@@ -26,6 +25,7 @@ pub fn update_handshakes() {
             }
         }
     }
+    Ok(())
 }
 
 /// Save the current capture to a file

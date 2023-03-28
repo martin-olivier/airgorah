@@ -67,7 +67,7 @@ struct RawClient {
 
 /// Check if a scan is currently running
 pub fn is_scan_process() -> bool {
-    SCAN_PROC.lock().unwrap().as_ref().is_some()
+    SCAN_PROC.lock().unwrap().is_some()
 }
 
 /// Check if the content of the channel filter is valid
@@ -94,7 +94,7 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
         None => return Err(Error::new("No interface set")),
     };
 
-    stop_scan_process();
+    stop_scan_process().ok();
 
     let mut proc_args = vec![
         iface.as_str(),
@@ -119,12 +119,10 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
 }
 
 /// Stop the scan process
-pub fn stop_scan_process() {
+pub fn stop_scan_process() -> Result<(), Error> {
     if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
-        Command::new("kill")
-            .arg(child.id().to_string())
-            .status()
-            .unwrap();
+        Command::new("kill").arg(child.id().to_string()).status()?;
+
         child.wait().ok();
     }
 
@@ -136,7 +134,7 @@ pub fn stop_scan_process() {
     std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.csv").ok();
 
     if !live_path_exists {
-        return;
+        return Ok(());
     }
 
     if !old_path_exists {
@@ -145,7 +143,7 @@ pub fn stop_scan_process() {
             OLD_SCAN_PATH.to_string() + "-01.cap",
         )
         .ok();
-        return;
+        return Ok(());
     }
 
     std::process::Command::new("mergecap")
@@ -158,8 +156,7 @@ pub fn stop_scan_process() {
             &(OLD_SCAN_PATH.to_string() + "-01.cap"),
             &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
         ])
-        .status()
-        .unwrap();
+        .status()?;
 
     std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
     std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
@@ -168,6 +165,8 @@ pub fn stop_scan_process() {
         OLD_SCAN_PATH.to_string() + "-01.cap",
     )
     .ok();
+
+    Ok(())
 }
 
 /// Get the data captured from airodump

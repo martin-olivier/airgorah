@@ -55,7 +55,9 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
 // Set the MAC address of an interface
 pub fn set_mac_address(iface: &str) -> Result<(), Error> {
     if !is_monitor_mode(iface)? {
-        return Err(Error::new("Can't change MAC address, interface is not in monitor mode"));
+        return Err(Error::new(
+            "Can't change MAC address, interface is not in monitor mode",
+        ));
     }
 
     Command::new("ifconfig").args([iface, "down"]).output()?;
@@ -69,19 +71,19 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
             Command::new("macchanger").args(["-p", iface]).output()?;
             true
         }
-        mac => {
-            Command::new("macchanger")
-                .args(["-m", mac, iface])
-                .output()?
-                .status
-                .success()
-        }
+        mac => Command::new("macchanger")
+            .args(["-m", mac, iface])
+            .output()?
+            .status
+            .success(),
     };
 
     Command::new("ifconfig").args([iface, "up"]).output()?;
 
     if !success {
-        return Err(Error::new("The MAC address is invalid. Change the value in the settings page."));
+        return Err(Error::new(
+            "The MAC address is invalid. Change the value in the settings page.",
+        ));
     }
 
     Ok(())
@@ -131,7 +133,7 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
         return Err(Error::new("Failed to get current interface"));
     }
 
-    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout).unwrap();
+    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
 
     if !check_monitor_output.contains("type monitor") {
         return Ok(());

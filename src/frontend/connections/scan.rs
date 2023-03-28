@@ -74,7 +74,7 @@ fn run_scan(app_data: &AppData) {
             "Error",
             &format!("Could not start scan process:\n\n{}", e),
             false,
-        )
+        );
     }
 
     app_data
@@ -87,7 +87,7 @@ fn connect_scan_button(app_data: Rc<AppData>) {
     app_data.app_gui.scan_but.connect_clicked(
         clone!(@strong app_data => move |this| match backend::is_scan_process() {
             true => {
-                backend::stop_scan_process();
+                backend::stop_scan_process().ok();
                 this.set_icon_name("media-playback-start-symbolic");
             }
             false => {
@@ -102,7 +102,7 @@ fn connect_clear_button(app_data: Rc<AppData>) {
         .app_gui
         .clear_but
         .connect_clicked(clone!(@strong app_data => move |this| {
-            backend::stop_scan_process();
+            backend::stop_scan_process().ok();
             backend::get_aps().clear();
 
             app_data.app_gui.aps_model.clear();

@@ -48,13 +48,13 @@ pub fn stop_deauth_attack(ap_bssid: &str) {
     if let Some(attack_target) = attack_pool.get_mut(ap_bssid) {
         match &mut attack_target.1 {
             AttackedClients::All(child) => {
-                child.kill().unwrap();
-                child.wait().unwrap();
+                child.kill().ok();
+                child.wait().ok();
             }
             AttackedClients::Selection(child_list) => {
                 for (_cli, child) in child_list {
-                    child.kill().unwrap();
-                    child.wait().unwrap();
+                    child.kill().ok();
+                    child.wait().ok();
                 }
             }
         }

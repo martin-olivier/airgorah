@@ -39,7 +39,7 @@ pub fn app_setup() -> Result<(), Error> {
 
 /// Stop the scan process, kill all the attack process, and remove all the files created by the app
 pub fn app_cleanup() {
-    stop_scan_process();
+    stop_scan_process().ok();
 
     for attacked_ap in get_attack_pool().iter_mut() {
         match &mut attacked_ap.1 .1 {
