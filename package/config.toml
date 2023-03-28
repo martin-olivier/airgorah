@@ -1,0 +1,3 @@
+mac_address = "random"
+display_hidden_ap = true
+kill_network_manager = true

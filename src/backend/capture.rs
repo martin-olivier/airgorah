@@ -1,21 +1,21 @@
+use super::*;
+use crate::error::Error;
 use crate::globals::*;
 
-pub fn update_handshakes() {
-    let live_scan_output = std::process::Command::new("aircrack-ng")
-        .args([&(LIVE_SCAN_PATH.to_string() + "-01.cap")])
-        .output()
-        .unwrap();
+use std::process::Command;
 
-    let old_scan_output = std::process::Command::new("aircrack-ng")
-        .args([&(OLD_SCAN_PATH.to_string() + "-01.cap")])
-        .output()
-        .unwrap();
+/// Update the handshake capture status of all APs
+pub fn update_handshakes() -> Result<(), Error> {
+    let capture_output = Command::new("aircrack-ng")
+        .args([
+            &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
+            &(OLD_SCAN_PATH.to_string() + "-01.cap"),
+        ])
+        .output()?;
 
-    let mut stdout = String::from_utf8_lossy(&live_scan_output.stdout).to_string();
-    stdout.push_str(&String::from_utf8_lossy(&old_scan_output.stdout));
-
+    let stdout = String::from_utf8_lossy(&capture_output.stdout).to_string();
     let lines = stdout.lines();
-    let mut aps = super::get_aps();
+    let mut aps = get_aps();
 
     for data in lines {
         for (bssid, ap) in aps.iter_mut() {
@@ -25,8 +25,11 @@ pub fn update_handshakes() {
             }
         }
     }
+    Ok(())
 }
 
-pub fn save_capture(path: &str) {
-    std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path).ok();
+/// Save the current capture to a file
+pub fn save_capture(path: &str) -> Result<(), Error> {
+    std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path)?;
+    Ok(())
 }

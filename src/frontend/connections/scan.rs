@@ -68,14 +68,14 @@ fn run_scan(app_data: &AppData) {
         }
     }
 
-    backend::set_scan_process(&args).unwrap_or_else(|e| {
-        ErrorDialog::spawn(
+    if let Err(e) = backend::set_scan_process(&args) {
+        return ErrorDialog::spawn(
             &app_data.app_gui.window,
             "Error",
-            &format!("Could not start scan process: {}", e),
+            &format!("Could not start scan process:\n\n{}", e),
             false,
-        )
-    });
+        );
+    }
 
     app_data
         .app_gui
@@ -87,7 +87,7 @@ fn connect_scan_button(app_data: Rc<AppData>) {
     app_data.app_gui.scan_but.connect_clicked(
         clone!(@strong app_data => move |this| match backend::is_scan_process() {
             true => {
-                backend::stop_scan_process();
+                backend::stop_scan_process().ok();
                 this.set_icon_name("media-playback-start-symbolic");
             }
             false => {
@@ -102,7 +102,7 @@ fn connect_clear_button(app_data: Rc<AppData>) {
         .app_gui
         .clear_but
         .connect_clicked(clone!(@strong app_data => move |this| {
-            backend::stop_scan_process();
+            backend::stop_scan_process().ok();
             backend::get_aps().clear();
 
             app_data.app_gui.aps_model.clear();
@@ -141,13 +141,20 @@ fn connect_save_button(app_data: Rc<AppData>) {
             file_chooser_dialog.set_current_name("capture.cap");
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
+                    this.close();
+
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
                     let path = gio_file.path().unwrap().to_str().unwrap().to_string();
 
-                    backend::save_capture(&path);
+                    if let Err(e) = backend::save_capture(&path) {
+                        if was_scanning {
+                            app_data.app_gui.scan_but.emit_clicked();
+                        }
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string(), false);
+                    }
 
                     for (_, ap) in backend::get_aps().iter_mut() {
                         if ap.handshake {
@@ -155,8 +162,6 @@ fn connect_save_button(app_data: Rc<AppData>) {
                         }
                     }
                 }
-
-                this.close();
 
                 if was_scanning {
                     app_data.app_gui.scan_but.emit_clicked();
@@ -225,8 +230,14 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
-                .as_str()
-                .replace(' ', "");
+                .replace(' ', "")
+                .chars()
+                .filter(|c| c.is_numeric() || *c == ',')
+                .collect::<String>();
+
+            if channel_filter != this.text() {
+                return this.set_text(&channel_filter);
+            }
 
             if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter) {
                 return;

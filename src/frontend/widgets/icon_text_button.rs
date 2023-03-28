@@ -3,6 +3,7 @@
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
+use std::io::BufReader;
 
 pub struct IconTextButton {
     pub handle: Button,
@@ -15,7 +16,7 @@ impl IconTextButton {
         let but_box = Box::new(Orientation::Horizontal, 6);
         but_box.set_halign(Align::Center);
 
-        let pixbuf = Pixbuf::from_read(std::io::BufReader::new(icon)).unwrap();
+        let pixbuf = Pixbuf::from_read(BufReader::new(icon)).unwrap();
         let image = Image::from_pixbuf(Some(&pixbuf));
         let label = Label::with_mnemonic(text);
 
@@ -44,7 +45,7 @@ impl IconTextButton {
     }
 
     pub fn set_icon(&self, icon: &'static [u8]) {
-        let pixbuf = Pixbuf::from_read(std::io::BufReader::new(icon)).unwrap();
+        let pixbuf = Pixbuf::from_read(BufReader::new(icon)).unwrap();
         self.image.set_from_pixbuf(Some(&pixbuf))
     }
 

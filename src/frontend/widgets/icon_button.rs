@@ -3,6 +3,7 @@
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
+use std::io::BufReader;
 
 pub struct IconButton {
     pub handle: Button,
@@ -11,7 +12,7 @@ pub struct IconButton {
 
 impl IconButton {
     pub fn new(icon: &'static [u8]) -> Self {
-        let pixbuf = Pixbuf::from_read(std::io::BufReader::new(icon)).unwrap();
+        let pixbuf = Pixbuf::from_read(BufReader::new(icon)).unwrap();
         let image = Image::from_pixbuf(Some(&pixbuf));
         let handle = Button::builder().child(&image).build();
 
@@ -27,7 +28,7 @@ impl IconButton {
     }
 
     pub fn set_icon(&self, icon: &'static [u8]) {
-        let pixbuf = Pixbuf::from_read(std::io::BufReader::new(icon)).unwrap();
+        let pixbuf = Pixbuf::from_read(BufReader::new(icon)).unwrap();
         self.image.set_from_pixbuf(Some(&pixbuf))
     }
 

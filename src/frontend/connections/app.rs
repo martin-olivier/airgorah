@@ -9,6 +9,7 @@ use glib::clone;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
+use std::io::BufReader;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -36,7 +37,7 @@ fn connect_about_button(app_data: Rc<AppData>) {
         .app_gui
         .about_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-        let ico = Pixbuf::from_read(std::io::BufReader::new(globals::APP_ICON)).unwrap();
+        let ico = Pixbuf::from_read(BufReader::new(globals::APP_ICON)).unwrap();
         let des = "A WiFi auditing software that can perform deauth attacks and passwords cracking";
 
         AboutDialog::builder()
@@ -68,8 +69,8 @@ fn connect_update_button(app_data: Rc<AppData>) {
 
             if let Some(proc) = updater.as_mut() {
                 if proc.is_finished() && updater.take().unwrap().join().unwrap_or(false) {
-                        app_data.app_gui.update_button.show();
-                        return glib::Continue(false);
+                    app_data.app_gui.update_button.show();
+                    return glib::Continue(false);
                 }
             }
             glib::Continue(true)
@@ -80,7 +81,15 @@ fn connect_update_button(app_data: Rc<AppData>) {
         .app_gui
         .update_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-            InfoDialog::spawn(&app_data.app_gui.window, "Update available", "An update is available, you can download it on the following page:\n\nhttps://github.com/martin-olivier/airgorah/releases/latest");
+            let version = globals::VERSION;
+            let new_version = globals::NEW_VERSION.lock().unwrap();
+
+            let new_version = match new_version.as_ref() {
+                Some(result) => result.clone(),
+                None => "unknown".to_string(),
+            };
+
+            UpdateDialog::spawn(&app_data.app_gui.window, version, &new_version);
         }));
 }
 
@@ -98,7 +107,7 @@ fn connect_settings_button(app_data: Rc<AppData>) {
         .app_gui
         .settings_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-            InfoDialog::spawn(&app_data.app_gui.window, "Coming Soon", "The settings page will be available in a future release");
+            app_data.settings_gui.show();
         }));
 }
 
@@ -145,6 +154,15 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
         let aps = backend::get_airodump_data();
 
         for (bssid, ap) in aps.iter() {
+            if !backend::get_settings().display_hidden_ap && ap.hidden {
+                if let Some(iter) =
+                    list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str())
+                {
+                    app_data.app_gui.aps_model.remove(&iter);
+                }
+                continue;
+            }
+
             let it = match list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str()) {
                 Some(it) => it,
                 None => app_data.app_gui.aps_model.append(),
@@ -153,6 +171,11 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
             let background_color = match backend::get_attack_pool().contains_key(bssid) {
                 true => gdk::RGBA::RED,
                 false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+            };
+
+            let handshake_status = match ap.handshake {
+                true => "Captured",
+                false => "",
             };
 
             app_data.app_gui.aps_model.set(
@@ -166,15 +189,9 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
                     (5, &ap.power.parse::<i32>().unwrap_or(-1)),
                     (6, &ap.privacy),
                     (7, &(ap.clients.len() as i32)),
-                    (
-                        8,
-                        &match ap.handshake {
-                            true => "Captured",
-                            false => "",
-                        },
-                    ),
-                    (9, &ap.first_time_seen),
-                    (10, &ap.last_time_seen),
+                    (8, &ap.first_time_seen),
+                    (9, &ap.last_time_seen),
+                    (10, &handshake_status),
                     (11, &background_color.to_str()),
                 ],
             );
@@ -223,7 +240,11 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
             }
         }
 
-        backend::update_handshakes();
+        glib::Continue(true)
+    });
+
+    glib::timeout_add_local(Duration::from_millis(1500), || {
+        backend::update_handshakes().ok();
 
         glib::Continue(true)
     });
@@ -294,13 +315,17 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             file_chooser_dialog.set_current_name("capture.cap");
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
+                    this.close();
+
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
                     let path = gio_file.path().unwrap().to_str().unwrap().to_string();
 
-                    backend::save_capture(&path);
+                    backend::save_capture(&path).unwrap_or_else(|e| {
+                        ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string(), false)
+                    });
 
                     for (_, ap) in backend::get_aps().iter_mut() {
                         if ap.handshake {
@@ -311,13 +336,10 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                     app_data.decrypt_gui.show(Some(path))
                 }
 
-                this.close();
-
                 if was_scanning {
                     app_data.app_gui.scan_but.emit_clicked();
                 }
             }));
-            //
         }));
 }
 

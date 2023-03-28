@@ -1,6 +1,7 @@
 use crate::backend;
 use crate::frontend::widgets::*;
 use crate::globals;
+
 use gtk4::prelude::*;
 use gtk4::*;
 
@@ -21,14 +22,14 @@ fn build_update_button() -> Button {
 fn build_decrypt_button() -> Button {
     Button::builder()
         .icon_name("utilities-terminal")
-        .tooltip_text("Open the handshake decryption pannel")
+        .tooltip_text("Open the handshake decryption panel")
         .build()
 }
 
 fn build_settings_button() -> Button {
     Button::builder()
         .icon_name("preferences-system")
-        .tooltip_text("Open the settings pannel")
+        .tooltip_text("Open the settings panel")
         .build()
 }
 
@@ -40,7 +41,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
-        .default_width(1280)
+        .default_width(1320)
         .default_height(620)
         .build();
 
@@ -62,43 +63,46 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,    // Power
         glib::Type::STRING, // Encryption
         glib::Type::I32,    // Clients
+        glib::Type::STRING, // First time seen
+        glib::Type::STRING, // First time seen
         glib::Type::STRING, // Handshake
-        glib::Type::STRING, // First time seen
-        glib::Type::STRING, // First time seen
         glib::Type::STRING, // <color>
     ])
 }
 
 fn build_aps_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
-    let colomn_names = [
-        "ESSID",
-        "BSSID",
-        "Band",
-        "Channel",
-        "Speed",
-        "Power",
-        "Encryption",
-        "Clients",
-        "Handshake",
-        "First time seen",
-        "Last time seen",
+    let columns = [
+        ("ESSID", 68),
+        ("BSSID", 130),
+        ("Band", 62),
+        ("Channel", 80),
+        ("Speed", 68),
+        ("Power", 68),
+        ("Encryption", 94),
+        ("Clients", 72),
+        ("First time seen", 140),
+        ("Last time seen", 140),
+        ("Handshake", 96),
     ];
 
-    for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
+    for (pos, (column_name, column_size)) in columns.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
-            .title(colomn_name)
-            .resizable(true)
-            .min_width(50)
+            .title(column_name)
+            .resizable(false)
+            .fixed_width(column_size)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
-            .expand(true)
+            .expand(false)
             .build();
 
         if pos == 0 {
             let icon_renderer = CellRendererPixbuf::new();
             icon_renderer.set_property("icon-name", "network-wireless");
+
             column.pack_start(&icon_renderer, false);
+            column.set_expand(true);
+            column.set_min_width(column_size);
         }
 
         let text_renderer = CellRendererText::new();
@@ -132,7 +136,7 @@ fn build_cli_model() -> ListStore {
 
 fn build_cli_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
-    let colomn_names = [
+    let column_names = [
         "Station MAC",
         "Packets",
         "Power",
@@ -140,10 +144,10 @@ fn build_cli_view() -> TreeView {
         "Last time seen",
     ];
 
-    for (pos, colomn_name) in colomn_names.into_iter().enumerate() {
+    for (pos, column_name) in column_names.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
-            .title(colomn_name)
-            .resizable(true)
+            .title(column_name)
+            .resizable(false)
             .min_width(50)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
@@ -210,9 +214,9 @@ impl AppGui {
         let settings_button = build_settings_button();
 
         header_bar.pack_start(&about_button);
+        header_bar.pack_start(&decrypt_button);
+        header_bar.pack_start(&settings_button);
         header_bar.pack_start(&update_button);
-        header_bar.pack_end(&settings_button);
-        header_bar.pack_end(&decrypt_button);
 
         update_button.hide();
 
@@ -333,7 +337,7 @@ impl AppGui {
         scan_box.set_margin_top(10);
         scan_box.set_margin_end(10);
 
-        // Set main window childs
+        // Set main window child
 
         let panned = Paned::new(Orientation::Vertical);
         panned.set_wide_handle(true);

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use gtk4::prelude::*;
 use gtk4::*;
 
@@ -45,6 +47,38 @@ impl InfoDialog {
             .build();
 
         dialog.connect_response(|this, _| {
+            this.close();
+        });
+        dialog.show();
+    }
+}
+
+pub struct UpdateDialog;
+
+impl UpdateDialog {
+    pub fn spawn(parent: &impl IsA<Window>, version: &str, new_version: &str) {
+        let link = "https://github.com/martin-olivier/airgorah/releases/latest";
+        let title = format!("Update available ({} -> {})", version, new_version);
+        let body = format!("\nYou can download it from the following page:\n\n{}", link);
+
+        let dialog = MessageDialog::builder()
+            .text(title)
+            .secondary_text(body)
+            .decorated(true)
+            .message_type(MessageType::Info)
+            .modal(true)
+            .transient_for(parent)
+            .build();
+
+        dialog.add_button("Close", ResponseType::Close);
+        dialog.add_button("Copy Link", ResponseType::Other(42));
+
+        dialog.connect_response(|this, response| {
+            if response == ResponseType::Other(42) {
+                if let Some(display) = gdk::Display::default() {
+                    display.clipboard().set_text(link);
+                }
+            }
             this.close();
         });
         dialog.show();

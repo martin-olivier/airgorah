@@ -1,15 +1,23 @@
+use crate::error::Error;
+
 use std::process::{Command, Stdio};
 
-pub fn run_decrypt_process(handshake: &str, wordlist: &str) {
-    let cmd = format!(
-        "gnome-terminal --hide-menubar --title \"Handshake Decryption\" -- sh -c \"aircrack-ng '{}' -w '{}' ; exec sh\"",
-        handshake,
-        wordlist
-    );
+/// Launch a new terminal window to run aircrack-ng to decrypt a handshake with the specified wordlist
+pub fn run_decrypt_process(handshake: &str, wordlist: &str) -> Result<(), Error> {
+    let cmd = format!("aircrack-ng '{}' -w '{}' ; exec sh", handshake, wordlist);
 
-    Command::new("sh")
+    Command::new("gnome-terminal")
         .stdin(Stdio::piped())
-        .args(["-c", &cmd])
-        .output()
-        .ok();
+        .args([
+            "--hide-menubar",
+            "--title",
+            "Handshake Decryption",
+            "--",
+            "sh",
+            "-c",
+            &cmd,
+        ])
+        .output()?;
+
+    Ok(())
 }

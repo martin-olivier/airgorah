@@ -1,5 +1,6 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
+use crate::frontend::widgets::ErrorDialog;
 
 use glib::clone;
 use gtk4::prelude::*;
@@ -62,10 +63,19 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
 }
 
 fn connect_decrypt_button(app_data: Rc<AppData>) {
-    app_data.decrypt_gui.decrypt_but.connect_clicked(clone!(@strong app_data => move |_| {
-        backend::run_decrypt_process(app_data.decrypt_gui.handshake_entry.text().as_str(), app_data.decrypt_gui.wordlist_entry.text().as_str());
-        app_data.decrypt_gui.window.close();
-    }));
+    app_data
+        .decrypt_gui
+        .decrypt_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let handshake_entry = app_data.decrypt_gui.handshake_entry.text();
+            let wordlist_entry = app_data.decrypt_gui.wordlist_entry.text();
+
+            app_data.decrypt_gui.window.close();
+
+            backend::run_decrypt_process(&handshake_entry, &wordlist_entry).unwrap_or_else(|e| {
+                ErrorDialog::spawn(&app_data.app_gui.window, "Failed to run decryption", &e.to_string(), false);
+            });
+        }));
 }
 
 pub fn connect(app_data: Rc<AppData>) {

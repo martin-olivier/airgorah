@@ -1,0 +1,31 @@
+name: "Release"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: "Deploy"
+    runs-on: "ubuntu-22.04"
+    permissions: write-all
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build project
+        run: cargo deb
+
+      - name: Deploy release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./target/debian/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

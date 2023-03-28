@@ -31,6 +31,7 @@ fn connect_interface_refresh(app_data: Rc<AppData>) {
             }
 
             app_data.interface_gui.interface_view.set_active(if !ifaces.is_empty() { Some(0) } else { None });
+            app_data.interface_gui.select_but.set_sensitive(!ifaces.is_empty());
         }));
     app_data.interface_gui.refresh_but.emit_clicked();
 }
@@ -46,8 +47,21 @@ fn connect_interface_select(app_data: Rc<AppData>) {
             };
             let iface = list_store_get!(app_data.interface_gui.interface_model, &iter, 0, String);
 
-            match crate::backend::enable_monitor_mode(&iface) {
+            match backend::enable_monitor_mode(&iface) {
                 Ok(res) => {
+                    if let Err(e) = backend::set_mac_address(&res) {
+                        backend::disable_monitor_mode(&iface).ok();
+                        backend::restore_network_manager().ok();
+
+                        app_data.interface_gui.refresh_but.emit_clicked();
+
+                        return ErrorDialog::spawn(
+                            &app_data.interface_gui.window,
+                            "Failed to set MAC address",
+                            &e.to_string(),
+                            false,
+                        );
+                    }
                     backend::set_iface(res.clone());
 
                     app_data.app_gui.iface_label.set_text(&res);
@@ -55,13 +69,14 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     app_data.app_gui.scan_but.emit_clicked();
                 }
                 Err(e) => {
+                    app_data.interface_gui.refresh_but.emit_clicked();
+
                     ErrorDialog::spawn(
                         &app_data.interface_gui.window,
                         "Monitor mode failed",
                         &format!("Could not enable monitor mode on \"{}\":\n{}", iface, e),
                         false,
                     );
-                    app_data.interface_gui.refresh_but.emit_clicked();
                 }
             };
         }));
