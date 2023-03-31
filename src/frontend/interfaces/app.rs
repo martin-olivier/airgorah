@@ -73,7 +73,7 @@ fn build_aps_model() -> ListStore {
 fn build_aps_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
     let columns = [
-        ("ESSID", 140),
+        ("ESSID", 154),
         ("BSSID", 130),
         ("Band", 64),
         ("Channel", 86),
