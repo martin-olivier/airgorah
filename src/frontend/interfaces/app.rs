@@ -41,7 +41,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Airgorah")
-        .default_width(1320)
+        .default_width(1300)
         .default_height(620)
         .build();
 
@@ -73,24 +73,25 @@ fn build_aps_model() -> ListStore {
 fn build_aps_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
     let columns = [
-        ("ESSID", 68),
+        ("ESSID", 154),
         ("BSSID", 130),
-        ("Band", 62),
-        ("Channel", 80),
-        ("Speed", 68),
-        ("Power", 68),
-        ("Encryption", 94),
-        ("Clients", 72),
+        ("Band", 64),
+        ("Channel", 86),
+        ("Speed", 72),
+        ("Power", 72),
+        ("Encryption", 106),
+        ("Clients", 80),
         ("First time seen", 140),
         ("Last time seen", 140),
-        ("Handshake", 96),
+        ("Handshake", 106),
     ];
 
     for (pos, (column_name, column_size)) in columns.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(column_name)
-            .resizable(false)
+            .resizable(true)
             .fixed_width(column_size)
+            .min_width(column_size)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
             .expand(false)
@@ -102,7 +103,6 @@ fn build_aps_view() -> TreeView {
 
             column.pack_start(&icon_renderer, false);
             column.set_expand(true);
-            column.set_min_width(column_size);
         }
 
         let text_renderer = CellRendererText::new();
@@ -147,7 +147,7 @@ fn build_cli_view() -> TreeView {
     for (pos, column_name) in column_names.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(column_name)
-            .resizable(false)
+            .resizable(true)
             .min_width(50)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
