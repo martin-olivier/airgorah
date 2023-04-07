@@ -6,31 +6,33 @@ on:
       - main
     paths:
       - src/*
-      - .github/workflows/CI.yml
+      - icons/*
+      - package/*
+      - .github/workflows/*.yml
       - Cargo.toml
   pull_request:
     branches:
       - main
     paths:
       - src/*
-      - .github/workflows/CI.yml
+      - icons/*
+      - package/*
+      - .github/workflows/*.yml
       - Cargo.toml
-
-defaults:
-  run:
-    shell: bash
+  release:
+    types: [published]
 
 jobs:
-  conventional_commits:
-    name: conventional commits
-    runs-on: ubuntu-22.04
+  commits:
+    name: commits
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: webiny/action-conventional-commits@v1.0.5
+      - uses: webiny/action-conventional-commits@v1.1.0
 
   linter:
     name: linter
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -44,26 +46,35 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
 
-  ci:
+  build:
+    name: ubuntu-latest
+    runs-on: ubuntu-latest
     needs: linter
-    strategy:
-      fail-fast: false
-      matrix:
-        build: ['', --release]
-        include:
-          - build: ''
-            profile: debug
-          - build: --release
-            profile: release
-
-    name: ${{ matrix.profile }} build
-    runs-on: ubuntu-22.04
+    permissions: write-all
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Install build dependencies
         run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
 
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
       - name: Build project
-        run: cargo build ${{ matrix.build }}
+        run: cargo deb
+
+      - name: Save artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: airgorah_amd64.deb
+          path: ./target/debian/*.deb
+          if-no-files-found: error
+
+      - name: Upload binary
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./target/debian/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
