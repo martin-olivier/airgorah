@@ -7,6 +7,11 @@ pub enum AttackedClients {
     Selection(Vec<(String, Child)>),
 }
 
+pub enum AttackSoftware {
+    Aireplay,
+    Mdk4,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AP {
     pub essid: String,
