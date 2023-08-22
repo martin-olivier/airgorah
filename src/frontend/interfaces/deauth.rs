@@ -5,6 +5,8 @@ use gtk4::*;
 
 pub struct DeauthGui {
     pub window: Window,
+    pub aireplay_but: ToggleButton,
+    pub mdk4_but: ToggleButton,
     pub store: ListStore,
     pub view: TreeView,
     pub toggle: CellRendererToggle,
@@ -20,11 +22,24 @@ impl DeauthGui {
             .title("Deauth")
             .hide_on_close(true)
             .default_width(300)
-            .default_height(300)
+            .default_height(340)
             .resizable(false)
             .transient_for(parent)
             .modal(true)
             .build();
+
+        let aireplay_but = ToggleButton::with_label("aireplay-ng");
+        let mdk4_but = ToggleButton::with_label("mdk4");
+
+        aireplay_but.set_active(true);
+        mdk4_but.set_group(Some(&aireplay_but));
+
+        let soft_box = Box::new(Orientation::Horizontal, 10);
+        soft_box.append(&aireplay_but);
+        soft_box.append(&mdk4_but);
+
+        let soft_box_center = CenterBox::new();
+        soft_box_center.set_center_widget(Some(&soft_box));
 
         let all_cli_but = CheckButton::with_label("Deauth all clients");
         let sel_cli_but = CheckButton::with_label("Deauth selected clients");
@@ -66,13 +81,14 @@ impl DeauthGui {
         deauth_box.append(&sel_cli_but);
         deauth_box.append(&scroll);
 
-        let frame = Frame::new(None);
-        frame.set_child(Some(&deauth_box));
+        let deauth_frame = Frame::new(None);
+        deauth_frame.set_child(Some(&deauth_box));
 
-        let attack_but = Button::with_label("Attack");
+        let attack_but = Button::with_label("Deauth");
 
         let main_box = Box::new(Orientation::Vertical, 10);
-        main_box.append(&frame);
+        main_box.append(&soft_box_center);
+        main_box.append(&deauth_frame);
         main_box.append(&attack_but);
 
         main_box.set_margin_bottom(10);
@@ -84,6 +100,8 @@ impl DeauthGui {
 
         Self {
             window,
+            aireplay_but,
+            mdk4_but,
             store,
             view,
             toggle,

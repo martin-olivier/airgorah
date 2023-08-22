@@ -2,6 +2,7 @@ use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::widgets::*;
 use crate::list_store_get;
+use crate::types::AttackSoftware;
 
 use glib::clone;
 use glib::Value;
@@ -85,7 +86,12 @@ fn connect_attack_but(app_data: Rc<AppData>) {
 
         let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
 
-        backend::launch_deauth_attack(backend::get_aps()[&bssid].clone(), params).unwrap_or_else(|e| {
+        let attack_software = match app_data.deauth_gui.aireplay_but.is_active() {
+            true => AttackSoftware::Aireplay,
+            false => AttackSoftware::Mdk4,
+        };
+
+        backend::launch_deauth_attack(backend::get_aps()[&bssid].clone(), params, attack_software).unwrap_or_else(|e| {
             ErrorDialog::spawn(
                 &app_data.app_gui.window,
                 "Error",
