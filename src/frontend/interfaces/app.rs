@@ -22,14 +22,14 @@ fn build_update_button() -> Button {
 fn build_decrypt_button() -> Button {
     Button::builder()
         .icon_name("utilities-terminal")
-        .tooltip_text("Open the handshake decryption panel")
+        .tooltip_text("Handshake decryption")
         .build()
 }
 
 fn build_settings_button() -> Button {
     Button::builder()
         .icon_name("preferences-system")
-        .tooltip_text("Open the settings panel")
+        .tooltip_text("Settings")
         .build()
 }
 
