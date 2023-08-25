@@ -57,26 +57,6 @@ fn connect_about_button(app_data: Rc<AppData>) {
 }
 
 fn connect_update_button(app_data: Rc<AppData>) {
-    globals::UPDATE_PROC
-        .lock()
-        .unwrap()
-        .replace(backend::spawn_update_checker());
-
-    glib::timeout_add_local(
-        Duration::from_millis(1000),
-        clone!(@strong app_data => move || {
-            let mut updater = globals::UPDATE_PROC.lock().unwrap();
-
-            if let Some(proc) = updater.as_mut() {
-                if proc.is_finished() && updater.take().unwrap().join().unwrap_or(false) {
-                    app_data.app_gui.update_button.show();
-                    return glib::Continue(false);
-                }
-            }
-            glib::Continue(true)
-        }),
-    );
-
     app_data
         .app_gui
         .update_button
@@ -111,8 +91,8 @@ fn connect_settings_button(app_data: Rc<AppData>) {
         }));
 }
 
-fn connect_app_refresh(app_data: Rc<AppData>) {
-    glib::timeout_add_local(Duration::from_millis(100), move || {
+fn start_app_refresh(app_data: Rc<AppData>) {
+    glib::timeout_add_local(Duration::from_millis(100), clone!(@strong app_data => move || {
         match app_data.app_gui.aps_view.selection().selected() {
             Some((_, iter)) => {
                 let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
@@ -241,13 +221,52 @@ fn connect_app_refresh(app_data: Rc<AppData>) {
         }
 
         glib::Continue(true)
-    });
+    }));
 
-    glib::timeout_add_local(Duration::from_millis(1500), || {
-        backend::update_handshakes().ok();
+    glib::timeout_add_local(
+        Duration::from_millis(1000),
+        clone!(@strong app_data => move || {
+            let mut updater = globals::UPDATE_PROC.lock().unwrap();
 
-        glib::Continue(true)
+            if let Some(proc) = updater.as_mut() {
+                if proc.is_finished() {
+                    if updater.take().unwrap().join().unwrap_or(false) {
+                        app_data.app_gui.update_button.show();
+                    }
+                    return glib::Continue(false);
+                }
+            }
+            glib::Continue(true)
+        }),
+    );
+}
+
+fn start_handshake_refresh() {
+    std::thread::spawn(|| {
+        loop {
+            backend::update_handshakes().ok();
+            std::thread::sleep(Duration::from_millis(1500));
+        }
     });
+}
+
+fn start_update_checker() {
+    globals::UPDATE_PROC
+        .lock()
+        .unwrap()
+        .replace(
+            std::thread::spawn(|| {
+                let update = backend::check_update(globals::VERSION);
+
+                match update {
+                    Some(update) => {
+                        *globals::NEW_VERSION.lock().unwrap() = Some(update);
+                        true
+                    }
+                    None => false
+                }
+            })
+        );
 }
 
 fn connect_deauth_button(app_data: Rc<AppData>) {
@@ -349,7 +368,9 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_decrypt_button(app_data.clone());
     connect_settings_button(app_data.clone());
 
-    connect_app_refresh(app_data.clone());
+    start_app_refresh(app_data.clone());
+    start_handshake_refresh();
+    start_update_checker();
 
     connect_deauth_button(app_data.clone());
     connect_capture_button(app_data);

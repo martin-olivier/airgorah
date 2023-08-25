@@ -3,8 +3,6 @@ use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
 
-use std::thread::JoinHandle;
-
 /// Check if the user is root, and if all the dependencies are installed
 pub fn app_setup() -> Result<(), Error> {
     app_cleanup();
@@ -80,20 +78,17 @@ pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {
     Ok(())
 }
 
-/// Spawn a thread that will check if a new version is available
-pub fn spawn_update_checker() -> JoinHandle<bool> {
-    std::thread::spawn(|| {
-        let url = "https://api.github.com/repos/martin-olivier/airgorah/releases/latest";
+/// Check if a new version is available
+pub fn check_update(current_version: &str) -> Option<String> {
+    let url = "https://api.github.com/repos/martin-olivier/airgorah/releases/latest";
 
-        if let Ok(response) = ureq::get(url).call() {
-            if let Ok(json) = response.into_json::<serde_json::Value>() {
-                if json["tag_name"] != VERSION {
-                    let new_version = json["tag_name"].as_str().unwrap_or("unknown");
-                    *NEW_VERSION.lock().unwrap() = Some(new_version.to_string());
-                    return true;
-                }
+    if let Ok(response) = ureq::get(url).call() {
+        if let Ok(json) = response.into_json::<serde_json::Value>() {
+            if json["tag_name"] != current_version {
+                let new_version = json["tag_name"].as_str().unwrap_or("unknown").to_owned();                    
+                return Some(new_version);
             }
         }
-        false
-    })
+    }
+    None
 }
