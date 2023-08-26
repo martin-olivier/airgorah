@@ -23,7 +23,6 @@ pub fn app_setup() -> Result<(), Error> {
         "sh",
         "service",
         "iw",
-        "iwlist",
         "awk",
         "airmon-ng",
         "airodump-ng",
