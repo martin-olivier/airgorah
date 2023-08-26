@@ -22,6 +22,7 @@ pub fn app_setup() -> Result<(), Error> {
     check_dependencies(&[
         "sh",
         "service",
+        "ip",
         "iw",
         "awk",
         "airmon-ng",

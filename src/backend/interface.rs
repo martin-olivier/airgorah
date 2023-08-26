@@ -66,7 +66,7 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
         ));
     }
 
-    Command::new("ifconfig").args([iface, "down"]).output()?;
+    Command::new("ip").args(["link", "set", "dev", iface, "down"]).output()?;
 
     let success = match get_settings().mac_address.as_str() {
         "random" => {
@@ -84,7 +84,7 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
             .success(),
     };
 
-    Command::new("ifconfig").args([iface, "up"]).output()?;
+    Command::new("ip").args(["link", "set", "dev", iface, "up"]).output()?;
 
     if !success {
         return Err(Error::new(
