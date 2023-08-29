@@ -349,7 +349,6 @@ impl AppGui {
         main_box.append(&scan_box);
 
         window.set_child(Some(&main_box));
-        window.show();
 
         Self {
             // Header bar

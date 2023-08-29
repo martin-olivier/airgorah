@@ -62,7 +62,6 @@ impl InterfaceGui {
         vbox.append(&select_but);
 
         window.set_child(Some(&vbox));
-        window.show();
 
         Self {
             window,
