@@ -51,40 +51,6 @@ impl DecryptGui {
             .modal(true)
             .build();
 
-        let handshake_entry = Entry::builder()
-            .placeholder_text("ex: handshake.cap")
-            .hexpand(true)
-            .editable(false)
-            .build();
-
-        let handshake_but = Button::from_icon_name("edit-find-symbolic");
-
-        let handshake_frame = Frame::new(Some("Capture"));
-
-        let handshake_box = Box::new(Orientation::Horizontal, 4);
-        handshake_box.set_margin_start(4);
-        handshake_box.set_margin_end(4);
-        handshake_box.set_margin_bottom(4);
-        handshake_box.append(&handshake_entry);
-        handshake_box.append(&handshake_but);
-
-        handshake_frame.set_child(Some(&handshake_box));
-
-        //
-
-        let target_model = build_ap_model();
-        let target_view = build_ap_view(&target_model);
-
-        let target_frame = Frame::new(Some("Target"));
-
-        let target_box = Box::new(Orientation::Horizontal, 4);
-        target_box.set_margin_start(4);
-        target_box.set_margin_end(4);
-        target_box.set_margin_bottom(4);
-        target_box.append(&target_view);
-
-        target_frame.set_child(Some(&target_box));
-
         //
 
         let wordlist_entry = Entry::builder()
@@ -140,6 +106,42 @@ impl DecryptGui {
 
         //
 
+        let handshake_entry = Entry::builder()
+            .placeholder_text("ex: handshake.cap")
+            .hexpand(true)
+            .editable(false)
+            .build();
+
+        let handshake_but = Button::from_icon_name("edit-find-symbolic");
+
+        let handshake_frame = Frame::new(Some("Capture"));
+
+        let handshake_box = Box::new(Orientation::Horizontal, 4);
+        handshake_box.set_margin_start(4);
+        handshake_box.set_margin_end(4);
+        handshake_box.set_margin_bottom(4);
+        handshake_box.append(&handshake_entry);
+        handshake_box.append(&handshake_but);
+
+        handshake_frame.set_child(Some(&handshake_box));
+
+        //
+
+        let target_model = build_ap_model();
+        let target_view = build_ap_view(&target_model);
+
+        let target_frame = Frame::new(Some("Target"));
+
+        let target_box = Box::new(Orientation::Horizontal, 4);
+        target_box.set_margin_start(4);
+        target_box.set_margin_end(4);
+        target_box.set_margin_bottom(4);
+        target_box.append(&target_view);
+
+        target_frame.set_child(Some(&target_box));
+
+        //
+
         let decrypt_but = Button::with_label("Start Decryption");
         decrypt_but.set_sensitive(false);
 
@@ -149,10 +151,10 @@ impl DecryptGui {
         vbox.set_margin_start(10);
         vbox.set_margin_bottom(10);
 
-        vbox.append(&handshake_frame);
-        vbox.append(&target_frame);
         vbox.append(&stack_switcher);
         vbox.append(&stack);
+        vbox.append(&handshake_frame);
+        vbox.append(&target_frame);
         vbox.append(&decrypt_but);
 
         window.set_child(Some(&vbox));
