@@ -23,10 +23,14 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
     let phy_path = format!("/sys/class/net/{}/phy80211", iface);
 
     let phy_link = std::fs::read_link(phy_path)?;
-    let phy_name = phy_link.file_name().ok_or(Error::new("phy parsing error"))?;
+    let phy_name = phy_link
+        .file_name()
+        .ok_or(Error::new("phy parsing error"))?;
     let phy_name_str = phy_name.to_str().ok_or(Error::new("phy parsing error"))?;
 
-    let check_band_cmd = Command::new("iw").args(["phy", phy_name_str, "info"]).output()?;
+    let check_band_cmd = Command::new("iw")
+        .args(["phy", phy_name_str, "info"])
+        .output()?;
 
     if !check_band_cmd.status.success() {
         return Err(Error::new("No such interface"));
@@ -66,7 +70,9 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
         ));
     }
 
-    Command::new("ip").args(["link", "set", "dev", iface, "down"]).output()?;
+    Command::new("ip")
+        .args(["link", "set", "dev", iface, "down"])
+        .output()?;
 
     let success = match get_settings().mac_address.as_str() {
         "random" => {
@@ -84,7 +90,9 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
             .success(),
     };
 
-    Command::new("ip").args(["link", "set", "dev", iface, "up"]).output()?;
+    Command::new("ip")
+        .args(["link", "set", "dev", iface, "up"])
+        .output()?;
 
     if !success {
         return Err(Error::new(

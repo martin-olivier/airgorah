@@ -196,12 +196,18 @@ impl DecryptGui {
             let handshakes = backend::get_handshakes(&path).unwrap_or_default();
 
             if handshakes.is_empty() {
-                return ErrorDialog::spawn(&self.window, "Invalid capture", &format!("\"{}\" doesn't contain any valid handshake", path), false);
+                return ErrorDialog::spawn(
+                    &self.window,
+                    "Invalid capture",
+                    &format!("\"{}\" doesn't contain any valid handshake", path),
+                    false,
+                );
             }
 
             for (hs_bssid, hs_essid) in handshakes.iter() {
                 if hs_bssid == &bssid {
-                    self.target_model.insert_with_values(None, &[(0, &hs_bssid), (1, &hs_essid)]);
+                    self.target_model
+                        .insert_with_values(None, &[(0, &hs_bssid), (1, &hs_essid)]);
                 }
             }
 

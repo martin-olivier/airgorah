@@ -66,7 +66,7 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                     for (bssid, essid) in handshakes.iter() {
                         app_data.decrypt_gui.target_model.insert_with_values(None, &[(0, &bssid), (1, &essid)]);
                     }
-        
+
                     app_data.decrypt_gui.target_view.set_active(if !handshakes.is_empty() { Some(0) } else { None });
 
                     app_data.decrypt_gui.handshake_entry.set_text(file_path);
@@ -79,9 +79,12 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
 }
 
 fn connect_stack_notify(app_data: Rc<AppData>) {
-    app_data.decrypt_gui.stack.connect_visible_child_notify(clone!(@strong app_data => move |_| {
-        update_decrypt_button_status(app_data.clone());
-    }));
+    app_data
+        .decrypt_gui
+        .stack
+        .connect_visible_child_notify(clone!(@strong app_data => move |_| {
+            update_decrypt_button_status(app_data.clone());
+        }));
 }
 
 fn connect_wordlist_button(app_data: Rc<AppData>) {
@@ -111,23 +114,34 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
     );
 }
 
-
 fn connect_bruteforce_buttons(app_data: Rc<AppData>) {
-    app_data.decrypt_gui.lowercase_but.connect_toggled(clone!(@strong app_data => move |_| {
-        update_decrypt_button_status(app_data.clone());
-    }));
+    app_data
+        .decrypt_gui
+        .lowercase_but
+        .connect_toggled(clone!(@strong app_data => move |_| {
+            update_decrypt_button_status(app_data.clone());
+        }));
 
-    app_data.decrypt_gui.uppercase_but.connect_toggled(clone!(@strong app_data => move |_| {
-        update_decrypt_button_status(app_data.clone());
-    }));
+    app_data
+        .decrypt_gui
+        .uppercase_but
+        .connect_toggled(clone!(@strong app_data => move |_| {
+            update_decrypt_button_status(app_data.clone());
+        }));
 
-    app_data.decrypt_gui.numbers_but.connect_toggled(clone!(@strong app_data => move |_| {
-        update_decrypt_button_status(app_data.clone());
-    }));
+    app_data
+        .decrypt_gui
+        .numbers_but
+        .connect_toggled(clone!(@strong app_data => move |_| {
+            update_decrypt_button_status(app_data.clone());
+        }));
 
-    app_data.decrypt_gui.symbols_but.connect_toggled(clone!(@strong app_data => move |_| {
-        update_decrypt_button_status(app_data.clone());
-    }));
+    app_data
+        .decrypt_gui
+        .symbols_but
+        .connect_toggled(clone!(@strong app_data => move |_| {
+            update_decrypt_button_status(app_data.clone());
+        }));
 }
 
 fn connect_decrypt_button(app_data: Rc<AppData>) {

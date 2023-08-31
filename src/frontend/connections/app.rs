@@ -5,8 +5,8 @@ use crate::globals;
 use crate::list_store_get;
 use crate::types::*;
 
-use glib::ControlFlow;
 use glib::clone;
+use glib::ControlFlow;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
@@ -93,136 +93,139 @@ fn connect_settings_button(app_data: Rc<AppData>) {
 }
 
 fn start_app_refresh(app_data: Rc<AppData>) {
-    glib::timeout_add_local(Duration::from_millis(100), clone!(@strong app_data => move || {
-        match app_data.app_gui.aps_view.selection().selected() {
-            Some((_, iter)) => {
-                let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
-                let attack_pool = backend::get_attack_pool();
+    glib::timeout_add_local(
+        Duration::from_millis(100),
+        clone!(@strong app_data => move || {
+            match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, iter)) => {
+                    let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+                    let attack_pool = backend::get_attack_pool();
 
-                match attack_pool.contains_key(&bssid) {
-                    true => {
-                        app_data.app_gui.deauth_but.set_label("Stop Attack");
-                        app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
-                    }
-                    false => {
-                        app_data.app_gui.deauth_but.set_label("Deauth Attack");
-                        app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
-                    }
-                }
-
-                match backend::get_aps()[&bssid].handshake {
-                    true => app_data.app_gui.capture_but.set_sensitive(true),
-                    false => app_data.app_gui.capture_but.set_sensitive(false),
-                }
-            }
-            None => {
-                app_data.app_gui.deauth_but.set_label("Deauth Attack");
-                app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
-            }
-        };
-
-        match backend::get_aps().is_empty() {
-            true => {
-                app_data.app_gui.clear_but.set_sensitive(false);
-                app_data.app_gui.export_but.set_sensitive(false);
-            }
-            false => {
-                app_data.app_gui.clear_but.set_sensitive(true);
-                app_data.app_gui.export_but.set_sensitive(true);
-            }
-        }
-
-        let aps = backend::get_airodump_data();
-
-        for (bssid, ap) in aps.iter() {
-            if !backend::get_settings().display_hidden_ap && ap.hidden {
-                if let Some(iter) =
-                    list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str())
-                {
-                    app_data.app_gui.aps_model.remove(&iter);
-                }
-                continue;
-            }
-
-            let it = match list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str()) {
-                Some(it) => it,
-                None => app_data.app_gui.aps_model.append(),
-            };
-
-            let background_color = match backend::get_attack_pool().contains_key(bssid) {
-                true => gdk::RGBA::RED,
-                false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
-            };
-
-            let handshake_status = match ap.handshake {
-                true => "Captured",
-                false => "",
-            };
-
-            app_data.app_gui.aps_model.set(
-                &it,
-                &[
-                    (0, &ap.essid),
-                    (1, &ap.bssid),
-                    (2, &ap.band),
-                    (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
-                    (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
-                    (5, &ap.power.parse::<i32>().unwrap_or(-1)),
-                    (6, &ap.privacy),
-                    (7, &(ap.clients.len() as i32)),
-                    (8, &ap.first_time_seen),
-                    (9, &ap.last_time_seen),
-                    (10, &handshake_status),
-                    (11, &background_color.to_str()),
-                ],
-            );
-        }
-
-        if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
-            let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
-            let clients = &aps[&bssid].clients;
-
-            for (_, cli) in clients.iter() {
-                let it =
-                    match list_store_find(app_data.app_gui.cli_model.as_ref(), 0, cli.mac.as_str())
-                    {
-                        Some(it) => it,
-                        None => app_data.app_gui.cli_model.append(),
-                    };
-
-                let background_color = match backend::get_attack_pool().get(&bssid) {
-                    Some((_, attack_target)) => match &attack_target {
-                        AttackedClients::All(_) => gdk::RGBA::RED,
-                        AttackedClients::Selection(selection) => {
-                            let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
-
-                            for (sel, _) in selection.iter() {
-                                if sel == cli.mac.as_str() {
-                                    color = gdk::RGBA::RED;
-                                }
-                            }
-                            color
+                    match attack_pool.contains_key(&bssid) {
+                        true => {
+                            app_data.app_gui.deauth_but.set_label("Stop Attack");
+                            app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
                         }
-                    },
-                    None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                        false => {
+                            app_data.app_gui.deauth_but.set_label("Deauth Attack");
+                            app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
+                        }
+                    }
+
+                    match backend::get_aps()[&bssid].handshake {
+                        true => app_data.app_gui.capture_but.set_sensitive(true),
+                        false => app_data.app_gui.capture_but.set_sensitive(false),
+                    }
+                }
+                None => {
+                    app_data.app_gui.deauth_but.set_label("Deauth Attack");
+                    app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
+                }
+            };
+
+            match backend::get_aps().is_empty() {
+                true => {
+                    app_data.app_gui.clear_but.set_sensitive(false);
+                    app_data.app_gui.export_but.set_sensitive(false);
+                }
+                false => {
+                    app_data.app_gui.clear_but.set_sensitive(true);
+                    app_data.app_gui.export_but.set_sensitive(true);
+                }
+            }
+
+            let aps = backend::get_airodump_data();
+
+            for (bssid, ap) in aps.iter() {
+                if !backend::get_settings().display_hidden_ap && ap.hidden {
+                    if let Some(iter) =
+                        list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str())
+                    {
+                        app_data.app_gui.aps_model.remove(&iter);
+                    }
+                    continue;
+                }
+
+                let it = match list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str()) {
+                    Some(it) => it,
+                    None => app_data.app_gui.aps_model.append(),
                 };
 
-                app_data.app_gui.cli_model.set(
+                let background_color = match backend::get_attack_pool().contains_key(bssid) {
+                    true => gdk::RGBA::RED,
+                    false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                };
+
+                let handshake_status = match ap.handshake {
+                    true => "Captured",
+                    false => "",
+                };
+
+                app_data.app_gui.aps_model.set(
                     &it,
                     &[
-                        (0, &cli.mac),
-                        (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
-                        (2, &cli.power.parse::<i32>().unwrap_or(-1)),
-                        (3, &cli.first_time_seen),
-                        (4, &cli.last_time_seen),
-                        (5, &background_color.to_str()),
+                        (0, &ap.essid),
+                        (1, &ap.bssid),
+                        (2, &ap.band),
+                        (3, &ap.channel.parse::<i32>().unwrap_or(-1)),
+                        (4, &ap.speed.parse::<i32>().unwrap_or(-1)),
+                        (5, &ap.power.parse::<i32>().unwrap_or(-1)),
+                        (6, &ap.privacy),
+                        (7, &(ap.clients.len() as i32)),
+                        (8, &ap.first_time_seen),
+                        (9, &ap.last_time_seen),
+                        (10, &handshake_status),
+                        (11, &background_color.to_str()),
                     ],
                 );
             }
-        }
 
-        ControlFlow::Continue
-    }));
+            if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
+                let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+                let clients = &aps[&bssid].clients;
+
+                for (_, cli) in clients.iter() {
+                    let it =
+                        match list_store_find(app_data.app_gui.cli_model.as_ref(), 0, cli.mac.as_str())
+                        {
+                            Some(it) => it,
+                            None => app_data.app_gui.cli_model.append(),
+                        };
+
+                    let background_color = match backend::get_attack_pool().get(&bssid) {
+                        Some((_, attack_target)) => match &attack_target {
+                            AttackedClients::All(_) => gdk::RGBA::RED,
+                            AttackedClients::Selection(selection) => {
+                                let mut color = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+
+                                for (sel, _) in selection.iter() {
+                                    if sel == cli.mac.as_str() {
+                                        color = gdk::RGBA::RED;
+                                    }
+                                }
+                                color
+                            }
+                        },
+                        None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                    };
+
+                    app_data.app_gui.cli_model.set(
+                        &it,
+                        &[
+                            (0, &cli.mac),
+                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                            (3, &cli.first_time_seen),
+                            (4, &cli.last_time_seen),
+                            (5, &background_color.to_str()),
+                        ],
+                    );
+                }
+            }
+
+            ControlFlow::Continue
+        }),
+    );
 
     glib::timeout_add_local(
         Duration::from_millis(1000),
@@ -237,17 +240,15 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     return ControlFlow::Break;
                 }
             }
-            return ControlFlow::Continue;
+            ControlFlow::Continue
         }),
     );
 }
 
 fn start_handshake_refresh() {
-    std::thread::spawn(|| {
-        loop {
-            backend::update_handshakes().ok();
-            std::thread::sleep(Duration::from_millis(1500));
-        }
+    std::thread::spawn(|| loop {
+        backend::update_handshakes().ok();
+        std::thread::sleep(Duration::from_millis(1500));
     });
 }
 
@@ -255,19 +256,17 @@ fn start_update_checker() {
     globals::UPDATE_PROC
         .lock()
         .unwrap()
-        .replace(
-            std::thread::spawn(|| {
-                let update = backend::check_update(globals::VERSION);
+        .replace(std::thread::spawn(|| {
+            let update = backend::check_update(globals::VERSION);
 
-                match update {
-                    Some(update) => {
-                        *globals::NEW_VERSION.lock().unwrap() = Some(update);
-                        true
-                    }
-                    None => false
+            match update {
+                Some(update) => {
+                    *globals::NEW_VERSION.lock().unwrap() = Some(update);
+                    true
                 }
-            })
-        );
+                None => false,
+            }
+        }));
 }
 
 fn connect_deauth_button(app_data: Rc<AppData>) {
