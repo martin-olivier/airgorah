@@ -33,6 +33,7 @@ pub fn app_setup() -> Result<(), Error> {
         "gnome-terminal",
         "mergecap",
         "macchanger",
+        "crunch",
     ])
 }
 

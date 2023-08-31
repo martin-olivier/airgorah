@@ -15,13 +15,13 @@ Then, you will need to install `airgorah` dependencies:
 ### Debian (Ubuntu, PopOS, Mint, Kali)
 
 ```sh
-sudo apt install dbus-x11 libgtk-4-dev libglib2.0-dev aircrack-ng mdk4 iproute2 iw gnome-terminal wireshark-common macchanger
+sudo apt install dbus-x11 libgtk-4-dev libglib2.0-dev aircrack-ng mdk4 iproute2 iw gnome-terminal wireshark-common macchanger crunch
 ```
 
 ### Fedora
 
 ```sh
-sudo dnf install dbus-x11 gtk4-devel glib2-devel aircrack-ng mdk4 iproute2 iw gnome-terminal wireshark-cli macchanger
+sudo dnf install dbus-x11 gtk4-devel glib2-devel aircrack-ng mdk4 iproute2 iw gnome-terminal wireshark-cli macchanger crunch
 ```
 
 ## 3. Install Airgorah

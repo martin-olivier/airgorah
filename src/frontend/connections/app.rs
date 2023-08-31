@@ -315,7 +315,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             }
 
             if let Some(ref cap) = ap.saved_handshake {
-                return app_data.decrypt_gui.show(Some(cap.clone()));
+                return app_data.decrypt_gui.show(Some((cap.clone(), bssid)));
             }
 
             let was_scanning = backend::is_scan_process();
@@ -352,7 +352,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                         }
                     }
 
-                    app_data.decrypt_gui.show(Some(path))
+                    app_data.decrypt_gui.show(Some((path, bssid)));
                 }
 
                 if was_scanning {
