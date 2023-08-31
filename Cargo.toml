@@ -10,7 +10,7 @@ repository = "https://github.com/martin-olivier/airgorah"
 documentation = "https://github.com/martin-olivier/airgorah"
 keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
 readme = "README.md"
-exclude = ["/.github", "/package", "/docs"]
+exclude = ["/.github", "/package"]
 
 [dependencies]
 gtk4 = { version = "0.7.2", features = ["v4_6"] }

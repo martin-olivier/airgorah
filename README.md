@@ -47,7 +47,11 @@ You can find pre-built releases for `Debian` based distributions [here](https://
 sudo apt install ~/Downloads/airgorah_0.3.0_amd64.deb
 ```
 
-Otherwise, if you'd like to compile from source, you can follow this [guide](docs/build_from_source.md).
+Otherwise, if you'd like to compile from source, you can follow this [guide](https://github.com/martin-olivier/airgorah/wiki/Build-from-source).
+
+## Documentation
+
+The documentation of this project are available on the [wiki](https://github.com/martin-olivier/airgorah/wiki)
 
 ## License
 
@@ -56,10 +60,3 @@ This project is released under [MIT](LICENSE) license.
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## Future
-
-- [ ] Provide usage documentation
-- [ ] Improve the code quality and the documentation
-- [ ] Provide releases for other linux distributions (Arch, Fedora, ...)
-- [ ] Provide releases for other architectures (arm, ...)
