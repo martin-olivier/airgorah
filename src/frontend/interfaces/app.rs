@@ -47,7 +47,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
 
     window.connect_close_request(|_| {
         backend::app_cleanup();
-        glib::signal::Inhibit(false)
+        glib::Propagation::Proceed
     });
 
     window

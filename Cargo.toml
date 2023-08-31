@@ -13,17 +13,17 @@ readme = "README.md"
 exclude = ["/.github", "/package", "/docs"]
 
 [dependencies]
-gtk4 = { version = "0.6.4", features = ["v4_6"] }
-glib = "0.17.5"
-serde = { version = "1.0.159", features = ["derive"] }
-serde_json = "1.0.95"
-toml = "0.7.3"
-csv = "1.2.1"
+gtk4 = { version = "0.7.2", features = ["v4_6"] }
+glib = "0.18.1"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.105"
+toml = "0.7.6"
+csv = "1.2.2"
 sudo = "0.6.0"
-ctrlc = "3.2.5"
-regex = "1.7.3"
+ctrlc = "3.4.0"
+regex = "1.9.4"
 lazy_static = "1.4.0"
-ureq = { version = "2.6.2", features = ["json"] }
+ureq = { version = "2.7.1", features = ["json"] }
 which = "4.4.0"
 
 [package.metadata.deb]

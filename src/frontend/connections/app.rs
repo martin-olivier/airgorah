@@ -5,6 +5,7 @@ use crate::globals;
 use crate::list_store_get;
 use crate::types::*;
 
+use glib::ControlFlow;
 use glib::clone;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
@@ -220,7 +221,7 @@ fn start_app_refresh(app_data: Rc<AppData>) {
             }
         }
 
-        glib::Continue(true)
+        ControlFlow::Continue
     }));
 
     glib::timeout_add_local(
@@ -233,10 +234,10 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     if updater.take().unwrap().join().unwrap_or(false) {
                         app_data.app_gui.update_button.show();
                     }
-                    return glib::Continue(false);
+                    return ControlFlow::Break;
                 }
             }
-            glib::Continue(true)
+            return ControlFlow::Continue;
         }),
     );
 }
