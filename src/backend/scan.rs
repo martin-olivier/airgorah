@@ -215,9 +215,17 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         let mut essid = result.essid.trim_start().to_string();
         let mut hidden = false;
 
+        let old_ap_data = glob_aps.get(&bssid);
+
         if essid.is_empty() {
             hidden = true;
             essid = format!("[Hidden] (length: {})", result.id_length.trim_start());
+
+            if let Some(old_ap_data) = old_ap_data {
+                if !old_ap_data.essid.starts_with("[Hidden] (length:") {
+                    essid = old_ap_data.essid.clone();
+                }
+            }
         }
 
         let old_data = aps.insert(
@@ -232,12 +240,12 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                 privacy: result.privacy.trim_start().to_string(),
                 hidden,
                 handshake: {
-                    match glob_aps.get(&bssid) {
+                    match old_ap_data {
                         Some(ap) => ap.handshake,
                         None => false,
                     }
                 },
-                saved_handshake: match glob_aps.get(&bssid) {
+                saved_handshake: match old_ap_data {
                     Some(ap) => ap.saved_handshake.clone(),
                     None => None,
                 },

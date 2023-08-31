@@ -1,5 +1,6 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
+use crate::types::Settings;
 
 use glib::clone;
 use gtk4::prelude::*;
@@ -56,7 +57,7 @@ fn connect_save_but(app_data: Rc<AppData>) {
         .settings_gui
         .save_but
         .connect_clicked(clone!(@strong app_data => move |_| {
-            let mut mac_address = crate::types::Settings::default().mac_address;
+            let mut mac_address = Settings::default().mac_address;
 
             if app_data.settings_gui.random_mac.is_active() {
                 mac_address = "random".to_string()
@@ -69,7 +70,7 @@ fn connect_save_but(app_data: Rc<AppData>) {
             let display_hidden_ap = app_data.settings_gui.display_hidden_ap.is_active();
             let kill_network_manager = app_data.settings_gui.kill_network_manager.is_active();
 
-            let settings = crate::types::Settings {
+            let settings = Settings {
                 mac_address,
                 display_hidden_ap,
                 kill_network_manager,

