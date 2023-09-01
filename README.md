@@ -51,7 +51,7 @@ Otherwise, if you'd like to compile from source, you can follow this [guide](htt
 
 ## Documentation
 
-The documentation of this project are available on the [wiki](https://github.com/martin-olivier/airgorah/wiki)
+The documentation of this project is available on the [wiki](https://github.com/martin-olivier/airgorah/wiki) page.
 
 ## License
 
