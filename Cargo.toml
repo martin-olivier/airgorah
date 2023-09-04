@@ -31,7 +31,7 @@ copyright = "2023, Martin Olivier"
 maintainer = "Martin Olivier <martin.olivier@live.fr>"
 license-file = ["LICENSE"]
 extended-description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
-depends = "gnome-terminal, pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, iproute2, iw, aircrack-ng (>= 1.6), mdk4, wireshark-common, macchanger, crunch"
+depends = "bash, systemd, gnome-terminal, pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, iproute2, iw, aircrack-ng (>= 1.6), mdk4, wireshark-common, macchanger, crunch"
 priority = "optional"
 section = "utility"
 assets = [
