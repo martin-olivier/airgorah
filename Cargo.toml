@@ -25,20 +25,3 @@ regex = "1.9.4"
 lazy_static = "1.4.0"
 ureq = { version = "2.7.1", features = ["json"] }
 which = "4.4.0"
-
-[package.metadata.deb]
-copyright = "2023, Martin Olivier"
-maintainer = "Martin Olivier <martin.olivier@live.fr>"
-license-file = ["LICENSE"]
-extended-description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
-depends = "bash, systemd, gnome-terminal, pkexec, libgtk-4-1 (>= 4.6.0), dbus-x11, iproute2, iw, aircrack-ng (>= 1.6), mdk4, wireshark-common, macchanger, crunch"
-priority = "optional"
-section = "utility"
-assets = [
-    ["target/release/airgorah", "/usr/bin/airgorah", "755"],
-    ["README.md", "/usr/share/doc/airgorah/README", "644"],
-    ["icons/app_icon.png", "/usr/share/app-install/icons/airgorah.png", "644"],
-    ["package/config.toml", "/etc/airgorah/config.toml", "644"],
-    ["package/.desktop", "/usr/share/applications/com.martin-olivier.airgorah.desktop", "644"],
-    ["package/.policy", "/usr/share/polkit-1/actions/org.freedesktop.policykit.airgorah.policy", "755"],
-]

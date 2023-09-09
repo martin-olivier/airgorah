@@ -1,0 +1,20 @@
+-s dir ./target/release/airgorah ./icons/app_icon.png package
+--name airgorah
+--license MIT
+--version 0.4.0
+--description "A WiFi auditing software that can perform deauth attacks and passwords cracking"
+--url "https://github.com/martin-olivier/airgorah"
+--maintainer "Martin Olivier <martin.olivier@live.fr>"
+
+--depends bash
+--depends systemd
+--depends gnome-terminal
+--depends iw
+--depends macchanger
+--depends aircrack-ng
+
+target/release/airgorah=/usr/bin/airgorah
+icons/app_icon.png=/usr/share/app-install/icons/airgorah.png
+package/config.toml=/etc/airgorah/config.toml
+package/.desktop=/usr/share/applications/com.martin-olivier.airgorah.desktop
+package/.policy=/usr/share/polkit-1/actions/org.freedesktop.policykit.airgorah.policy
