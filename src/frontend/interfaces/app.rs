@@ -74,15 +74,15 @@ fn build_aps_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
     let columns = [
         ("ESSID", 154),
-        ("BSSID", 130),
+        ("BSSID", 138),
         ("Band", 64),
         ("Channel", 86),
         ("Speed", 72),
         ("Power", 72),
         ("Encryption", 106),
         ("Clients", 80),
-        ("First time seen", 140),
-        ("Last time seen", 140),
+        ("First time seen", 150),
+        ("Last time seen", 150),
         ("Handshake", 106),
     ];
 

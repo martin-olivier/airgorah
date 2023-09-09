@@ -91,14 +91,23 @@ fn connect_attack_but(app_data: Rc<AppData>) {
             false => AttackSoftware::Mdk4,
         };
 
-        backend::launch_deauth_attack(backend::get_aps()[&bssid].clone(), params, attack_software).unwrap_or_else(|e| {
-            ErrorDialog::spawn(
-                &app_data.app_gui.window,
+        if attack_software == AttackSoftware::Mdk4 && !backend::has_dependency("mdk4") {
+            return ErrorDialog::spawn(
+                &app_data.deauth_gui.window,
+                "Error",
+                "\"mdk4\" is not installed on your system",
+                false,
+            );
+        }
+
+        if let Err(e) = backend::launch_deauth_attack(backend::get_aps()[&bssid].clone(), params, attack_software) {
+            return ErrorDialog::spawn(
+                &app_data.deauth_gui.window,
                 "Error",
                 &format!("Could not start deauth process:\n\n{}", e),
                 false,
             );
-        });
+        };
 
         app_data.deauth_gui.window.hide();
     }));

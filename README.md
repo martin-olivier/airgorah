@@ -7,8 +7,8 @@
 <h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.4.0">
-    <img src="https://img.shields.io/badge/Version-0.4.0_(beta)-blue.svg" alt="version"/>
+  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.4.1">
+    <img src="https://img.shields.io/badge/Version-0.4.1_(beta)-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
@@ -23,9 +23,9 @@
 
 ![illustration](.github/assets/illustration.png)
 
-`Airgorah` can be used to audit a WiFi network by discovering the clients connected to it, performing deauth attacks against specific clients or all the clients connected to the network, or by cracking the password of the access point.
+`Airgorah` is a WiFi auditing software that can discover the clients connected to an access point, perform deauthentication attacks against specific clients or all the clients connected to it, capture WPA handshakes, and crack the password of the access point.
 
-It is written in Rust and uses [GTK4 bindings](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
+It is written in Rust and uses [GTK4](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is mainly based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
 `⭐ Don't forget to put a star if you like the project!`
 
@@ -41,22 +41,18 @@ You will also need a wireless network card that supports `monitor mode` and `pac
 
 ## Installation
 
-You can find pre-built releases for `Debian` based distributions [here](https://github.com/martin-olivier/airgorah/releases/latest) (Ubuntu, PopOS, Mint, Kali). You will just need to download the debian package and install it with the following command:
-
-```
-sudo apt install ~/Downloads/airgorah_0.4.0_amd64.deb
-```
-
-Otherwise, if you'd like to compile from source, you can follow this [guide](https://github.com/martin-olivier/airgorah/wiki/Build-from-source).
+The installation instructions are available [here](https://github.com/martin-olivier/airgorah/wiki/Installation).
 
 ## Documentation
 
-The documentation of this project are available on the [wiki](https://github.com/martin-olivier/airgorah/wiki)
+The documentation about the usage of the application is available [here](https://github.com/martin-olivier/airgorah/wiki/Usage).
 
 ## License
 
 This project is released under [MIT](LICENSE) license.
 
-## Contributing
+## Community
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+If you have any question about the usage of the application, do not hesitate to open a [discussion](https://github.com/martin-olivier/airgorah/discussions)
+
+If you want to report a bug or provide a feature, do not hesitate to open an [issue](https://github.com/martin-olivier/airgorah/issues) or submit a [pull request](https://github.com/martin-olivier/airgorah/pulls)

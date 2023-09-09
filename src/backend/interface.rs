@@ -188,14 +188,14 @@ pub fn restore_network_manager() -> Result<(), Error> {
         return Ok(());
     }
 
-    Command::new("service")
-        .args(["NetworkManager", "restart"])
+    Command::new("systemctl")
+        .args(["restart", "NetworkManager"])
         .output()?;
-    Command::new("service")
-        .args(["network-manager", "restart"])
+    Command::new("systemctl")
+        .args(["restart", "network-manager"])
         .output()?;
-    Command::new("service")
-        .args(["wpa-supplicant", "restart"])
+    Command::new("systemctl")
+        .args(["restart", "wpa-supplicant"])
         .output()?;
 
     Ok(())

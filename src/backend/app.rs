@@ -19,9 +19,9 @@ pub fn app_setup() -> Result<(), Error> {
 
     load_settings();
 
-    check_dependencies(&[
+    check_required_dependencies(&[
         "sh",
-        "service",
+        "systemctl",
         "ip",
         "iw",
         "awk",
@@ -29,11 +29,9 @@ pub fn app_setup() -> Result<(), Error> {
         "airodump-ng",
         "aireplay-ng",
         "aircrack-ng",
-        "mdk4",
-        "gnome-terminal",
+        "xfce4-terminal",
         "mergecap",
         "macchanger",
-        "crunch",
     ])
 }
 
@@ -66,12 +64,17 @@ pub fn app_cleanup() {
     std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
 }
 
-/// Check if all the dependencies are installed
-pub fn check_dependencies(deps: &[&str]) -> Result<(), Error> {
+/// Check if a dependency is installed
+pub fn has_dependency(dep: &str) -> bool {
+    which::which(dep).is_ok()
+}
+
+/// Check if all the required dependencies are installed
+pub fn check_required_dependencies(deps: &[&str]) -> Result<(), Error> {
     for dep in deps {
-        if which::which(dep).is_err() {
+        if !has_dependency(dep) {
             return Err(Error::new(&format!(
-                "Missing dependency: \"{}\"\n{}",
+                "Missing required dependency: \"{}\"\n{}",
                 dep, "Please install it using your package manager"
             )));
         }
