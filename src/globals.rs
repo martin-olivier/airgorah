@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use std::thread::JoinHandle;
 
 pub static APP_ID: &str = "com.molivier.airgorah";
-pub static VERSION: &str = "v0.4.0";
+pub static VERSION: &str = "v0.4.1";
 
 pub static LIVE_SCAN_PATH: &str = "/tmp/airgorah_live_scan";
 pub static OLD_SCAN_PATH: &str = "/tmp/airgorah_old_scan";

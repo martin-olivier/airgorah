@@ -1,6 +1,6 @@
 [package]
 name = "airgorah"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "MIT"
 description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
@@ -16,12 +16,12 @@ exclude = ["/.github", "/package"]
 gtk4 = { version = "0.7.2", features = ["v4_6"] }
 glib = "0.18.1"
 serde = { version = "1.0.188", features = ["derive"] }
-serde_json = "1.0.105"
-toml = "0.7.6"
+serde_json = "1.0.106"
+toml = "0.7.8"
 csv = "1.2.2"
 sudo = "0.6.0"
-ctrlc = "3.4.0"
-regex = "1.9.4"
+ctrlc = "3.4.1"
+regex = "1.9.5"
 lazy_static = "1.4.0"
 ureq = { version = "2.7.1", features = ["json"] }
-which = "4.4.0"
+which = "4.4.2"
