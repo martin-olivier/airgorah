@@ -15,22 +15,26 @@ pub fn run_decrypt_wordlist_process(
     wordlist: &str,
 ) -> Result<(), Error> {
     let cmd = format!(
-        "aircrack-ng '{}' -b '{}' -w '{}' ; exec sh",
+        "aircrack-ng '{}' -b '{}' -w '{}'",
         handshake, bssid, wordlist
     );
 
-    Command::new("gnome-terminal")
-        .stdin(Stdio::piped())
-        .args([
-            "--hide-menubar",
-            "--title",
-            &format!("Handshake Decryption ({})", essid),
-            "--",
-            "sh",
-            "-c",
-            &cmd,
-        ])
-        .output()?;
+    let mut process = Command::new("xfce4-terminal");
+    process.stdin(Stdio::piped());
+    process.args([
+        "--hide-menubar",
+        "--hide-toolbar",
+        "--hide-scrollbar",
+        "--hold",
+        "-T",
+        &format!("Handshake Decryption ({})", essid),
+        "-e",
+        &cmd,
+    ]);
+
+    std::thread::spawn(move || {
+        process.output().unwrap();
+    });
 
     Ok(())
 }
@@ -65,22 +69,26 @@ pub fn run_decrypt_bruteforce_process(
         },
     );
     let cmd = format!(
-        "crunch 8 64 '{}' | aircrack-ng -w - -b '{}' '{}' ; exec sh",
+        "sh -c \"crunch 8 64 '{}' | aircrack-ng -w - -b '{}' '{}'\"",
         charset, bssid, handshake
     );
 
-    Command::new("gnome-terminal")
-        .stdin(Stdio::piped())
-        .args([
-            "--hide-menubar",
-            "--title",
-            &format!("Handshake Decryption ({})", essid),
-            "--",
-            "sh",
-            "-c",
-            &cmd,
-        ])
-        .output()?;
+    let mut process = Command::new("xfce4-terminal");
+    process.stdin(Stdio::piped());
+    process.args([
+        "--hide-menubar",
+        "--hide-toolbar",
+        "--hide-scrollbar",
+        "--hold",
+        "-T",
+        &format!("Handshake Decryption ({})", essid),
+        "-e",
+        &cmd,
+    ]);
+
+    std::thread::spawn(move || {
+        process.output().unwrap();
+    });
 
     Ok(())
 }

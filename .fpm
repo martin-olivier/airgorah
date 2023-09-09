@@ -8,7 +8,7 @@
 
 --depends bash
 --depends systemd
---depends gnome-terminal
+--depends xfce4-terminal
 --depends iw
 --depends macchanger
 --depends aircrack-ng

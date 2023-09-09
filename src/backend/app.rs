@@ -29,7 +29,7 @@ pub fn app_setup() -> Result<(), Error> {
         "airodump-ng",
         "aireplay-ng",
         "aircrack-ng",
-        "gnome-terminal",
+        "xfce4-terminal",
         "mergecap",
         "macchanger",
     ])
