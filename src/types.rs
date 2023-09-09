@@ -7,6 +7,7 @@ pub enum AttackedClients {
     Selection(Vec<(String, Child)>),
 }
 
+#[derive(PartialEq)]
 pub enum AttackSoftware {
     Aireplay,
     Mdk4,

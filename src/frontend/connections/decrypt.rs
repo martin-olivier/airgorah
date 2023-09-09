@@ -166,17 +166,20 @@ fn connect_decrypt_button(app_data: Rc<AppData>) {
 
             let stack = app_data.decrypt_gui.stack.visible_child_name().unwrap();
 
-            app_data.decrypt_gui.window.close();
-
             if stack == "dictionary" {
-                backend::run_decrypt_wordlist_process(&handshake_entry, &bssid, &essid, &wordlist_entry).unwrap_or_else(|e| {
-                    ErrorDialog::spawn(&app_data.app_gui.window, "Failed to run decryption", &e.to_string(), false);
-                });
+                if let Err(e) = backend::run_decrypt_wordlist_process(&handshake_entry, &bssid, &essid, &wordlist_entry) {
+                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", &e.to_string(), false);
+                }
             } else {
-                backend::run_decrypt_bruteforce_process(&handshake_entry, &bssid, &essid, low, up, num, sym).unwrap_or_else(|e| {
-                    ErrorDialog::spawn(&app_data.app_gui.window, "Failed to run decryption", &e.to_string(), false);
-                });
+                if !backend::has_dependency("crunch") {
+                    let err_msg = "\"crunch\" is not installed on your system, could not generate a wordlist from a charset";
+                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", err_msg, false);
+                }
+                if let Err(e) = backend::run_decrypt_bruteforce_process(&handshake_entry, &bssid, &essid, low, up, num, sym) {
+                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", &e.to_string(), false);
+                }
             }
+            app_data.decrypt_gui.window.close();
         }));
 }
 
