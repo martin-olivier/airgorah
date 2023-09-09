@@ -6,7 +6,7 @@ use std::process::Child;
 use std::sync::Mutex;
 use std::thread::JoinHandle;
 
-pub static APP_ID: &str = "com.martin-olivier.airgorah";
+pub static APP_ID: &str = "com.molivier.airgorah";
 pub static VERSION: &str = "v0.4.0";
 
 pub static LIVE_SCAN_PATH: &str = "/tmp/airgorah_live_scan";
