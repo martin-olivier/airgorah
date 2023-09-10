@@ -126,17 +126,18 @@ jobs:
       - name: Name packages for release
         if: github.event_name == 'release'
         run: |
-          cp ./airgorah_amd64.deb ./airgorah_${{ github.ref_name }}_amd64.deb
-          cp ./airgorah_amd64.rpm ./airgorah_${{ github.ref_name }}_amd64.rpm
-          cp ./airgorah_amd64.pkg.tar.zst ./airgorah_${{ github.ref_name }}_amd64.pkg.tar.zst
+          echo "RELEASE_VERSION=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_ENV
+          cp ./airgorah_amd64.deb ./airgorah_$RELEASE_VERSION_amd64.deb
+          cp ./airgorah_amd64.rpm ./airgorah_$RELEASE_VERSION_amd64.rpm
+          cp ./airgorah_amd64.pkg.tar.zst ./airgorah_$RELEASE_VERSION_amd64.pkg.tar.zst
 
       - name: Upload packages
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./airgorah_${{ github.ref_name }}_amd64.deb
-            ./airgorah_${{ github.ref_name }}_amd64.rpm
-            ./airgorah_${{ github.ref_name }}_amd64.pkg.tar.zst
+            ./airgorah_$RELEASE_VERSION_amd64.deb
+            ./airgorah_$RELEASE_VERSION_amd64.rpm
+            ./airgorah_$RELEASE_VERSION_amd64.pkg.tar.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
