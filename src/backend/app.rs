@@ -1,7 +1,6 @@
 use super::*;
 use crate::error::Error;
 use crate::globals::*;
-use crate::types::*;
 
 /// Check if the user is root, and if all the dependencies are installed
 pub fn app_setup() -> Result<(), Error> {
@@ -38,21 +37,7 @@ pub fn app_setup() -> Result<(), Error> {
 /// Stop the scan process, kill all the attack process, and remove all the files created by the app
 pub fn app_cleanup() {
     stop_scan_process().ok();
-
-    for attacked_ap in get_attack_pool().iter_mut() {
-        match &mut attacked_ap.1 .1 {
-            AttackedClients::All(child) => {
-                child.kill().ok();
-                child.wait().ok();
-            }
-            AttackedClients::Selection(child_list) => {
-                for (_, child) in child_list {
-                    child.kill().ok();
-                    child.wait().ok();
-                }
-            }
-        }
-    }
+    stop_all_deauth_attacks();
 
     if let Some(iface) = IFACE.lock().unwrap().as_ref() {
         disable_monitor_mode(iface).ok();
@@ -74,8 +59,8 @@ pub fn check_required_dependencies(deps: &[&str]) -> Result<(), Error> {
     for dep in deps {
         if !has_dependency(dep) {
             return Err(Error::new(&format!(
-                "Missing required dependency: \"{}\"\n{}",
-                dep, "Please install it using your package manager"
+                "Missing required dependency: \"{}\"",
+                dep,
             )));
         }
     }
@@ -90,9 +75,15 @@ pub fn check_update(current_version: &str) -> Option<String> {
         if let Ok(json) = response.into_json::<serde_json::Value>() {
             if json["tag_name"] != current_version {
                 let new_version = json["tag_name"].as_str().unwrap_or("unknown").to_owned();
+
+                log::info!("a new version is available: \"{}\"", new_version);
+
                 return Some(new_version);
             }
         }
     }
+
+    log::info!("airgorah is up to date");
+
     None
 }

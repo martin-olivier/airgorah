@@ -8,6 +8,9 @@ pub fn load_settings() {
     if Path::new(CONFIG_PATH).exists() {
         let config = std::fs::read_to_string(CONFIG_PATH).unwrap_or_default();
         let settings: Settings = toml::from_str(&config).unwrap_or_default();
+
+        log::debug!("settings loaded from \"{}\"", CONFIG_PATH);
+
         *SETTINGS.lock().unwrap() = settings;
     }
 }
@@ -17,6 +20,8 @@ pub fn save_settings(settings: Settings) {
     if Path::new(CONFIG_PATH).exists() {
         if let Ok(toml_settings) = toml::to_string(&settings) {
             std::fs::write(CONFIG_PATH, toml_settings).ok();
+
+            log::debug!("settings saved into \"{}\"", CONFIG_PATH);
         }
     }
     *SETTINGS.lock().unwrap() = settings;

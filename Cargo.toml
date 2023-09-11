@@ -25,3 +25,5 @@ regex = "1.9.5"
 lazy_static = "1.4.0"
 ureq = { version = "2.7.1", features = ["json"] }
 which = "4.4.2"
+log = "0.4.20"
+env_logger = "0.10.0"

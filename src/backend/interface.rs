@@ -100,6 +100,12 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
         ));
     }
 
+    log::info!(
+        "{}: MAC address changed to {}",
+        iface,
+        get_settings().mac_address
+    );
+
     Ok(())
 }
 
@@ -117,6 +123,8 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     if !enable_monitor_cmd.status.success() {
         return Err(Error::new("Failed to enable monitor mode"));
     }
+
+    log::info!("{}: monitor mode enabled", iface);
 
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
@@ -155,6 +163,8 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
 
     let disable_monitor_cmd = Command::new("airmon-ng").args(["stop", iface]).output()?;
 
+    log::info!("{}: monitor mode disabled", iface);
+
     match disable_monitor_cmd.status.success() {
         true => Ok(()),
         false => Err(Error::new(
@@ -177,6 +187,8 @@ pub fn set_iface(iface: String) {
 pub fn kill_network_manager() -> Result<(), Error> {
     if get_settings().kill_network_manager {
         Command::new("airmon-ng").args(["check", "kill"]).output()?;
+
+        log::warn!("network manager killed");
     }
 
     Ok(())
@@ -197,6 +209,8 @@ pub fn restore_network_manager() -> Result<(), Error> {
     Command::new("systemctl")
         .args(["restart", "wpa-supplicant"])
         .output()?;
+
+    log::warn!("network manager restored");
 
     Ok(())
 }

@@ -79,6 +79,11 @@ fn connect_attack_but(app_data: Rc<AppData>) {
             false => None,
         };
 
+        let iface = match backend::get_iface() {
+            Some(iface) => iface,
+            None => return,
+        };
+
         let iter = match app_data.app_gui.aps_view.selection().selected() {
             Some((_, iter)) => iter,
             None => return,
@@ -100,7 +105,7 @@ fn connect_attack_but(app_data: Rc<AppData>) {
             );
         }
 
-        if let Err(e) = backend::launch_deauth_attack(backend::get_aps()[&bssid].clone(), params, attack_software) {
+        if let Err(e) = backend::launch_deauth_attack(&iface, backend::get_aps()[&bssid].clone(), params, attack_software) {
             return ErrorDialog::spawn(
                 &app_data.deauth_gui.window,
                 "Error",

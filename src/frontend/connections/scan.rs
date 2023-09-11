@@ -8,8 +8,6 @@ use gtk4::*;
 use std::rc::Rc;
 
 fn run_scan(app_data: &AppData) {
-    let mut args = vec![];
-
     let iface = match backend::get_iface() {
         Some(iface) => iface,
         None => return app_data.interface_gui.window.show(),
@@ -24,7 +22,8 @@ fn run_scan(app_data: &AppData) {
         );
     }
 
-    let mut bands = "".to_string();
+    let mut ghz_2_4 = false;
+    let mut ghz_5 = false;
 
     if app_data.app_gui.ghz_5_but.is_active() {
         if !backend::is_5ghz_supported(&iface).unwrap() {
@@ -36,13 +35,11 @@ fn run_scan(app_data: &AppData) {
             );
             return app_data.app_gui.ghz_5_but.set_active(false);
         }
-        bands.push('a');
+        ghz_5 = true;
     }
     if app_data.app_gui.ghz_2_4_but.is_active() {
-        bands.push_str("bg");
+        ghz_2_4 = true;
     }
-    args.push("--band");
-    args.push(&bands);
 
     let channel_filter = app_data
         .app_gui
@@ -51,12 +48,9 @@ fn run_scan(app_data: &AppData) {
         .as_str()
         .replace(' ', "");
 
-    if !channel_filter.is_empty() {
-        match backend::is_valid_channel_filter(&channel_filter) {
-            true => {
-                args.push("--channel");
-                args.push(&channel_filter);
-            }
+    let channel_filter = match !channel_filter.is_empty() {
+        true => match backend::is_valid_channel_filter(&channel_filter) {
+            true => Some(channel_filter),
             false => {
                 return ErrorDialog::spawn(
                     &app_data.app_gui.window,
@@ -65,10 +59,11 @@ fn run_scan(app_data: &AppData) {
                     false,
                 );
             }
-        }
-    }
+        },
+        false => None,
+    };
 
-    if let Err(e) = backend::set_scan_process(&args) {
+    if let Err(e) = backend::set_scan_process(&iface, ghz_2_4, ghz_5, channel_filter) {
         return ErrorDialog::spawn(
             &app_data.app_gui.window,
             "Error",
