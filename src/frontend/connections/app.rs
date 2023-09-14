@@ -342,9 +342,9 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                     };
                     let path = gio_file.path().unwrap().to_str().unwrap().to_string();
 
-                    backend::save_capture(&path).unwrap_or_else(|e| {
-                        ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string(), false)
-                    });
+                    if let Err(e) = backend::save_capture(&path) {
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string());
+                    }
 
                     for (_, ap) in backend::get_aps().iter_mut() {
                         if ap.handshake {

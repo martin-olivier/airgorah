@@ -21,7 +21,6 @@ fn connect_interface_refresh(app_data: Rc<AppData>) {
                         &app_data.interface_gui.window,
                         "Failed to get interfaces",
                         &e.to_string(),
-                        false,
                     );
                 }
             };
@@ -59,7 +58,6 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                             &app_data.interface_gui.window,
                             "Failed to set MAC address",
                             &e.to_string(),
-                            false,
                         );
                     }
                     backend::set_iface(res.clone());
@@ -75,7 +73,6 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                         &app_data.interface_gui.window,
                         "Monitor mode failed",
                         &format!("Could not enable monitor mode on \"{}\":\n{}", iface, e),
-                        false,
                     );
                 }
             };

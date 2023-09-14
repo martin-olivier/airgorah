@@ -99,18 +99,16 @@ fn connect_attack_but(app_data: Rc<AppData>) {
         if attack_software == AttackSoftware::Mdk4 && !backend::has_dependency("mdk4") {
             return ErrorDialog::spawn(
                 &app_data.deauth_gui.window,
-                "Error",
+                "Missing dependency",
                 "\"mdk4\" is not installed on your system",
-                false,
             );
         }
 
         if let Err(e) = backend::launch_deauth_attack(&iface, backend::get_aps()[&bssid].clone(), params, attack_software) {
             return ErrorDialog::spawn(
                 &app_data.deauth_gui.window,
-                "Error",
+                "Deauth attack failed",
                 &format!("Could not start deauth process:\n\n{}", e),
-                false,
             );
         };
 

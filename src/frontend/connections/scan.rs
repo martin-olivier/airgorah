@@ -18,7 +18,6 @@ fn run_scan(app_data: &AppData) {
             &app_data.app_gui.window,
             "Error",
             "You need to select at least one frequency band",
-            false,
         );
     }
 
@@ -31,7 +30,6 @@ fn run_scan(app_data: &AppData) {
                 &app_data.app_gui.window,
                 "Error",
                 "Your network card doesn't support 5GHz",
-                false,
             );
             return app_data.app_gui.ghz_5_but.set_active(false);
         }
@@ -55,8 +53,7 @@ fn run_scan(app_data: &AppData) {
                 return ErrorDialog::spawn(
                     &app_data.app_gui.window,
                     "Error",
-                    "You need to put a valid channel filter",
-                    false,
+                    "The channel filter is invalid",
                 );
             }
         },
@@ -68,7 +65,6 @@ fn run_scan(app_data: &AppData) {
             &app_data.app_gui.window,
             "Error",
             &format!("Could not start scan process:\n\n{}", e),
-            false,
         );
     }
 
@@ -148,7 +144,7 @@ fn connect_save_button(app_data: Rc<AppData>) {
                         if was_scanning {
                             app_data.app_gui.scan_but.emit_clicked();
                         }
-                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string(), false);
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string());
                     }
 
                     for (_, ap) in backend::get_aps().iter_mut() {
@@ -176,7 +172,6 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
                         &app_data.app_gui.window,
                         "Error",
                         "You need to select at least one frequency band",
-                        false,
                     );
                     return this.set_active(true);
                 }
@@ -195,12 +190,11 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            if !backend::is_5ghz_supported(&iface).unwrap() && this.is_active() {
+            if !backend::is_5ghz_supported(&iface).unwrap_or(false) && this.is_active() {
                 ErrorDialog::spawn(
                     &app_data.app_gui.window,
                     "Error",
                     "Your network card doesn't support 5GHz",
-                    false,
                 );
                 return this.set_active(false);
             }
@@ -211,7 +205,6 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                         &app_data.app_gui.window,
                         "Error",
                         "You need to select at least one frequency band",
-                        false,
                     );
                     return this.set_active(true);
                 }

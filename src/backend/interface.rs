@@ -23,10 +23,16 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
     let phy_path = format!("/sys/class/net/{}/phy80211", iface);
 
     let phy_link = std::fs::read_link(phy_path)?;
-    let phy_name = phy_link
-        .file_name()
-        .ok_or(Error::new("phy parsing error"))?;
-    let phy_name_str = phy_name.to_str().ok_or(Error::new("phy parsing error"))?;
+
+    let phy_name = match phy_link.file_name() {
+        Some(name) => name,
+        None => return Err(Error::new("phy parsing error")),
+    };
+
+    let phy_name_str = match phy_name.to_str() {
+        Some(name) => name,
+        None => return Err(Error::new("phy parsing error")),
+    };
 
     let check_band_cmd = Command::new("iw")
         .args(["phy", phy_name_str, "info"])

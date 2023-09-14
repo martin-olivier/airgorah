@@ -39,7 +39,7 @@ pub fn app_cleanup() {
     stop_scan_process().ok();
     stop_all_deauth_attacks();
 
-    if let Some(iface) = IFACE.lock().unwrap().as_ref() {
+    if let Some(ref iface) = get_iface() {
         disable_monitor_mode(iface).ok();
         restore_network_manager().ok();
     }
