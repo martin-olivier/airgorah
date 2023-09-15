@@ -6,12 +6,7 @@ const CRUNCH_NUMBERS: &str = "0123456789";
 const CRUNCH_SYMBOLS: &str = "!#$%/=?{}[]-*:;";
 
 /// Launch a new terminal window to run aircrack-ng to decrypt a handshake with the specified wordlist
-pub fn run_decrypt_wordlist_process(
-    handshake: &str,
-    bssid: &str,
-    essid: &str,
-    wordlist: &str,
-) {
+pub fn run_decrypt_wordlist_process(handshake: &str, bssid: &str, essid: &str, wordlist: &str) {
     let cmd = format!(
         "aircrack-ng '{}' -b '{}' -w '{}'",
         handshake, bssid, wordlist

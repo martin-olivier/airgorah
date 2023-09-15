@@ -311,15 +311,13 @@ impl AppGui {
                         color: red;
                         border-color: red;
                     }
-                "
-            ).unwrap(),
+                ",
+            )
+            .unwrap(),
         );
 
         let style_context = channel_filter_entry.style_context();
-        style_context.add_provider(
-            &css_provider,
-            gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
+        style_context.add_provider(&css_provider, gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         let channel_frame = Frame::new(Some("Channel"));
         channel_frame.set_child(Some(&channel_filter_entry));

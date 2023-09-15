@@ -39,17 +39,14 @@ fn run_scan(app_data: &AppData) {
         ghz_2_4 = true;
     }
 
-    let channel_filter = app_data
-        .app_gui
-        .channel_filter_entry
-        .text();
+    let channel_filter = app_data.app_gui.channel_filter_entry.text();
 
     let channel_filter = match !channel_filter.is_empty() {
         true => match backend::is_valid_channel_filter(&channel_filter, ghz_2_4, ghz_5) {
             true => Some(channel_filter.to_string()),
             false => None,
-        }
-        false => None
+        },
+        false => None,
     };
 
     if let Err(e) = backend::set_scan_process(&iface, ghz_2_4, ghz_5, channel_filter) {
