@@ -17,7 +17,7 @@ pub fn build_ui(app: &Application) {
     gui_data.app_gui.window.show();
 
     if let Err(e) = backend::app_setup() {
-        return ErrorDialog::spawn(&gui_data.app_gui.window, "Error", &e.to_string(), true);
+        return PanicDialog::spawn(&gui_data.app_gui.window, &e.to_string());
     }
 
     gui_data.interface_gui.window.show();

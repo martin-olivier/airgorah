@@ -6,6 +6,9 @@
 --url "https://github.com/martin-olivier/airgorah"
 --maintainer "Martin Olivier <martin.olivier@live.fr>"
 
+--provides airgorah
+--conflicts airgorah
+
 --depends bash
 --depends systemd
 --depends xfce4-terminal

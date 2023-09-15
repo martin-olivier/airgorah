@@ -200,7 +200,6 @@ impl DecryptGui {
                     &self.window,
                     "Invalid capture",
                     &format!("\"{}\" doesn't contain any valid handshake", path),
-                    false,
                 );
             }
 

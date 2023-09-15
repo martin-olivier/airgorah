@@ -88,16 +88,20 @@ pub fn is_valid_channel_filter(channel_filter: &str) -> bool {
 }
 
 /// Set the scan process
-pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
-    let iface = match get_iface().as_ref() {
-        Some(res) => res.to_string(),
-        None => return Err(Error::new("No interface set")),
-    };
+pub fn set_scan_process(
+    iface: &str,
+    ghz_2_4: bool,
+    ghz_5: bool,
+    channel_filter: Option<String>,
+) -> Result<(), Error> {
+    if !ghz_2_4 && !ghz_5 {
+        return Err(Error::new("No band selected"));
+    }
 
     stop_scan_process().ok();
 
     let mut proc_args = vec![
-        iface.as_str(),
+        iface,
         "-a",
         "--output-format",
         "csv,cap",
@@ -106,7 +110,28 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
         "--write-interval",
         "1",
     ];
-    proc_args.append(&mut args.to_vec());
+
+    let mut band = String::new();
+
+    if ghz_5 {
+        band += "a";
+    }
+
+    if ghz_2_4 {
+        band += "bg";
+    }
+
+    proc_args.push("--band");
+    proc_args.push(&band);
+
+    let channels;
+
+    if let Some(ref filter) = channel_filter {
+        channels = filter;
+
+        proc_args.push("--channel");
+        proc_args.push(channels);
+    }
 
     let child = Command::new("airodump-ng")
         .args(proc_args)
@@ -114,6 +139,13 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
         .spawn()?;
 
     SCAN_PROC.lock().unwrap().replace(child);
+
+    log::info!(
+        "scan started: 2.4ghz: {}, 5ghz: {}, channel filter: {:?}",
+        ghz_2_4,
+        ghz_5,
+        channel_filter
+    );
 
     Ok(())
 }
@@ -165,6 +197,8 @@ pub fn stop_scan_process() -> Result<(), Error> {
         OLD_SCAN_PATH.to_string() + "-01.cap",
     )
     .ok();
+
+    log::info!("scan stopped");
 
     Ok(())
 }
