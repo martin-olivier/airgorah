@@ -98,7 +98,7 @@ pub fn set_scan_process(
         return Err(Error::new("No band selected"));
     }
 
-    stop_scan_process().ok();
+    stop_scan_process()?;
 
     let mut proc_args = vec![
         iface,
