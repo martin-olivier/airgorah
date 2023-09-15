@@ -4,5 +4,3 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    reviewers:
-      - "martin-olivier"
