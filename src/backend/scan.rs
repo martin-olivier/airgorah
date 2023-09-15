@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -71,17 +70,41 @@ pub fn is_scan_process() -> bool {
 }
 
 /// Check if the content of the channel filter is valid
-pub fn is_valid_channel_filter(channel_filter: &str) -> bool {
-    let channel_regex = Regex::new(r"^[1-9]+[0-9]*$").unwrap();
+pub fn is_valid_channel_filter(channel_filter: &str, ghz_2_4_but: bool, ghz_5_but: bool) -> bool {
     let channel_list: Vec<String> = channel_filter
         .split_terminator(',')
         .map(String::from)
         .collect();
 
-    for chan in channel_list {
-        if !channel_regex.is_match(&chan) {
+    let mut channel_buf = vec![];
+
+    if channel_filter.ends_with(',') {
+        return false;
+    }
+
+    for channel_str in channel_list {
+        let channel = match channel_str.parse::<u32>() {
+            Ok(chan) => chan,
+            Err(_) => return false,
+        };
+
+        if channel < 1 || (15..=35).contains(&channel) || channel > 165 {
             return false;
         }
+
+        if (1..=14).contains(&channel) && !ghz_2_4_but {
+            return false;
+        }
+
+        if (36..=165).contains(&channel) && !ghz_5_but {
+            return false;
+        }
+
+        if channel_buf.contains(&channel) {
+            return false;
+        }
+
+        channel_buf.push(channel);
     }
 
     true

@@ -42,22 +42,14 @@ fn run_scan(app_data: &AppData) {
     let channel_filter = app_data
         .app_gui
         .channel_filter_entry
-        .text()
-        .as_str()
-        .replace(' ', "");
+        .text();
 
     let channel_filter = match !channel_filter.is_empty() {
-        true => match backend::is_valid_channel_filter(&channel_filter) {
-            true => Some(channel_filter),
-            false => {
-                return ErrorDialog::spawn(
-                    &app_data.app_gui.window,
-                    "Error",
-                    "The channel filter is invalid",
-                );
-            }
-        },
-        false => None,
+        true => match backend::is_valid_channel_filter(&channel_filter, ghz_2_4, ghz_5) {
+            true => Some(channel_filter.to_string()),
+            false => None,
+        }
+        false => None
     };
 
     if let Err(e) = backend::set_scan_process(&iface, ghz_2_4, ghz_5, channel_filter) {
@@ -166,6 +158,9 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
+
             if backend::is_scan_process() {
                 if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
                     ErrorDialog::spawn(
@@ -185,6 +180,9 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_5_but
         .connect_toggled(clone!(@strong app_data => move |this| {
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
+
             let iface = match backend::get_iface() {
                 Some(iface) => iface,
                 None => return,
@@ -218,7 +216,6 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
-                .replace(' ', "")
                 .chars()
                 .filter(|c| c.is_numeric() || *c == ',')
                 .collect::<String>();
@@ -227,8 +224,13 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
                 return this.set_text(&channel_filter);
             }
 
-            if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter) {
-                return;
+            let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
+            let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
+
+            if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter, ghz_2_4_but, ghz_5_but) {
+                this.style_context().add_class("error");
+            } else {
+                this.style_context().remove_class("error");
             }
 
             if backend::is_scan_process() {
