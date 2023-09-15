@@ -183,6 +183,8 @@ pub fn stop_scan_process() -> Result<(), Error> {
 
     SCAN_PROC.lock().unwrap().take();
 
+    log::info!("scan stopped");
+
     let old_path_exists = Path::new(&(OLD_SCAN_PATH.to_string() + "-01.cap")).exists();
     let live_path_exists = Path::new(&(LIVE_SCAN_PATH.to_string() + "-01.cap")).exists();
 
@@ -220,8 +222,6 @@ pub fn stop_scan_process() -> Result<(), Error> {
         OLD_SCAN_PATH.to_string() + "-01.cap",
     )
     .ok();
-
-    log::info!("scan stopped");
 
     Ok(())
 }

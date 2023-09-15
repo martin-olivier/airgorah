@@ -27,7 +27,7 @@ pub fn update_handshakes() -> Result<(), Error> {
         }
     }
 
-    log::debug!("handshakes updated");
+    log::trace!("handshakes updated");
 
     Ok(())
 }

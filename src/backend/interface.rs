@@ -39,7 +39,7 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
         .output()?;
 
     if !check_band_cmd.status.success() {
-        return Err(Error::new("No such interface"));
+        return Err(Error::new(&format!("{}: No such phy", phy_name_str)));
     }
 
     let check_band_output = String::from_utf8(check_band_cmd.stdout)?;
@@ -56,7 +56,7 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
     if !check_monitor_cmd.status.success() {
-        return Err(Error::new("No such interface"));
+        return Err(Error::new(&format!("{}: No such interface", iface)));
     }
 
     let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
