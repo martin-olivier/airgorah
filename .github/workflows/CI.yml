@@ -48,6 +48,7 @@ jobs:
 
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-latest-arm64]
         include:
