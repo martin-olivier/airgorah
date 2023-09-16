@@ -71,6 +71,7 @@ jobs:
           libgtk-4-dev
           libglib2.0-dev
           build-essential
+          cargo
           ruby
           ruby-dev
           rubygems
