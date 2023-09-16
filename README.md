@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.4.2">
-    <img src="https://img.shields.io/badge/Release-0.4.2-blue.svg" alt="version"/>
+    <img src="https://img.shields.io/badge/Release-v0.4.2-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>

@@ -79,6 +79,9 @@ jobs:
       - name: Install fpm
         run: sudo gem install fpm
 
+      - name: Print env
+        run: env
+
       - name: Build project
         run: cargo build --release
 
