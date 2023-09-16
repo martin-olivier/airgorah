@@ -40,12 +40,6 @@ jobs:
       - name: Install dependencies
         run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
 
-      - name: Install rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          export PATH="$HOME/.cargo/bin:$PATH"
-          source $HOME/.cargo/env
-
       - name: Clippy
         run: cargo clippy --all --all-features -- -D warnings
 
@@ -84,12 +78,6 @@ jobs:
 
       - name: Install fpm
         run: sudo gem install fpm
-
-      - name: Install rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          export PATH="$HOME/.cargo/bin:$PATH"
-          source $HOME/.cargo/env
 
       - name: Build project
         run: cargo build --release
