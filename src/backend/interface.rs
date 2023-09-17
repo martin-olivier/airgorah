@@ -127,7 +127,10 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;
 
     if !enable_monitor_cmd.status.success() {
-        return Err(Error::new("Failed to enable monitor mode"));
+        return Err(Error::new(&format!(
+            "Could not enable monitor mode on \"{}\"",
+            iface
+        )));
     }
 
     log::info!("{}: monitor mode enabled", iface);
@@ -135,7 +138,10 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => Err(Error::new("Failed to enable monitor mode")),
+            false => Err(Error::new(&format!(
+                "Interface \"{}mon\" is in managed mode",
+                iface
+            ))),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -147,7 +153,7 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
             }
 
             Err(Error::new(
-                "Monitor mode has been enabled but the new interface has not been found",
+                &format!("Monitor mode has been enabled on \"{}\", but the new interface name could not been found", iface)
             ))
         }
     }

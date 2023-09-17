@@ -53,9 +53,9 @@ jobs:
         os: [ubuntu-latest, ubuntu-latest-arm64]
         include:
         - os: ubuntu-latest
-          arch: amd64
+          arch: x86_64
         - os: ubuntu-latest-arm64
-          arch: arm64
+          arch: aarch64
 
     name: build ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}

@@ -67,12 +67,14 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     app_data.app_gui.scan_but.emit_clicked();
                 }
                 Err(e) => {
+                    backend::restore_network_manager().ok();
+
                     app_data.interface_gui.refresh_but.emit_clicked();
 
                     ErrorDialog::spawn(
                         &app_data.interface_gui.window,
                         "Monitor mode failed",
-                        &format!("Could not enable monitor mode on \"{}\":\n{}", iface, e),
+                        &e.message,
                     );
                 }
             };
