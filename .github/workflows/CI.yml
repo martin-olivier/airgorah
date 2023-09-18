@@ -134,21 +134,25 @@ jobs:
           path: ./airgorah_${{ matrix.arch }}.pkg.tar.zst
           if-no-files-found: error
 
-      - name: Name packages for release
+      - name: Get release version
+        id: 'tag'
+        if: github.event_name == 'release'
+        run: echo "tag=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_OUTPUT
+
+      - name: Rename packages
         if: github.event_name == 'release'
         run: |
-          echo "RELEASE_VERSION=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_ENV
-          cp ./airgorah_${{ matrix.arch }}.deb ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.deb
-          cp ./airgorah_${{ matrix.arch }}.rpm ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.rpm
-          cp ./airgorah_${{ matrix.arch }}.pkg.tar.zst ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.pkg.tar.zst
+          cp ./airgorah_${{ matrix.arch }}.deb ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.deb
+          cp ./airgorah_${{ matrix.arch }}.rpm ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.rpm
+          cp ./airgorah_${{ matrix.arch }}.pkg.tar.zst ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.pkg.tar.zst
 
       - name: Upload packages
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.deb
-            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.rpm
-            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.pkg.tar.zst
+            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.deb
+            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.rpm
+            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.pkg.tar.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
