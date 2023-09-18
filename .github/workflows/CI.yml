@@ -47,8 +47,18 @@ jobs:
         run: cargo fmt --all -- --check
 
   build:
-    name: build
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-latest-arm64]
+        include:
+        - os: ubuntu-latest
+          arch: x86_64
+        - os: ubuntu-latest-arm64
+          arch: aarch64
+
+    name: build ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
     needs: linter
     permissions: write-all
 
@@ -64,6 +74,7 @@ jobs:
           ruby
           ruby-dev
           rubygems
+          rpm
           libarchive-tools
 
       - name: Install fpm
@@ -74,7 +85,7 @@ jobs:
 
       - name: Build debian package
         run: >
-          fpm -t deb -p airgorah_amd64.deb --architecture amd64
+          fpm -t deb -p airgorah_${{ matrix.arch }}.deb --architecture native
           --depends policykit-1
           --depends "libgtk-4-1 (>= 4.6.0)"
           --depends dbus-x11
@@ -86,13 +97,13 @@ jobs:
       - name: Save debian artifact
         uses: actions/upload-artifact@v3
         with:
-          name: airgorah_amd64.deb
-          path: ./airgorah_amd64.deb
+          name: airgorah_${{ matrix.arch }}.deb
+          path: ./airgorah_${{ matrix.arch }}.deb
           if-no-files-found: error
 
       - name: Build redhat package
         run: >
-          fpm -t rpm -p airgorah_amd64.rpm --architecture amd64
+          fpm -t rpm -p airgorah_${{ matrix.arch }}.rpm --architecture native
           --depends polkit
           --depends "gtk4-devel >= 4.6.0"
           --depends dbus-x11
@@ -102,13 +113,13 @@ jobs:
       - name: Save redhat artifact
         uses: actions/upload-artifact@v3
         with:
-          name: airgorah_amd64.rpm
-          path: ./airgorah_amd64.rpm
+          name: airgorah_${{ matrix.arch }}.rpm
+          path: ./airgorah_${{ matrix.arch }}.rpm
           if-no-files-found: error
 
       - name: Build archlinux package
         run: >
-          fpm -t pacman -p airgorah_amd64.pkg.tar.zst --architecture amd64
+          fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture native
           --depends polkit
           --depends "gtk4 (>= 4.6.0)"
           --depends dbus
@@ -119,24 +130,25 @@ jobs:
       - name: Save archlinux artifact
         uses: actions/upload-artifact@v3
         with:
-          name: airgorah_amd64.pkg.tar.zst
-          path: ./airgorah_amd64.pkg.tar.zst
+          name: airgorah_${{ matrix.arch }}.pkg.tar.zst
+          path: ./airgorah_${{ matrix.arch }}.pkg.tar.zst
           if-no-files-found: error
 
       - name: Name packages for release
         if: github.event_name == 'release'
         run: |
-          cp ./airgorah_amd64.deb ./airgorah_${{ github.ref_name }}_amd64.deb
-          cp ./airgorah_amd64.rpm ./airgorah_${{ github.ref_name }}_amd64.rpm
-          cp ./airgorah_amd64.pkg.tar.zst ./airgorah_${{ github.ref_name }}_amd64.pkg.tar.zst
+          echo "RELEASE_VERSION=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_ENV
+          cp ./airgorah_${{ matrix.arch }}.deb ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.deb
+          cp ./airgorah_${{ matrix.arch }}.rpm ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.rpm
+          cp ./airgorah_${{ matrix.arch }}.pkg.tar.zst ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.pkg.tar.zst
 
       - name: Upload packages
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./airgorah_${{ github.ref_name }}_amd64.deb
-            ./airgorah_${{ github.ref_name }}_amd64.rpm
-            ./airgorah_${{ github.ref_name }}_amd64.pkg.tar.zst
+            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.deb
+            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.rpm
+            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.pkg.tar.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

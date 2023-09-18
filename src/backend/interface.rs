@@ -23,17 +23,23 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
     let phy_path = format!("/sys/class/net/{}/phy80211", iface);
 
     let phy_link = std::fs::read_link(phy_path)?;
-    let phy_name = phy_link
-        .file_name()
-        .ok_or(Error::new("phy parsing error"))?;
-    let phy_name_str = phy_name.to_str().ok_or(Error::new("phy parsing error"))?;
+
+    let phy_name = match phy_link.file_name() {
+        Some(name) => name,
+        None => return Err(Error::new("phy parsing error")),
+    };
+
+    let phy_name_str = match phy_name.to_str() {
+        Some(name) => name,
+        None => return Err(Error::new("phy parsing error")),
+    };
 
     let check_band_cmd = Command::new("iw")
         .args(["phy", phy_name_str, "info"])
         .output()?;
 
     if !check_band_cmd.status.success() {
-        return Err(Error::new("No such interface"));
+        return Err(Error::new(&format!("{}: No such phy", phy_name_str)));
     }
 
     let check_band_output = String::from_utf8(check_band_cmd.stdout)?;
@@ -50,7 +56,7 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
     if !check_monitor_cmd.status.success() {
-        return Err(Error::new("No such interface"));
+        return Err(Error::new(&format!("{}: No such interface", iface)));
     }
 
     let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
@@ -100,6 +106,12 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
         ));
     }
 
+    log::info!(
+        "{}: MAC address changed to {}",
+        iface,
+        get_settings().mac_address
+    );
+
     Ok(())
 }
 
@@ -115,13 +127,21 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;
 
     if !enable_monitor_cmd.status.success() {
-        return Err(Error::new("Failed to enable monitor mode"));
+        return Err(Error::new(&format!(
+            "Could not enable monitor mode on \"{}\"",
+            iface
+        )));
     }
+
+    log::info!("{}: monitor mode enabled", iface);
 
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => Err(Error::new("Failed to enable monitor mode")),
+            false => Err(Error::new(&format!(
+                "Interface \"{}mon\" is in managed mode",
+                iface
+            ))),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -133,7 +153,7 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
             }
 
             Err(Error::new(
-                "Monitor mode has been enabled but the new interface has not been found",
+                &format!("Monitor mode has been enabled on \"{}\", but the new interface name could not been found", iface)
             ))
         }
     }
@@ -154,6 +174,8 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
     }
 
     let disable_monitor_cmd = Command::new("airmon-ng").args(["stop", iface]).output()?;
+
+    log::info!("{}: monitor mode disabled", iface);
 
     match disable_monitor_cmd.status.success() {
         true => Ok(()),
@@ -177,6 +199,8 @@ pub fn set_iface(iface: String) {
 pub fn kill_network_manager() -> Result<(), Error> {
     if get_settings().kill_network_manager {
         Command::new("airmon-ng").args(["check", "kill"]).output()?;
+
+        log::warn!("network manager killed");
     }
 
     Ok(())
@@ -197,6 +221,8 @@ pub fn restore_network_manager() -> Result<(), Error> {
     Command::new("systemctl")
         .args(["restart", "wpa-supplicant"])
         .output()?;
+
+    log::warn!("network manager restored");
 
     Ok(())
 }

@@ -1,5 +1,3 @@
-use crate::error::Error;
-
 use std::process::{Command, Stdio};
 
 const CRUNCH_LOWERCASE: &str = "abcdefghijklmnopqrstuvwxyz";
@@ -8,12 +6,7 @@ const CRUNCH_NUMBERS: &str = "0123456789";
 const CRUNCH_SYMBOLS: &str = "!#$%/=?{}[]-*:;";
 
 /// Launch a new terminal window to run aircrack-ng to decrypt a handshake with the specified wordlist
-pub fn run_decrypt_wordlist_process(
-    handshake: &str,
-    bssid: &str,
-    essid: &str,
-    wordlist: &str,
-) -> Result<(), Error> {
+pub fn run_decrypt_wordlist_process(handshake: &str, bssid: &str, essid: &str, wordlist: &str) {
     let cmd = format!(
         "aircrack-ng '{}' -b '{}' -w '{}'",
         handshake, bssid, wordlist
@@ -35,8 +28,6 @@ pub fn run_decrypt_wordlist_process(
     std::thread::spawn(move || {
         process.output().unwrap();
     });
-
-    Ok(())
 }
 
 /// Launch a new terminal window to run aircrack-ng to decrypt a handshake using bruteforce
@@ -48,7 +39,7 @@ pub fn run_decrypt_bruteforce_process(
     up: bool,
     num: bool,
     sym: bool,
-) -> Result<(), Error> {
+) {
     let charset = format!(
         "{}{}{}{}",
         match low {
@@ -89,6 +80,4 @@ pub fn run_decrypt_bruteforce_process(
     std::thread::spawn(move || {
         process.output().unwrap();
     });
-
-    Ok(())
 }

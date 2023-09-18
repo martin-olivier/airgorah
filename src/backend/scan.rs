@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -71,33 +70,61 @@ pub fn is_scan_process() -> bool {
 }
 
 /// Check if the content of the channel filter is valid
-pub fn is_valid_channel_filter(channel_filter: &str) -> bool {
-    let channel_regex = Regex::new(r"^[1-9]+[0-9]*$").unwrap();
+pub fn is_valid_channel_filter(channel_filter: &str, ghz_2_4_but: bool, ghz_5_but: bool) -> bool {
     let channel_list: Vec<String> = channel_filter
         .split_terminator(',')
         .map(String::from)
         .collect();
 
-    for chan in channel_list {
-        if !channel_regex.is_match(&chan) {
+    let mut channel_buf = vec![];
+
+    if channel_filter.ends_with(',') {
+        return false;
+    }
+
+    for channel_str in channel_list {
+        let channel = match channel_str.parse::<u32>() {
+            Ok(chan) => chan,
+            Err(_) => return false,
+        };
+
+        if channel < 1 || (15..=35).contains(&channel) || channel > 165 {
             return false;
         }
+
+        if (1..=14).contains(&channel) && !ghz_2_4_but {
+            return false;
+        }
+
+        if (36..=165).contains(&channel) && !ghz_5_but {
+            return false;
+        }
+
+        if channel_buf.contains(&channel) {
+            return false;
+        }
+
+        channel_buf.push(channel);
     }
 
     true
 }
 
 /// Set the scan process
-pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
-    let iface = match get_iface().as_ref() {
-        Some(res) => res.to_string(),
-        None => return Err(Error::new("No interface set")),
-    };
+pub fn set_scan_process(
+    iface: &str,
+    ghz_2_4: bool,
+    ghz_5: bool,
+    channel_filter: Option<String>,
+) -> Result<(), Error> {
+    if !ghz_2_4 && !ghz_5 {
+        return Err(Error::new("No band selected"));
+    }
 
-    stop_scan_process().ok();
+    stop_scan_process()?;
 
     let mut proc_args = vec![
-        iface.as_str(),
+        iface,
         "-a",
         "--output-format",
         "csv,cap",
@@ -106,7 +133,28 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
         "--write-interval",
         "1",
     ];
-    proc_args.append(&mut args.to_vec());
+
+    let mut band = String::new();
+
+    if ghz_5 {
+        band += "a";
+    }
+
+    if ghz_2_4 {
+        band += "bg";
+    }
+
+    proc_args.push("--band");
+    proc_args.push(&band);
+
+    let channels;
+
+    if let Some(ref filter) = channel_filter {
+        channels = filter;
+
+        proc_args.push("--channel");
+        proc_args.push(channels);
+    }
 
     let child = Command::new("airodump-ng")
         .args(proc_args)
@@ -114,6 +162,13 @@ pub fn set_scan_process(args: &[&str]) -> Result<(), Error> {
         .spawn()?;
 
     SCAN_PROC.lock().unwrap().replace(child);
+
+    log::info!(
+        "scan started: 2.4ghz: {}, 5ghz: {}, channel filter: {:?}",
+        ghz_2_4,
+        ghz_5,
+        channel_filter
+    );
 
     Ok(())
 }
@@ -127,6 +182,8 @@ pub fn stop_scan_process() -> Result<(), Error> {
     }
 
     SCAN_PROC.lock().unwrap().take();
+
+    log::info!("scan stopped");
 
     let old_path_exists = Path::new(&(OLD_SCAN_PATH.to_string() + "-01.cap")).exists();
     let live_path_exists = Path::new(&(LIVE_SCAN_PATH.to_string() + "-01.cap")).exists();

@@ -58,7 +58,11 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                     let handshakes = backend::get_handshakes(file_path).unwrap_or_default();
 
                     if handshakes.is_empty() {
-                        return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Invalid capture", &format!("\"{}\" doesn't contain any valid handshake", file_path), false);
+                        return ErrorDialog::spawn(
+                            &app_data.decrypt_gui.window,
+                            "Invalid capture",
+                            &format!("\"{}\" doesn't contain any valid handshake", file_path)
+                        );
                     }
 
                     app_data.decrypt_gui.target_model.clear();
@@ -166,19 +170,17 @@ fn connect_decrypt_button(app_data: Rc<AppData>) {
 
             let stack = app_data.decrypt_gui.stack.visible_child_name().unwrap();
 
-            if stack == "dictionary" {
-                if let Err(e) = backend::run_decrypt_wordlist_process(&handshake_entry, &bssid, &essid, &wordlist_entry) {
-                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", &e.to_string(), false);
-                }
-            } else {
-                if !backend::has_dependency("crunch") {
-                    let err_msg = "\"crunch\" is not installed on your system, could not generate a wordlist from a charset";
-                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", err_msg, false);
-                }
-                if let Err(e) = backend::run_decrypt_bruteforce_process(&handshake_entry, &bssid, &essid, low, up, num, sym) {
-                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", &e.to_string(), false);
-                }
+            if stack == "bruteforce" && !backend::has_dependency("crunch") {
+                let err_msg = "\"crunch\" is not installed on your system, could not generate a wordlist from a charset";
+                return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", err_msg);
             }
+
+            if stack == "dictionary" {
+                backend::run_decrypt_wordlist_process(&handshake_entry, &bssid, &essid, &wordlist_entry);
+            } else if stack == "bruteforce" {
+                backend::run_decrypt_bruteforce_process(&handshake_entry, &bssid, &essid, low, up, num, sym);
+            }
+
             app_data.decrypt_gui.window.close();
         }));
 }

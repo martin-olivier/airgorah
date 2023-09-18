@@ -26,9 +26,13 @@ pub fn update_handshakes() -> Result<(), Error> {
             }
         }
     }
+
+    log::trace!("handshakes updated");
+
     Ok(())
 }
 
+/// Get the access points infos of the handshakes contained in the capture file
 pub fn get_handshakes(path: &str) -> Result<Vec<(String, String)>, Error> {
     let capture_output = Command::new("aircrack-ng").args([path]).output()?;
 
@@ -60,5 +64,8 @@ pub fn get_handshakes(path: &str) -> Result<Vec<(String, String)>, Error> {
 /// Save the current capture to a file
 pub fn save_capture(path: &str) -> Result<(), Error> {
     std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path)?;
+
+    log::info!("capture saved to \"{}\"", path);
+
     Ok(())
 }

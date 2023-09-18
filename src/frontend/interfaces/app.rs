@@ -303,6 +303,22 @@ impl AppGui {
             .margin_bottom(4)
             .build();
 
+        let css_provider = CssProvider::new();
+        css_provider.load_from_data(
+            std::str::from_utf8(
+                b"
+                    .error {
+                        color: red;
+                        border-color: red;
+                    }
+                ",
+            )
+            .unwrap(),
+        );
+
+        let style_context = channel_filter_entry.style_context();
+        style_context.add_provider(&css_provider, gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
         let channel_frame = Frame::new(Some("Channel"));
         channel_frame.set_child(Some(&channel_filter_entry));
 

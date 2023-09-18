@@ -1,12 +1,10 @@
-#![allow(unused)]
-
 use gtk4::prelude::*;
 use gtk4::*;
 
 pub struct ErrorDialog;
 
 impl ErrorDialog {
-    pub fn spawn(parent: &impl IsA<Window>, title: &str, content: &str, terminate: bool) {
+    pub fn spawn(parent: &impl IsA<Window>, title: &str, content: &str) {
         let dialog = MessageDialog::builder()
             .text(title)
             .secondary_text(content)
@@ -19,35 +17,31 @@ impl ErrorDialog {
 
         dialog.connect_response(move |this, _| {
             this.close();
-            if terminate {
-                std::process::exit(1);
-            }
-        });
-        dialog.connect_close(move |_| {
-            if terminate {
-                std::process::exit(1);
-            }
         });
         dialog.show();
     }
 }
 
-pub struct InfoDialog;
+pub struct PanicDialog;
 
-impl InfoDialog {
-    pub fn spawn(parent: &impl IsA<Window>, title: &str, content: &str) {
+impl PanicDialog {
+    pub fn spawn(parent: &impl IsA<Window>, message: &str) {
         let dialog = MessageDialog::builder()
-            .text(title)
-            .secondary_text(content)
+            .text("Error")
+            .secondary_text(message)
             .decorated(true)
-            .message_type(MessageType::Info)
-            .buttons(ButtonsType::Ok)
+            .message_type(MessageType::Error)
+            .buttons(ButtonsType::Close)
             .modal(true)
             .transient_for(parent)
             .build();
 
-        dialog.connect_response(|this, _| {
+        dialog.connect_response(move |this, _| {
             this.close();
+            std::process::exit(1);
+        });
+        dialog.connect_close(move |_| {
+            std::process::exit(1);
         });
         dialog.show();
     }

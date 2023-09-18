@@ -8,6 +8,8 @@ mod globals;
 mod types;
 
 fn main() {
+    env_logger::init();
+
     let application = Application::builder()
         .application_id(globals::APP_ID)
         .build();

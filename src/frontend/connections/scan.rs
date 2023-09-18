@@ -8,8 +8,6 @@ use gtk4::*;
 use std::rc::Rc;
 
 fn run_scan(app_data: &AppData) {
-    let mut args = vec![];
-
     let iface = match backend::get_iface() {
         Some(iface) => iface,
         None => return app_data.interface_gui.window.show(),
@@ -20,11 +18,11 @@ fn run_scan(app_data: &AppData) {
             &app_data.app_gui.window,
             "Error",
             "You need to select at least one frequency band",
-            false,
         );
     }
 
-    let mut bands = "".to_string();
+    let mut ghz_2_4 = false;
+    let mut ghz_5 = false;
 
     if app_data.app_gui.ghz_5_but.is_active() {
         if !backend::is_5ghz_supported(&iface).unwrap() {
@@ -32,48 +30,30 @@ fn run_scan(app_data: &AppData) {
                 &app_data.app_gui.window,
                 "Error",
                 "Your network card doesn't support 5GHz",
-                false,
             );
             return app_data.app_gui.ghz_5_but.set_active(false);
         }
-        bands.push('a');
+        ghz_5 = true;
     }
     if app_data.app_gui.ghz_2_4_but.is_active() {
-        bands.push_str("bg");
-    }
-    args.push("--band");
-    args.push(&bands);
-
-    let channel_filter = app_data
-        .app_gui
-        .channel_filter_entry
-        .text()
-        .as_str()
-        .replace(' ', "");
-
-    if !channel_filter.is_empty() {
-        match backend::is_valid_channel_filter(&channel_filter) {
-            true => {
-                args.push("--channel");
-                args.push(&channel_filter);
-            }
-            false => {
-                return ErrorDialog::spawn(
-                    &app_data.app_gui.window,
-                    "Error",
-                    "You need to put a valid channel filter",
-                    false,
-                );
-            }
-        }
+        ghz_2_4 = true;
     }
 
-    if let Err(e) = backend::set_scan_process(&args) {
+    let channel_filter = app_data.app_gui.channel_filter_entry.text();
+
+    let channel_filter = match !channel_filter.is_empty() {
+        true => match backend::is_valid_channel_filter(&channel_filter, ghz_2_4, ghz_5) {
+            true => Some(channel_filter.to_string()),
+            false => None,
+        },
+        false => None,
+    };
+
+    if let Err(e) = backend::set_scan_process(&iface, ghz_2_4, ghz_5, channel_filter) {
         return ErrorDialog::spawn(
             &app_data.app_gui.window,
             "Error",
             &format!("Could not start scan process:\n\n{}", e),
-            false,
         );
     }
 
@@ -153,7 +133,7 @@ fn connect_save_button(app_data: Rc<AppData>) {
                         if was_scanning {
                             app_data.app_gui.scan_but.emit_clicked();
                         }
-                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string(), false);
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string());
                     }
 
                     for (_, ap) in backend::get_aps().iter_mut() {
@@ -175,13 +155,15 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
+
             if backend::is_scan_process() {
                 if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
                     ErrorDialog::spawn(
                         &app_data.app_gui.window,
                         "Error",
                         "You need to select at least one frequency band",
-                        false,
                     );
                     return this.set_active(true);
                 }
@@ -195,17 +177,19 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_5_but
         .connect_toggled(clone!(@strong app_data => move |this| {
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
+
             let iface = match backend::get_iface() {
                 Some(iface) => iface,
                 None => return,
             };
 
-            if !backend::is_5ghz_supported(&iface).unwrap() && this.is_active() {
+            if !backend::is_5ghz_supported(&iface).unwrap_or(false) && this.is_active() {
                 ErrorDialog::spawn(
                     &app_data.app_gui.window,
                     "Error",
                     "Your network card doesn't support 5GHz",
-                    false,
                 );
                 return this.set_active(false);
             }
@@ -216,7 +200,6 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                         &app_data.app_gui.window,
                         "Error",
                         "You need to select at least one frequency band",
-                        false,
                     );
                     return this.set_active(true);
                 }
@@ -230,7 +213,6 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |this| {
             let channel_filter = this
                 .text()
-                .replace(' ', "")
                 .chars()
                 .filter(|c| c.is_numeric() || *c == ',')
                 .collect::<String>();
@@ -239,8 +221,13 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
                 return this.set_text(&channel_filter);
             }
 
-            if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter) {
-                return;
+            let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
+            let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
+
+            if !channel_filter.is_empty() && !backend::is_valid_channel_filter(&channel_filter, ghz_2_4_but, ghz_5_but) {
+                this.style_context().add_class("error");
+            } else {
+                this.style_context().remove_class("error");
             }
 
             if backend::is_scan_process() {

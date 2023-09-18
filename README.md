@@ -7,17 +7,26 @@
 <h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.4.1">
-    <img src="https://img.shields.io/badge/Version-0.4.1_(beta)-blue.svg" alt="version"/>
+  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.4.2">
+    <img src="https://img.shields.io/badge/Release-v0.4.2-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
   </a>
   <a href="https://www.rust-lang.org/">
-    <img src="https://img.shields.io/badge/Language-Rust-orange.svg" alt="cppversion"/>
+    <img src="https://img.shields.io/badge/Language-Rust-orange.svg" alt="lang"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml">
     <img src="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg" alt="ci"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://crates.io/crates/airgorah">
+    <img src="https://img.shields.io/crates/v/airgorah.svg" alt="crates"/>
+  </a>
+  <a href="https://aur.archlinux.org/packages/airgorah">
+    <img src="https://img.shields.io/aur/version/airgorah" alt="aur"/>
   </a>
 </p>
 
