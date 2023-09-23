@@ -131,7 +131,7 @@ jobs:
         run: >
           fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture native
           --depends polkit
-          --depends "gtk4 (>= 4.6.0)"
+          --depends gtk4
           --depends dbus
           --depends wireshark-cli
           --depends iproute2

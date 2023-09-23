@@ -13,6 +13,8 @@ use gtk4::*;
 use std::io::BufReader;
 use std::rc::Rc;
 use std::time::Duration;
+use std::fs::File;
+use std::io::Write;
 
 fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
     let mut iter = storage.iter_first();
@@ -92,6 +94,57 @@ fn connect_settings_button(app_data: Rc<AppData>) {
         }));
 }
 
+fn connect_report_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .report_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let aps = backend::get_aps().values().cloned().collect::<Vec<AP>>();
+
+            if aps.is_empty() {
+                return ErrorDialog::spawn(
+                    &app_data.app_gui.window,
+                    "Error",
+                    "There is no data to export",
+                );
+            }
+
+            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
+
+            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+                Some("Save capture report"),
+                Some(&app_data.app_gui.window),
+                FileChooserAction::Save,
+                &[("Save", ResponseType::Accept)],
+            ));
+
+            file_chooser_dialog.set_current_name("report.json");
+            file_chooser_dialog.run_async(move |this, response| {
+                if response == ResponseType::Accept {
+                    let gio_file = match this.file() {
+                        Some(file) => file,
+                        None => return,
+                    };
+                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
+                    file.write_all(json_data.as_bytes()).unwrap();
+                }
+                this.close();
+            });
+        }));
+}
+
+fn connect_focus_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .focus_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+                app_data.app_gui.channel_filter_entry.set_text(&channel.to_string());
+            }
+        }));
+}
+
 fn start_app_refresh(app_data: Rc<AppData>) {
     glib::timeout_add_local(
         Duration::from_millis(100),
@@ -103,11 +156,9 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 
                     match attack_pool.contains_key(&bssid) {
                         true => {
-                            app_data.app_gui.deauth_but.set_label("Stop Attack");
                             app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
                         }
                         false => {
-                            app_data.app_gui.deauth_but.set_label("Deauth Attack");
                             app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
                         }
                     }
@@ -118,7 +169,6 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     }
                 }
                 None => {
-                    app_data.app_gui.deauth_but.set_label("Deauth Attack");
                     app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
                 }
             };
@@ -372,6 +422,8 @@ pub fn connect(app_data: Rc<AppData>) {
     start_handshake_refresh();
     start_update_checker();
 
+    connect_report_button(app_data.clone());
+    connect_focus_button(app_data.clone());
     connect_deauth_button(app_data.clone());
     connect_capture_button(app_data);
 }

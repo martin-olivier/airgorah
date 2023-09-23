@@ -244,9 +244,11 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
         .connect_cursor_changed(clone!(@strong app_data => move |this| {
             match this.selection().selected().is_some() {
                 true => {
+                    app_data.app_gui.focus_but.set_sensitive(true);
                     app_data.app_gui.deauth_but.set_sensitive(true);
                 }
                 false => {
+                    app_data.app_gui.focus_but.set_sensitive(false);
                     app_data.app_gui.deauth_but.set_sensitive(false);
                     app_data.app_gui.capture_but.set_sensitive(false);
                 }

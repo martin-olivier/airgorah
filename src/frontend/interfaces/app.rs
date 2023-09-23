@@ -33,15 +33,40 @@ fn build_settings_button() -> Button {
         .build()
 }
 
-pub fn build_header_bar() -> HeaderBar {
-    HeaderBar::builder().show_title_buttons(true).build()
+fn build_scan_button() -> Button {
+    Button::builder()
+        .icon_name("media-playback-start-symbolic")
+        .tooltip_text("Start / Pause the scan")
+        .build()
+}
+
+fn build_clear_button() -> Button {
+    Button::builder()
+        .icon_name("edit-delete-symbolic")
+        .sensitive(false)
+        .tooltip_text("Stop the scan and clear results")
+        .build()
+}
+
+fn build_export_button() -> Button {
+    Button::builder()
+        .icon_name("media-floppy-symbolic")
+        .tooltip_text("Save the capture")
+        .build()
+}
+
+fn build_report_button() -> Button {
+    Button::builder()
+        .icon_name("text-x-generic")
+        .tooltip_text("Save report")
+        .build()
 }
 
 fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
-        .title("Airgorah")
-        .default_width(1300)
+        .title("")
+        .default_width(1200)
         .default_height(620)
         .build();
 
@@ -197,110 +222,46 @@ pub struct AppGui {
     pub scan_but: Button,
     pub clear_but: Button,
     pub export_but: Button,
-    pub deauth_but: IconTextButton,
-    pub capture_but: IconTextButton,
+    pub report_but: Button,
+    pub focus_but: IconButton,
+    pub deauth_but: IconButton,
+    pub capture_but: IconButton,
 }
 
 impl AppGui {
     pub fn new(app: &Application) -> Self {
         let window = build_window(app);
-        let header_bar = build_header_bar();
+        let header_bar = HeaderBar::new();
 
         window.set_titlebar(Some(&header_bar));
 
+        let scan_but = build_scan_button();
+        let clear_but = build_clear_button();
+        let export_but = build_export_button();
+        let report_but = build_report_button();
+
         let about_button = build_about_button();
-        let update_button = build_update_button();
         let decrypt_button = build_decrypt_button();
         let settings_button = build_settings_button();
-
-        header_bar.pack_start(&about_button);
-        header_bar.pack_start(&decrypt_button);
-        header_bar.pack_start(&settings_button);
-        header_bar.pack_start(&update_button);
+        let update_button = build_update_button();
 
         update_button.hide();
-
-        // Left View (Access Points and Clients)
-
-        let aps_model = build_aps_model();
-        let aps_view = build_aps_view();
-        let aps_scroll = build_aps_scroll();
-
-        aps_scroll.set_child(Some(&aps_view));
-        aps_view.set_model(Some(&aps_model));
-
-        let cli_model = build_cli_model();
-        let cli_view = build_cli_view();
-        let cli_scroll = build_cli_scroll();
-
-        cli_scroll.set_child(Some(&cli_view));
-        cli_view.set_model(Some(&cli_model));
-
-        // Scan, Stop and Save Buttons
-
-        let scan_but = Button::builder()
-            .icon_name("media-playback-start-symbolic")
-            .tooltip_text("Start / Pause the scan")
-            .build();
-
-        let clear_but = Button::builder()
-            .icon_name("edit-delete-symbolic")
-            .sensitive(false)
-            .tooltip_text("Stop the scan and clear results")
-            .build();
-
-        let export_but = Button::builder()
-            .icon_name("media-floppy-symbolic")
-            .tooltip_text("Save the capture")
-            .build();
-
-        let top_but_box = CenterBox::new();
-        top_but_box.set_margin_start(10);
-        top_but_box.set_margin_end(10);
-        top_but_box.set_margin_top(10);
-        top_but_box.set_start_widget(Some(&scan_but));
-        top_but_box.set_center_widget(Some(&clear_but));
-        top_but_box.set_end_widget(Some(&export_but));
 
         // Interface Display
 
         let iface_ico = Image::from_icon_name("network-wired");
         let iface_label = Label::new(Some("None"));
-
-        let iface_box = Box::new(Orientation::Horizontal, 6);
-        iface_box.append(&iface_ico);
-        iface_box.append(&iface_label);
-
-        iface_box.set_margin_top(4);
-        iface_box.set_margin_start(6);
-        iface_box.set_margin_end(6);
-        iface_box.set_margin_bottom(4);
-
-        let iface_frame = Frame::new(None);
-        iface_frame.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
-        iface_frame.set_child(Some(&iface_box));
+        iface_label.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
 
         // Scan filters
 
         let ghz_2_4_but = CheckButton::builder().active(true).label("2.4 GHz").build();
         let ghz_5_but = CheckButton::builder().active(false).label("5 GHz").build();
 
-        let but_box = Box::new(Orientation::Horizontal, 10);
-        but_box.append(&ghz_2_4_but);
-        but_box.append(&ghz_5_but);
-
-        but_box.set_margin_start(6);
-        but_box.set_margin_end(6);
-        but_box.set_margin_bottom(4);
-
-        let band_frame = Frame::new(Some("Band"));
-        band_frame.set_child(Some(&but_box));
+        // Channel
 
         let channel_filter_entry = Entry::builder()
-            .placeholder_text("ex: 1,6,11")
-            .margin_start(4)
-            .margin_end(4)
-            .margin_bottom(4)
+            .placeholder_text("Channel (ex: 1,6,11)")
             .build();
 
         let css_provider = CssProvider::new();
@@ -319,39 +280,69 @@ impl AppGui {
         let style_context = channel_filter_entry.style_context();
         style_context.add_provider(&css_provider, gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        let channel_frame = Frame::new(Some("Channel"));
-        channel_frame.set_child(Some(&channel_filter_entry));
+        // Actions
 
-        let separator = Separator::new(Orientation::Vertical);
-        separator.set_vexpand(true);
-        separator.set_opacity(0.0);
+        let focus_but = IconButton::new(globals::FOCUS_ICON);
+        focus_but.set_tooltip_text(Some(
+            "Focus the channel on the selected access point",
+        ));
+        focus_but.set_sensitive(false);
 
-        let deauth_but = IconTextButton::new(globals::DEAUTH_ICON, "Deauth Attack");
+        let deauth_but = IconButton::new(globals::DEAUTH_ICON);
         deauth_but.set_tooltip_text(Some(
             "Perform (or stop) a deauth attack on the selected access point",
         ));
         deauth_but.set_sensitive(false);
 
-        let capture_but = IconTextButton::new(globals::CAPTURE_ICON, "Decrypt Handshake");
+        let capture_but = IconButton::new(globals::CAPTURE_ICON);
         capture_but.set_tooltip_text(Some(
             "Decrypt a handshake captured on the selected access point",
         ));
         capture_but.set_sensitive(false);
-        capture_but.set_margin_bottom(10);
 
-        let scan_box = Box::new(Orientation::Vertical, 10);
-        scan_box.append(&iface_frame);
-        scan_box.append(&band_frame);
-        scan_box.append(&channel_frame);
-        scan_box.append(&top_but_box);
-        scan_box.append(&separator);
-        scan_box.append(&deauth_but.handle);
-        scan_box.append(&capture_but.handle);
+        // Header Bar
 
-        scan_box.set_hexpand(false);
+        header_bar.pack_start(&scan_but);
+        header_bar.pack_start(&clear_but);
+        header_bar.pack_start(&export_but);
+        header_bar.pack_start(&report_but);
 
-        scan_box.set_margin_top(10);
-        scan_box.set_margin_end(10);
+        header_bar.pack_start(&Separator::new(Orientation::Vertical));
+
+        header_bar.pack_start(&focus_but.handle);
+        header_bar.pack_start(&deauth_but.handle);
+        header_bar.pack_start(&capture_but.handle);
+
+        header_bar.pack_start(&Separator::new(Orientation::Vertical));
+
+        header_bar.pack_start(&about_button);
+        header_bar.pack_start(&decrypt_button);
+        header_bar.pack_start(&settings_button);
+        header_bar.pack_start(&update_button);
+
+        header_bar.pack_end(&iface_label);
+        header_bar.pack_end(&iface_ico);
+
+        header_bar.pack_end(&ghz_5_but);
+        header_bar.pack_end(&ghz_2_4_but);
+
+        header_bar.pack_end(&channel_filter_entry);
+
+        // Left View (Access Points and Clients)
+
+        let aps_model = build_aps_model();
+        let aps_view = build_aps_view();
+        let aps_scroll = build_aps_scroll();
+
+        aps_scroll.set_child(Some(&aps_view));
+        aps_view.set_model(Some(&aps_model));
+
+        let cli_model = build_cli_model();
+        let cli_view = build_cli_view();
+        let cli_scroll = build_cli_scroll();
+
+        cli_scroll.set_child(Some(&cli_view));
+        cli_view.set_model(Some(&cli_model));
 
         // Set main window child
 
@@ -360,11 +351,7 @@ impl AppGui {
         panned.set_start_child(Some(&aps_scroll));
         panned.set_end_child(Some(&cli_scroll));
 
-        let main_box = Box::new(Orientation::Horizontal, 10);
-        main_box.append(&panned);
-        main_box.append(&scan_box);
-
-        window.set_child(Some(&main_box));
+        window.set_child(Some(&panned));
 
         Self {
             // Header bar
@@ -385,6 +372,8 @@ impl AppGui {
             scan_but,
             clear_but,
             export_but,
+            report_but,
+            focus_but,
             deauth_but,
             capture_but,
         }
