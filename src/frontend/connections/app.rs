@@ -113,6 +113,90 @@ fn connect_focus_button(app_data: Rc<AppData>) {
         }));
 }
 
+fn connect_previous_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .previous_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let iter = match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, iter)) => iter,
+                None => return,
+            };
+
+            let mut prev_iter = iter.clone();
+            if !app_data.app_gui.aps_model.iter_previous(&mut prev_iter) {
+                return;
+            }
+
+            let path = app_data.app_gui.aps_model.path(&prev_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&prev_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+        }));
+}
+
+fn connect_next_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .next_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let iter = match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, iter)) => iter,
+                None => return,
+            };
+
+            let mut next_iter = iter.clone();
+            if !app_data.app_gui.aps_model.iter_next(&mut next_iter) {
+                return;
+            }
+
+            let path = app_data.app_gui.aps_model.path(&next_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&next_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+        }));
+}
+
+fn connect_top_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .top_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let first_iter = match app_data.app_gui.aps_model.iter_first() {
+                Some(iter) => iter,
+                None => return,
+            };
+
+            let path = app_data.app_gui.aps_model.path(&first_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&first_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+        }));
+}
+
+fn connect_bottom_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .bottom_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let mut iter = match app_data.app_gui.aps_model.iter_first() {
+                Some(iter) => iter,
+                None => return,
+            };
+
+            let mut last_iter = iter.clone();
+
+            while app_data.app_gui.aps_model.iter_next(&mut iter) {
+                last_iter = iter.clone();
+            }
+
+            let path = app_data.app_gui.aps_model.path(&last_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&last_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+        }));
+}
+
 fn start_app_refresh(app_data: Rc<AppData>) {
     glib::timeout_add_local(
         Duration::from_millis(100),
@@ -395,6 +479,11 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_update_button(app_data.clone());
     connect_decrypt_button(app_data.clone());
     connect_settings_button(app_data.clone());
+
+    connect_previous_button(app_data.clone());
+    connect_next_button(app_data.clone());
+    connect_top_button(app_data.clone());
+    connect_bottom_button(app_data.clone());
 
     start_app_refresh(app_data.clone());
     start_handshake_refresh();
