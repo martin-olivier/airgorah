@@ -40,25 +40,74 @@ fn build_scan_button() -> Button {
         .build()
 }
 
-fn build_clear_button() -> Button {
+fn build_restart_button() -> Button {
     Button::builder()
-        .icon_name("edit-delete-symbolic")
+        .icon_name("view-refresh-symbolic")
+        .tooltip_text("Clear results and restarts the scan")
         .sensitive(false)
-        .tooltip_text("Stop the scan and clear results")
         .build()
 }
 
 fn build_export_button() -> Button {
     Button::builder()
         .icon_name("media-floppy-symbolic")
-        .tooltip_text("Save the capture")
+        .tooltip_text("Save captured packets as .cap file")
+        .sensitive(false)
         .build()
 }
 
 fn build_report_button() -> Button {
     Button::builder()
-        .icon_name("text-x-generic")
-        .tooltip_text("Save report")
+        .icon_name("text-x-generic-symbolic")
+        .tooltip_text("Save captured data as .json file")
+        .sensitive(false)
+        .build()
+}
+
+fn build_hopping_button() -> Button {
+    Button::builder()
+        .icon_name("edit-select-all-symbolic")
+        .tooltip_text("Hop on all channels of the selected bands")
+        .build()
+}
+
+fn build_focus_button() -> Button {
+    Button::builder()
+        .icon_name("edit-select-symbolic")
+        .tooltip_text("Focus the channel of the selected access point")
+        .sensitive(false)
+        .build()
+}
+
+fn build_previous_but() -> Button {
+    Button::builder()
+        .icon_name("go-up-symbolic")
+        .tooltip_text("Previous access point")
+        .sensitive(false)
+        .build()
+}
+
+fn build_next_but() -> Button {
+    Button::builder()
+        .icon_name("go-down-symbolic")
+        .tooltip_text("Next access point")
+        .sensitive(false)
+        .build()
+}
+
+fn build_top_but() -> Button {
+    Button::builder()
+        .icon_name("go-top-symbolic")
+        .tooltip_text("First access point")
+        .sensitive(false)
+        .build()
+}
+
+fn build_bottom_but() -> Button {
+    Button::builder()
+        .icon_name("go-bottom-symbolic")
+        .tooltip_text("Last access point")
+        .sensitive(false)
         .build()
 }
 
@@ -66,7 +115,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("")
-        .default_width(1200)
+        .default_width(1240)
         .default_height(620)
         .build();
 
@@ -220,10 +269,15 @@ pub struct AppGui {
     pub ghz_5_but: CheckButton,
     pub channel_filter_entry: Entry,
     pub scan_but: Button,
-    pub clear_but: Button,
+    pub restart_but: Button,
     pub export_but: Button,
     pub report_but: Button,
-    pub focus_but: IconButton,
+    pub previous_but: Button,
+    pub next_but: Button,
+    pub top_but: Button,
+    pub bottom_but: Button,
+    pub hopping_but: Button,
+    pub focus_but: Button,
     pub deauth_but: IconButton,
     pub capture_but: IconButton,
 }
@@ -236,9 +290,17 @@ impl AppGui {
         window.set_titlebar(Some(&header_bar));
 
         let scan_but = build_scan_button();
-        let clear_but = build_clear_button();
+        let restart_but = build_restart_button();
         let export_but = build_export_button();
         let report_but = build_report_button();
+
+        let hopping_but = build_hopping_button();
+        let focus_but = build_focus_button();
+
+        let previous_but = build_previous_but();
+        let next_but = build_next_but();
+        let top_but = build_top_but();
+        let bottom_but = build_bottom_but();
 
         let about_button = build_about_button();
         let decrypt_button = build_decrypt_button();
@@ -262,6 +324,7 @@ impl AppGui {
 
         let channel_filter_entry = Entry::builder()
             .placeholder_text("Channel (ex: 1,6,11)")
+            .hexpand(true)
             .build();
 
         let css_provider = CssProvider::new();
@@ -282,12 +345,6 @@ impl AppGui {
 
         // Actions
 
-        let focus_but = IconButton::new(globals::FOCUS_ICON);
-        focus_but.set_tooltip_text(Some(
-            "Focus the channel on the selected access point",
-        ));
-        focus_but.set_sensitive(false);
-
         let deauth_but = IconButton::new(globals::DEAUTH_ICON);
         deauth_but.set_tooltip_text(Some(
             "Perform (or stop) a deauth attack on the selected access point",
@@ -303,22 +360,28 @@ impl AppGui {
         // Header Bar
 
         header_bar.pack_start(&scan_but);
-        header_bar.pack_start(&clear_but);
+        header_bar.pack_start(&restart_but);
         header_bar.pack_start(&export_but);
         header_bar.pack_start(&report_but);
 
         header_bar.pack_start(&Separator::new(Orientation::Vertical));
 
-        header_bar.pack_start(&focus_but.handle);
+        header_bar.pack_start(&previous_but);
+        header_bar.pack_start(&next_but);
+        header_bar.pack_start(&top_but);
+        header_bar.pack_start(&bottom_but);
+
+        header_bar.pack_start(&Separator::new(Orientation::Vertical));
+
         header_bar.pack_start(&deauth_but.handle);
         header_bar.pack_start(&capture_but.handle);
 
         header_bar.pack_start(&Separator::new(Orientation::Vertical));
 
-        header_bar.pack_start(&about_button);
         header_bar.pack_start(&decrypt_button);
         header_bar.pack_start(&settings_button);
         header_bar.pack_start(&update_button);
+        header_bar.pack_start(&about_button);
 
         header_bar.pack_end(&iface_label);
         header_bar.pack_end(&iface_ico);
@@ -327,6 +390,9 @@ impl AppGui {
         header_bar.pack_end(&ghz_2_4_but);
 
         header_bar.pack_end(&channel_filter_entry);
+
+        header_bar.pack_end(&hopping_but);
+        header_bar.pack_end(&focus_but);
 
         // Left View (Access Points and Clients)
 
@@ -370,9 +436,14 @@ impl AppGui {
             ghz_5_but,
             channel_filter_entry,
             scan_but,
-            clear_but,
+            restart_but,
             export_but,
             report_but,
+            previous_but,
+            next_but,
+            top_but,
+            bottom_but,
+            hopping_but,
             focus_but,
             deauth_but,
             capture_but,

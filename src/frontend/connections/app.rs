@@ -13,8 +13,6 @@ use gtk4::*;
 use std::io::BufReader;
 use std::rc::Rc;
 use std::time::Duration;
-use std::fs::File;
-use std::io::Write;
 
 fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
     let mut iter = storage.iter_first();
@@ -94,42 +92,12 @@ fn connect_settings_button(app_data: Rc<AppData>) {
         }));
 }
 
-fn connect_report_button(app_data: Rc<AppData>) {
+fn connect_hopping_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
-        .report_but
+        .hopping_but
         .connect_clicked(clone!(@strong app_data => move |_| {
-            let aps = backend::get_aps().values().cloned().collect::<Vec<AP>>();
-
-            if aps.is_empty() {
-                return ErrorDialog::spawn(
-                    &app_data.app_gui.window,
-                    "Error",
-                    "There is no data to export",
-                );
-            }
-
-            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
-
-            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
-                Some("Save capture report"),
-                Some(&app_data.app_gui.window),
-                FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
-            ));
-
-            file_chooser_dialog.set_current_name("report.json");
-            file_chooser_dialog.run_async(move |this, response| {
-                if response == ResponseType::Accept {
-                    let gio_file = match this.file() {
-                        Some(file) => file,
-                        None => return,
-                    };
-                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
-                    file.write_all(json_data.as_bytes()).unwrap();
-                }
-                this.close();
-            });
+            app_data.app_gui.channel_filter_entry.set_text("");
         }));
 }
 
@@ -175,12 +143,22 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 
             match backend::get_aps().is_empty() {
                 true => {
-                    app_data.app_gui.clear_but.set_sensitive(false);
+                    app_data.app_gui.restart_but.set_sensitive(false);
                     app_data.app_gui.export_but.set_sensitive(false);
+                    app_data.app_gui.report_but.set_sensitive(false);
+                    app_data.app_gui.top_but.set_sensitive(false);
+                    app_data.app_gui.bottom_but.set_sensitive(false);
+                    app_data.app_gui.previous_but.set_sensitive(false);
+                    app_data.app_gui.next_but.set_sensitive(false);
                 }
                 false => {
-                    app_data.app_gui.clear_but.set_sensitive(true);
+                    app_data.app_gui.restart_but.set_sensitive(true);
                     app_data.app_gui.export_but.set_sensitive(true);
+                    app_data.app_gui.report_but.set_sensitive(true);
+                    app_data.app_gui.top_but.set_sensitive(true);
+                    app_data.app_gui.bottom_but.set_sensitive(true);
+                    app_data.app_gui.previous_but.set_sensitive(true);
+                    app_data.app_gui.next_but.set_sensitive(true);
                 }
             }
 
@@ -422,7 +400,7 @@ pub fn connect(app_data: Rc<AppData>) {
     start_handshake_refresh();
     start_update_checker();
 
-    connect_report_button(app_data.clone());
+    connect_hopping_button(app_data.clone());
     connect_focus_button(app_data.clone());
     connect_deauth_button(app_data.clone());
     connect_capture_button(app_data);

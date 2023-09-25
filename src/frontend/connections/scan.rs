@@ -1,11 +1,14 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::*;
+use crate::types::*;
 
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
+use std::fs::File;
+use std::io::Write;
 
 fn run_scan(app_data: &AppData) {
     let iface = match backend::get_iface() {
@@ -77,10 +80,10 @@ fn connect_scan_button(app_data: Rc<AppData>) {
     );
 }
 
-fn connect_clear_button(app_data: Rc<AppData>) {
+fn connect_restart_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
-        .clear_but
+        .restart_but
         .connect_clicked(clone!(@strong app_data => move |this| {
             backend::stop_scan_process().ok();
             backend::get_aps().clear();
@@ -89,14 +92,12 @@ fn connect_clear_button(app_data: Rc<AppData>) {
             app_data.app_gui.cli_model.clear();
 
             this.set_sensitive(false);
-            app_data
-                .app_gui
-                .scan_but
-                .set_icon_name("media-playback-start-symbolic");
+            
+            run_scan(&app_data);
         }));
 }
 
-fn connect_save_button(app_data: Rc<AppData>) {
+fn connect_export_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
         .export_but
@@ -147,6 +148,41 @@ fn connect_save_button(app_data: Rc<AppData>) {
                     app_data.app_gui.scan_but.emit_clicked();
                 }
             }));
+        }));
+}
+
+fn connect_report_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .report_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            if backend::get_aps().is_empty() {
+                return;
+            }
+
+            let aps = backend::get_aps().values().cloned().collect::<Vec<AP>>();
+
+            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
+
+            let file_chooser_dialog = Rc::new(FileChooserDialog::new(
+                Some("Save capture report"),
+                Some(&app_data.app_gui.window),
+                FileChooserAction::Save,
+                &[("Save", ResponseType::Accept)],
+            ));
+
+            file_chooser_dialog.set_current_name("report.json");
+            file_chooser_dialog.run_async(move |this, response| {
+                if response == ResponseType::Accept {
+                    let gio_file = match this.file() {
+                        Some(file) => file,
+                        None => return,
+                    };
+                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
+                    file.write_all(json_data.as_bytes()).unwrap();
+                }
+                this.close();
+            });
         }));
 }
 
@@ -259,8 +295,9 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
 
 pub fn connect(app_data: Rc<AppData>) {
     connect_scan_button(app_data.clone());
-    connect_clear_button(app_data.clone());
-    connect_save_button(app_data.clone());
+    connect_restart_button(app_data.clone());
+    connect_export_button(app_data.clone());
+    connect_report_button(app_data.clone());
 
     connect_ghz_2_4_button(app_data.clone());
     connect_ghz_5_button(app_data.clone());

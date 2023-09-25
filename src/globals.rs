@@ -16,7 +16,6 @@ pub static MERGE_SCAN_PATH: &str = "/tmp/airgorah_merge_scan";
 pub static CONFIG_PATH: &str = "/etc/airgorah/config.toml";
 
 pub static APP_ICON: &[u8] = include_bytes!("../icons/app_icon.png");
-pub static FOCUS_ICON: &[u8] = include_bytes!("../icons/focus.png");
 pub static DEAUTH_ICON: &[u8] = include_bytes!("../icons/deauth.png");
 pub static STOP_ICON: &[u8] = include_bytes!("../icons/stop.png");
 pub static CAPTURE_ICON: &[u8] = include_bytes!("../icons/capture.png");
