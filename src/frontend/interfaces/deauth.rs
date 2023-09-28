@@ -22,7 +22,7 @@ impl DeauthGui {
             .title("Deauth")
             .hide_on_close(true)
             .default_width(300)
-            .default_height(340)
+            .default_height(400)
             .resizable(false)
             .transient_for(parent)
             .modal(true)
@@ -31,6 +31,9 @@ impl DeauthGui {
         let aireplay_but = ToggleButton::with_label("aireplay-ng");
         let mdk4_but = ToggleButton::with_label("mdk4");
 
+        aireplay_but.set_hexpand(true);
+        mdk4_but.set_hexpand(true);
+
         aireplay_but.set_active(true);
         mdk4_but.set_group(Some(&aireplay_but));
 
@@ -38,8 +41,12 @@ impl DeauthGui {
         soft_box.append(&aireplay_but);
         soft_box.append(&mdk4_but);
 
-        let soft_box_center = CenterBox::new();
-        soft_box_center.set_center_widget(Some(&soft_box));
+        soft_box.set_margin_start(10);
+        soft_box.set_margin_end(10);
+        soft_box.set_margin_bottom(10);
+
+        let backend_frame = Frame::new(Some("Backend"));
+        backend_frame.set_child(Some(&soft_box));
 
         let all_cli_but = CheckButton::with_label("Deauth all clients");
         let sel_cli_but = CheckButton::with_label("Deauth selected clients");
@@ -87,7 +94,7 @@ impl DeauthGui {
         let attack_but = Button::with_label("Deauth");
 
         let main_box = Box::new(Orientation::Vertical, 10);
-        main_box.append(&soft_box_center);
+        main_box.append(&backend_frame);
         main_box.append(&deauth_frame);
         main_box.append(&attack_but);
 

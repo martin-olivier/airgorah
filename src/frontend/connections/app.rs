@@ -132,6 +132,9 @@ fn connect_previous_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&prev_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
 
@@ -154,6 +157,9 @@ fn connect_next_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&next_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
 
@@ -171,6 +177,9 @@ fn connect_top_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&first_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
 
@@ -194,6 +203,9 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&last_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
 
@@ -332,6 +344,12 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             (5, &background_color.to_str()),
                         ],
                     );
+
+                    if app_data.deauth_gui.window.is_visible() {
+                        if list_store_find(app_data.deauth_gui.store.as_ref(), 1, cli.mac.as_str()).is_none() {
+                            app_data.deauth_gui.store.set(&app_data.deauth_gui.store.append(), &[(0, &false), (1, &cli.mac)]);
+                        }
+                    }
                 }
             }
 
