@@ -4,16 +4,18 @@ use gtk4::*;
 pub struct ErrorDialog;
 
 impl ErrorDialog {
-    pub fn spawn(parent: &impl IsA<Window>, title: &str, content: &str) {
+    pub fn spawn(parent: &impl IsA<Window>, title: &str, message: &str) {
         let dialog = MessageDialog::builder()
             .text(title)
-            .secondary_text(content)
+            .secondary_text(message)
             .decorated(true)
             .message_type(MessageType::Error)
             .buttons(ButtonsType::Close)
             .modal(true)
             .transient_for(parent)
             .build();
+
+        log::error!("{}", message.to_lowercase());
 
         dialog.connect_response(move |this, _| {
             this.close();
@@ -35,6 +37,8 @@ impl PanicDialog {
             .modal(true)
             .transient_for(parent)
             .build();
+
+        log::error!("{}", message.to_lowercase());
 
         dialog.connect_response(move |this, _| {
             this.close();

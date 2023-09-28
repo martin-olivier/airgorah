@@ -5,8 +5,6 @@ pub struct Error {
 
 impl Error {
     pub fn new(message: &str) -> Self {
-        log::error!("{}", message.to_lowercase());
-
         Self {
             message: message.to_string(),
         }
