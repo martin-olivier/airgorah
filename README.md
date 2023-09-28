@@ -1,10 +1,16 @@
-<h1 align="center">
+<p align=center>
   <img src="icons/app_icon.png" width=100 height=100/><br>
-  Airgorah
-  </a>
-</h1>
+</p>
 
 <h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
+
+<p align="center">
+  <a href="#installation">Installation</a>
+  &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#usage">Usage</a>
+  &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#contributing">Contributing</a>
+</p>
 
 <p align="center">
   <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.5.0">
@@ -12,9 +18,6 @@
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
-  </a>
-  <a href="https://www.rust-lang.org/">
-    <img src="https://img.shields.io/badge/Language-Rust-orange.svg" alt="lang"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml">
     <img src="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg" alt="ci"/>
@@ -52,7 +55,7 @@ You will also need a wireless network card that supports `monitor mode` and `pac
 
 The installation instructions are available [here](https://github.com/martin-olivier/airgorah/wiki/Installation).
 
-## Documentation
+## Usage
 
 The documentation about the usage of the application is available [here](https://github.com/martin-olivier/airgorah/wiki/Usage).
 
@@ -60,7 +63,7 @@ The documentation about the usage of the application is available [here](https:/
 
 This project is released under [MIT](LICENSE) license.
 
-## Community
+## Contributing
 
 If you have any question about the usage of the application, do not hesitate to open a [discussion](https://github.com/martin-olivier/airgorah/discussions)
 
