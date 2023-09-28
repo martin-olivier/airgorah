@@ -1,8 +1,9 @@
 <p align=center>
-  <img src="icons/app_icon.png" width=100 height=100/><br>
+  <img src="icons/app_icon.png" width=100 height=100/>
+  <br>
+  <span>A WiFi auditing software that can perform deauth attacks and passwords cracking</span>
+  <br>
 </p>
-
-<h4 align="center">A WiFi auditing software that can perform deauth attacks and passwords cracking</h4>
 
 <p align="center">
   <a href="#installation">Installation</a>
