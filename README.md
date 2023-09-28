@@ -1,6 +1,6 @@
 <p align=center>
   <img src="icons/app_icon.png" width=100 height=100/>
-  <br>
+  <br><br>
   <span>A WiFi auditing software that can perform deauth attacks and passwords cracking</span>
   <br>
 </p>
@@ -33,6 +33,8 @@
     <img src="https://img.shields.io/aur/version/airgorah" alt="aur"/>
   </a>
 </p>
+
+<br>
 
 ![illustration](.github/assets/illustration.png)
 
