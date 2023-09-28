@@ -123,8 +123,8 @@ fn connect_previous_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            let mut prev_iter = iter.clone();
-            if !app_data.app_gui.aps_model.iter_previous(&mut prev_iter) {
+            let prev_iter = iter;
+            if !app_data.app_gui.aps_model.iter_previous(&prev_iter) {
                 return;
             }
 
@@ -148,8 +148,8 @@ fn connect_next_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            let mut next_iter = iter.clone();
-            if !app_data.app_gui.aps_model.iter_next(&mut next_iter) {
+            let next_iter = iter;
+            if !app_data.app_gui.aps_model.iter_next(&next_iter) {
                 return;
             }
 
@@ -188,15 +188,15 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
         .app_gui
         .bottom_but
         .connect_clicked(clone!(@strong app_data => move |_| {
-            let mut iter = match app_data.app_gui.aps_model.iter_first() {
+            let iter = match app_data.app_gui.aps_model.iter_first() {
                 Some(iter) => iter,
                 None => return,
             };
 
-            let mut last_iter = iter.clone();
+            let mut last_iter = iter;
 
-            while app_data.app_gui.aps_model.iter_next(&mut iter) {
-                last_iter = iter.clone();
+            while app_data.app_gui.aps_model.iter_next(&iter) {
+                last_iter = iter;
             }
 
             let path = app_data.app_gui.aps_model.path(&last_iter);
@@ -345,10 +345,8 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         ],
                     );
 
-                    if app_data.deauth_gui.window.is_visible() {
-                        if list_store_find(app_data.deauth_gui.store.as_ref(), 1, cli.mac.as_str()).is_none() {
-                            app_data.deauth_gui.store.set(&app_data.deauth_gui.store.append(), &[(0, &false), (1, &cli.mac)]);
-                        }
+                    if app_data.deauth_gui.window.is_visible() && list_store_find(app_data.deauth_gui.store.as_ref(), 1, cli.mac.as_str()).is_none() {
+                        app_data.deauth_gui.store.set(&app_data.deauth_gui.store.append(), &[(0, &false), (1, &cli.mac)]);
                     }
                 }
             }

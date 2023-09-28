@@ -6,9 +6,9 @@ use crate::types::*;
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::rc::Rc;
 use std::fs::File;
 use std::io::Write;
+use std::rc::Rc;
 
 fn run_scan(app_data: &AppData) {
     let iface = match backend::get_iface() {
@@ -92,7 +92,7 @@ fn connect_restart_button(app_data: Rc<AppData>) {
             app_data.app_gui.cli_model.clear();
 
             this.set_sensitive(false);
-            
+
             run_scan(&app_data);
         }));
 }
