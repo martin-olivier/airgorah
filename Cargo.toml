@@ -1,6 +1,6 @@
 [package]
 name = "airgorah"
-version = "0.4.2"
+version = "0.5.0"
 edition = "2021"
 license = "MIT"
 description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
