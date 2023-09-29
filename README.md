@@ -37,8 +37,6 @@
   </a>
 </p>
 
-<br>
-
 ![illustration](.github/assets/illustration.png)
 
 `Airgorah` is a WiFi auditing software that can discover the clients connected to an access point, perform deauthentication attacks against specific clients or all the clients connected to it, capture WPA handshakes, and crack the password of the access point.
