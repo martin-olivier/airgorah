@@ -380,8 +380,8 @@ impl AppGui {
 
         header_bar.pack_start(&decrypt_button);
         header_bar.pack_start(&settings_button);
-        header_bar.pack_start(&update_button);
         header_bar.pack_start(&about_button);
+        header_bar.pack_start(&update_button);
 
         header_bar.pack_end(&iface_label);
         header_bar.pack_end(&iface_ico);

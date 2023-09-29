@@ -1,8 +1,11 @@
-<p align=center>
-  <img src="icons/app_icon.png" width=100 height=100/>
-  <br><br>
+<h1 align="center">
+  <img src="icons/app_icon.png" width=100 height=100/><br>
+  Airgorah
+  </a>
+</h1>
+
+<p align="center">
   <span>A WiFi auditing software that can perform deauth attacks and passwords cracking</span>
-  <br>
 </p>
 
 <p align="center">
