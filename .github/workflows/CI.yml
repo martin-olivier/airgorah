@@ -64,6 +64,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: linux_${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: linux_${{ matrix.arch }}-cargo-
 
       - name: Install dependencies
         run: >
@@ -121,7 +131,7 @@ jobs:
         run: >
           fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture native
           --depends polkit
-          --depends "gtk4 (>= 4.6.0)"
+          --depends gtk4
           --depends dbus
           --depends wireshark-cli
           --depends iproute2
@@ -134,21 +144,25 @@ jobs:
           path: ./airgorah_${{ matrix.arch }}.pkg.tar.zst
           if-no-files-found: error
 
-      - name: Name packages for release
+      - name: Get release version
+        id: 'tag'
+        if: github.event_name == 'release'
+        run: echo "tag=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_OUTPUT
+
+      - name: Rename packages
         if: github.event_name == 'release'
         run: |
-          echo "RELEASE_VERSION=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_ENV
-          cp ./airgorah_${{ matrix.arch }}.deb ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.deb
-          cp ./airgorah_${{ matrix.arch }}.rpm ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.rpm
-          cp ./airgorah_${{ matrix.arch }}.pkg.tar.zst ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.pkg.tar.zst
+          cp ./airgorah_${{ matrix.arch }}.deb ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.deb
+          cp ./airgorah_${{ matrix.arch }}.rpm ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.rpm
+          cp ./airgorah_${{ matrix.arch }}.pkg.tar.zst ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.pkg.tar.zst
 
       - name: Upload packages
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.deb
-            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.rpm
-            ./airgorah_$RELEASE_VERSION_${{ matrix.arch }}.pkg.tar.zst
+            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.deb
+            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.rpm
+            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.pkg.tar.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

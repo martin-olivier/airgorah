@@ -92,6 +92,123 @@ fn connect_settings_button(app_data: Rc<AppData>) {
         }));
 }
 
+fn connect_hopping_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .hopping_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            app_data.app_gui.channel_filter_entry.set_text("");
+        }));
+}
+
+fn connect_focus_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .focus_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+                app_data.app_gui.channel_filter_entry.set_text(&channel.to_string());
+            }
+        }));
+}
+
+fn connect_previous_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .previous_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let iter = match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, iter)) => iter,
+                None => return,
+            };
+
+            let prev_iter = iter;
+            if !app_data.app_gui.aps_model.iter_previous(&prev_iter) {
+                return;
+            }
+
+            let path = app_data.app_gui.aps_model.path(&prev_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&prev_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
+        }));
+}
+
+fn connect_next_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .next_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let iter = match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, iter)) => iter,
+                None => return,
+            };
+
+            let next_iter = iter;
+            if !app_data.app_gui.aps_model.iter_next(&next_iter) {
+                return;
+            }
+
+            let path = app_data.app_gui.aps_model.path(&next_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&next_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
+        }));
+}
+
+fn connect_top_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .top_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let first_iter = match app_data.app_gui.aps_model.iter_first() {
+                Some(iter) => iter,
+                None => return,
+            };
+
+            let path = app_data.app_gui.aps_model.path(&first_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&first_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
+        }));
+}
+
+fn connect_bottom_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .bottom_but
+        .connect_clicked(clone!(@strong app_data => move |_| {
+            let iter = match app_data.app_gui.aps_model.iter_first() {
+                Some(iter) => iter,
+                None => return,
+            };
+
+            let mut last_iter = iter;
+
+            while app_data.app_gui.aps_model.iter_next(&iter) {
+                last_iter = iter;
+            }
+
+            let path = app_data.app_gui.aps_model.path(&last_iter);
+            app_data.app_gui.aps_view.selection().select_iter(&last_iter);
+            app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
+            app_data.app_gui.cli_model.clear();
+
+            app_data.app_gui.focus_but.set_sensitive(true);
+            app_data.app_gui.deauth_but.set_sensitive(true);
+        }));
+}
+
 fn start_app_refresh(app_data: Rc<AppData>) {
     glib::timeout_add_local(
         Duration::from_millis(100),
@@ -103,11 +220,9 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 
                     match attack_pool.contains_key(&bssid) {
                         true => {
-                            app_data.app_gui.deauth_but.set_label("Stop Attack");
                             app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
                         }
                         false => {
-                            app_data.app_gui.deauth_but.set_label("Deauth Attack");
                             app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
                         }
                     }
@@ -118,19 +233,28 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     }
                 }
                 None => {
-                    app_data.app_gui.deauth_but.set_label("Deauth Attack");
                     app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
                 }
             };
 
             match backend::get_aps().is_empty() {
                 true => {
-                    app_data.app_gui.clear_but.set_sensitive(false);
+                    app_data.app_gui.restart_but.set_sensitive(false);
                     app_data.app_gui.export_but.set_sensitive(false);
+                    app_data.app_gui.report_but.set_sensitive(false);
+                    app_data.app_gui.top_but.set_sensitive(false);
+                    app_data.app_gui.bottom_but.set_sensitive(false);
+                    app_data.app_gui.previous_but.set_sensitive(false);
+                    app_data.app_gui.next_but.set_sensitive(false);
                 }
                 false => {
-                    app_data.app_gui.clear_but.set_sensitive(true);
+                    app_data.app_gui.restart_but.set_sensitive(true);
                     app_data.app_gui.export_but.set_sensitive(true);
+                    app_data.app_gui.report_but.set_sensitive(true);
+                    app_data.app_gui.top_but.set_sensitive(true);
+                    app_data.app_gui.bottom_but.set_sensitive(true);
+                    app_data.app_gui.previous_but.set_sensitive(true);
+                    app_data.app_gui.next_but.set_sensitive(true);
                 }
             }
 
@@ -220,6 +344,10 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             (5, &background_color.to_str()),
                         ],
                     );
+
+                    if app_data.deauth_gui.window.is_visible() && list_store_find(app_data.deauth_gui.store.as_ref(), 1, cli.mac.as_str()).is_none() {
+                        app_data.deauth_gui.store.set(&app_data.deauth_gui.store.append(), &[(0, &false), (1, &cli.mac)]);
+                    }
                 }
             }
 
@@ -368,10 +496,17 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_decrypt_button(app_data.clone());
     connect_settings_button(app_data.clone());
 
+    connect_previous_button(app_data.clone());
+    connect_next_button(app_data.clone());
+    connect_top_button(app_data.clone());
+    connect_bottom_button(app_data.clone());
+
     start_app_refresh(app_data.clone());
     start_handshake_refresh();
     start_update_checker();
 
+    connect_hopping_button(app_data.clone());
+    connect_focus_button(app_data.clone());
     connect_deauth_button(app_data.clone());
     connect_capture_button(app_data);
 }
