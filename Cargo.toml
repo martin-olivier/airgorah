@@ -21,7 +21,7 @@ toml = "0.8.1"
 csv = "1.2.2"
 sudo = "0.6.0"
 ctrlc = "3.4.1"
-regex = "1.9.5"
+regex = "1.9.6"
 lazy_static = "1.4.0"
 ureq = { version = "2.7.1", features = ["json"] }
 which = "4.4.2"
