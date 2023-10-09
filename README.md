@@ -1,8 +1,6 @@
 <h1 align="center">
   <img src="icons/app_icon.png" width=100 height=100/><br>
-  Airgorah
-  </a>
-</h1>
+Airgorah</h1>
 
 <p align="center">
   <span>A WiFi auditing software that can perform deauth attacks and passwords cracking</span>
@@ -17,8 +15,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.5.0">
-    <img src="https://img.shields.io/badge/Release-v0.5.0-blue.svg" alt="version"/>
+  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.5.1">
+    <img src="https://img.shields.io/badge/Release-v0.5.1-blue.svg" alt="version"/>
   </a>
   <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
