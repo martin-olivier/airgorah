@@ -11,6 +11,8 @@ use std::fs::File;
 use std::io::Write;
 use std::rc::Rc;
 
+use chrono::Local;
+
 fn run_scan(app_data: &AppData) {
     let iface = match backend::get_iface() {
         Some(iface) => iface,
@@ -120,7 +122,10 @@ fn connect_export_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.set_current_name("capture.cap");
+            let local = Local::now();
+            let date = local.format("%Y-%m-%d-%Hh%M");
+
+            file_chooser_dialog.set_current_name(&format!("capture_{}.cap", date));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
@@ -172,7 +177,10 @@ fn connect_report_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             ));
 
-            file_chooser_dialog.set_current_name("report.json");
+            let local = Local::now();
+            let date = local.format("%Y-%m-%d-%Hh%M");
+
+            file_chooser_dialog.set_current_name(&format!("report_{}.json", date));
             file_chooser_dialog.run_async(move |this, response| {
                 if response == ResponseType::Accept {
                     let gio_file = match this.file() {

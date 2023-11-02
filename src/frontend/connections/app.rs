@@ -431,6 +431,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
+            let essid = list_store_get!(app_data.app_gui.aps_model, &iter, 0, String);
             let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
 
             let ap = match backend::get_aps().get(&bssid) {
@@ -459,7 +460,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.set_current_name("capture.cap");
+            file_chooser_dialog.set_current_name(&format!("{}.cap", essid));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
