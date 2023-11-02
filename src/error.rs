@@ -46,3 +46,11 @@ impl From<regex::Error> for Error {
         }
     }
 }
+
+impl From<nix::errno::Errno> for Error {
+    fn from(error: nix::errno::Errno) -> Error {
+        Error {
+            message: error.to_string(),
+        }
+    }
+}

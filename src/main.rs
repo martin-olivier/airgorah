@@ -12,12 +12,13 @@ fn main() {
 
     gtk4::init().expect("Could not initialize gtk4");
 
+    Settings::default()
+        .unwrap()
+        .set_gtk_icon_theme_name(Some("Adwaita"));
+
     let application = Application::builder()
         .application_id(globals::APP_ID)
         .build();
-
-    let settings = Settings::default().unwrap();
-    settings.set_gtk_icon_theme_name(Some("Adwaita"));
 
     application.connect_activate(frontend::build_ui);
     application.run();
