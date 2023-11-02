@@ -2,6 +2,7 @@ use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::*;
 use crate::types::*;
+use crate::list_store_get;
 
 use glib::clone;
 use gtk4::prelude::*;
@@ -282,6 +283,26 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
                 true => {
                     app_data.app_gui.focus_but.set_sensitive(true);
                     app_data.app_gui.deauth_but.set_sensitive(true);
+
+                    let (_, ap_iter) = this.selection().selected().unwrap();
+                    let bssid = list_store_get!(app_data.app_gui.aps_model, &ap_iter, 1, String);
+                    let aps = backend::get_aps();
+
+                    let mut clients = aps[&bssid].clients.keys().clone();
+                    let mut cli_iter = app_data.app_gui.cli_model.iter_first();
+
+                    while let Some(it) = cli_iter {
+                        let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
+                
+                        if clients.find(|x| &&mac_val == x).is_none() {
+                            break;
+                        }
+                
+                        cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
+                            true => Some(it),
+                            false => return,
+                        }
+                    }
                 }
                 false => {
                     app_data.app_gui.focus_but.set_sensitive(false);
