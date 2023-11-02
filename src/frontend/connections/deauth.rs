@@ -31,6 +31,20 @@ fn get_selected_clients(storage: &ListStore) -> Vec<String> {
     selected_clients
 }
 
+fn connect_controller(app_data: Rc<AppData>) {
+    let controller = gtk4::EventControllerKey::new();
+
+    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
+        if key == gdk::Key::Escape {
+            app_data.deauth_gui.window.hide();
+        }
+
+        glib::Propagation::Proceed
+    }));
+
+    app_data.deauth_gui.window.add_controller(controller);
+}
+
 fn connect_all_cli_button(app_data: Rc<AppData>) {
     app_data
         .deauth_gui
@@ -117,6 +131,8 @@ fn connect_attack_but(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    connect_controller(app_data.clone());
+
     connect_all_cli_button(app_data.clone());
     connect_sel_cli_button(app_data.clone());
     connect_toggle(app_data.clone());
