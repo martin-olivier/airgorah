@@ -7,28 +7,28 @@ use gtk4::*;
 
 fn build_about_button() -> Button {
     Button::builder()
-        .icon_name("dialog-information")
+        .icon_name("help-about-symbolic")
         .tooltip_text("About")
         .build()
 }
 
 fn build_update_button() -> Button {
     Button::builder()
-        .icon_name("emblem-downloads")
+        .icon_name("folder-download-symbolic")
         .tooltip_text("Update available")
         .build()
 }
 
 fn build_decrypt_button() -> Button {
     Button::builder()
-        .icon_name("utilities-terminal")
+        .icon_name("utilities-terminal-symbolic")
         .tooltip_text("Handshake decryption")
         .build()
 }
 
 fn build_settings_button() -> Button {
     Button::builder()
-        .icon_name("preferences-system")
+        .icon_name("emblem-system-symbolic")
         .tooltip_text("Settings")
         .build()
 }
@@ -58,7 +58,7 @@ fn build_export_button() -> Button {
 
 fn build_report_button() -> Button {
     Button::builder()
-        .icon_name("text-x-generic-symbolic")
+        .icon_name("edit-paste-symbolic")
         .tooltip_text("Save captured data as .json file")
         .sensitive(false)
         .build()

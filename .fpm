@@ -15,6 +15,7 @@
 --depends iw
 --depends macchanger
 --depends aircrack-ng
+--depends adwaita-icon-theme
 
 target/release/airgorah=/usr/bin/airgorah
 icons/app_icon.png=/usr/share/pixmaps/airgorah.png
