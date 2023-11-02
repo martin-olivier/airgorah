@@ -69,7 +69,8 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
 
                     let gio_path = gio_file.path().unwrap();
                     let file_path = gio_path.to_str().unwrap();
-                    let handshakes = backend::get_handshakes(file_path).unwrap_or_default();
+
+                    let handshakes = backend::get_handshakes([file_path]).unwrap_or_default();
 
                     if handshakes.is_empty() {
                         return ErrorDialog::spawn(

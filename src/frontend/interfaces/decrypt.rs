@@ -193,7 +193,7 @@ impl DecryptGui {
         if let Some((path, bssid)) = capture_and_bssid {
             self.handshake_entry.set_text(&path);
 
-            let handshakes = backend::get_handshakes(&path).unwrap_or_default();
+            let handshakes = backend::get_handshakes([&path]).unwrap_or_default();
 
             if handshakes.is_empty() {
                 return ErrorDialog::spawn(

@@ -7,23 +7,16 @@ use std::process::Command;
 
 /// Update the handshake capture status of all APs
 pub fn update_handshakes() -> Result<(), Error> {
-    let capture_output = Command::new("aircrack-ng")
-        .args([
-            &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
-            &(OLD_SCAN_PATH.to_string() + "-01.cap"),
-        ])
-        .output()?;
+    let handshakes = get_handshakes([
+        &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
+        &(OLD_SCAN_PATH.to_string() + "-01.cap"),
+    ])?;
 
-    let stdout = String::from_utf8_lossy(&capture_output.stdout).to_string();
-    let lines = stdout.lines();
     let mut aps = get_aps();
 
-    for data in lines {
-        for (bssid, ap) in aps.iter_mut() {
-            if data.contains(bssid) && data.contains("WPA (") && !data.contains("WPA (0 handshake)")
-            {
-                ap.handshake = true;
-            }
+    for (bssid, _) in handshakes {
+        if let Some(ap) = aps.get_mut(&bssid) {
+            ap.handshake = true;
         }
     }
 
@@ -33,16 +26,25 @@ pub fn update_handshakes() -> Result<(), Error> {
 }
 
 /// Get the access points infos of the handshakes contained in the capture file
-pub fn get_handshakes(path: &str) -> Result<Vec<(String, String)>, Error> {
-    let capture_output = Command::new("aircrack-ng").args([path]).output()?;
+pub fn get_handshakes<I, S>(args: I) -> Result<Vec<(String, String)>, Error>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
+{
+    let capture_output = Command::new("aircrack-ng").args(args).output()?;
 
-    let stdout = String::from_utf8_lossy(&capture_output.stdout).to_string();
-    let re =
-        Regex::new(r"(\d+)\s+([\w:]+)\s+([\w\s]*)\s+WPA \((\d+)\s+handshake(?:.*?)\)").unwrap();
+    let output = String::from_utf8_lossy(&capture_output.stdout).to_string();
+
+    let re = Regex::new(r"\s+(\d+)\s+([\w:]+)\s+(.*)\s+WPA \((\d+)\s+handshake.*\)")?;
 
     let mut handshakes = vec![];
 
-    for caps in re.captures_iter(&stdout) {
+    for line in output.lines() {
+        let caps = match re.captures(line) {
+            Some(caps) => caps,
+            None => continue,
+        };
+
         let bssid = caps[2].to_string();
         let essid = caps[3].trim().to_string();
         let handshake_count = caps[4].to_string();
