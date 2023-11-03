@@ -8,8 +8,10 @@ on:
       - src/*
       - icons/*
       - package/*
+      - docker/*
       - .github/workflows/*.yml
       - Cargo.toml
+      - Cargo.lock
   pull_request:
     branches:
       - main
@@ -17,8 +19,10 @@ on:
       - src/*
       - icons/*
       - package/*
+      - docker/*
       - .github/workflows/*.yml
       - Cargo.toml
+      - Cargo.lock
   release:
     types: [published]
 
