@@ -1,5 +1,5 @@
-FROM amd64/rust:bullseye
+FROM amd64/rust:slim-bookworm
 
 WORKDIR /workspace
 
-RUN apt update && apt install build-essential libgtk-4-dev libglib2.0-dev
+RUN apt update && apt install -y build-essential libgtk-4-dev libglib2.0-dev
