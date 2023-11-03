@@ -4,25 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - src/*
-      - icons/*
-      - package/*
-      - docker/*
-      - .github/workflows/*.yml
-      - Cargo.toml
-      - Cargo.lock
   pull_request:
     branches:
       - main
-    paths:
-      - src/*
-      - icons/*
-      - package/*
-      - docker/*
-      - .github/workflows/*.yml
-      - Cargo.toml
-      - Cargo.lock
   release:
     types: [published]
 
