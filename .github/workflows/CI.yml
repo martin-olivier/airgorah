@@ -56,14 +56,8 @@ jobs:
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3
 
-      - name: Set up docker buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Create builder image
-        run: |
-          docker buildx create --use
-          docker buildx inspect --bootstrap
-          docker buildx build . -t ${{ matrix.image }} -f docker/${{ matrix.image }}/Dockerfile
+        run: docker build . -t ${{ matrix.image }} -f docker/${{ matrix.image }}/Dockerfile
 
       - name: List images
         run: docker images
