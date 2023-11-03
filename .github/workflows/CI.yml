@@ -81,6 +81,9 @@ jobs:
           docker buildx inspect --bootstrap
           docker buildx build . -t ${{ matrix.image }} -f docker/${{ matrix.image }}/Dockerfile
 
+      - name: List images
+        run: docker images
+
       - name: Build project
         run: >
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace
