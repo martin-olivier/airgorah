@@ -70,9 +70,6 @@ jobs:
           -t ${{ matrix.image }}
           -f docker/${{ matrix.image }}/Dockerfile
 
-      - name: List images
-        run: docker images
-
       - name: Build project
         run: >
           docker run --rm
@@ -97,7 +94,7 @@ jobs:
 
       - name: Build debian package
         run: >
-          fpm -t deb -p airgorah_${{ matrix.arch }}.deb --architecture native
+          fpm -t deb -p airgorah_${{ matrix.arch }}.deb --architecture ${{ matrix.arch }}
           --depends policykit-1
           --depends "libgtk-4-1 (>= 4.6.0)"
           --depends dbus-x11
@@ -115,7 +112,7 @@ jobs:
 
       - name: Build redhat package
         run: >
-          fpm -t rpm -p airgorah_${{ matrix.arch }}.rpm --architecture native
+          fpm -t rpm -p airgorah_${{ matrix.arch }}.rpm --architecture ${{ matrix.arch }}
           --depends polkit
           --depends "gtk4-devel >= 4.6.0"
           --depends dbus-x11
@@ -131,7 +128,7 @@ jobs:
 
       - name: Build archlinux package
         run: >
-          fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture native
+          fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture ${{ matrix.arch }}
           --depends polkit
           --depends gtk4
           --depends dbus
