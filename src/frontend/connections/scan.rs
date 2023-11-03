@@ -1,8 +1,8 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::*;
-use crate::types::*;
 use crate::list_store_get;
+use crate::types::*;
 
 use glib::clone;
 use gtk4::prelude::*;
@@ -288,11 +288,11 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
 
                     while let Some(it) = cli_iter {
                         let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
-                
-                        if clients.find(|x| &&mac_val == x).is_none() {
+
+                        if !clients.any(|x| &mac_val == x) {
                             break;
                         }
-                
+
                         cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
                             true => Some(it),
                             false => return,
