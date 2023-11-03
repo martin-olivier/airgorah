@@ -41,8 +41,10 @@ jobs:
         arch: [x86_64, aarch64]
         include:
         - arch: x86_64
+          platform: linux/amd64
           image: amd64_builder
         - arch: aarch64
+          platform: linux/arm64
           image: arm64_builder
 
     name: build ${{ matrix.arch }}
@@ -52,19 +54,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v3
+        with:
+          path: /var/lib/docker
+          key: docker-${{ matrix.arch }}-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: docker-${{ matrix.arch }}-
 
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3
 
       - name: Create builder image
-        run: docker build . -t ${{ matrix.image }} -f docker/${{ matrix.image }}/Dockerfile
+        run: >
+          docker build .
+          --platform ${{ matrix.platform }}
+          -t ${{ matrix.image }}
+          -f docker/${{ matrix.image }}/Dockerfile
 
       - name: List images
         run: docker images
 
       - name: Build project
         run: >
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace
+          docker run --rm
+          --platform ${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
           ${{ matrix.image }}
           cargo build --release
 
