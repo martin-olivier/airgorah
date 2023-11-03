@@ -181,7 +181,7 @@ pub fn stop_scan_process() -> Result<(), Error> {
     if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
         let child_pid = Pid::from_raw(child.id() as i32);
 
-        kill(child_pid, Signal::SIGINT)?;
+        kill(child_pid, Signal::SIGTERM)?;
 
         child.wait()?;
     }

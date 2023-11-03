@@ -115,7 +115,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("")
-        .default_width(1240)
+        .default_width(1280)
         .default_height(620)
         .build();
 

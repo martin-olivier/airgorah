@@ -19,26 +19,10 @@ fn run_scan(app_data: &AppData) {
         None => return app_data.interface_gui.window.show(),
     };
 
-    if !app_data.app_gui.ghz_2_4_but.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
-        return ErrorDialog::spawn(
-            &app_data.app_gui.window,
-            "Error",
-            "You need to select at least one frequency band",
-        );
-    }
-
     let mut ghz_2_4 = false;
     let mut ghz_5 = false;
 
     if app_data.app_gui.ghz_5_but.is_active() {
-        if !backend::is_5ghz_supported(&iface).unwrap() {
-            ErrorDialog::spawn(
-                &app_data.app_gui.window,
-                "Error",
-                "Your network card doesn't support 5GHz",
-            );
-            return app_data.app_gui.ghz_5_but.set_active(false);
-        }
         ghz_5 = true;
     }
     if app_data.app_gui.ghz_2_4_but.is_active() {
@@ -200,9 +184,6 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            let filter = app_data.app_gui.channel_filter_entry.text();
-            app_data.app_gui.channel_filter_entry.set_text(&filter);
-
             if backend::is_scan_process() {
                 if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
                     ErrorDialog::spawn(
@@ -214,6 +195,9 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
                 }
                 run_scan(&app_data);
             }
+
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
         }));
 }
 
@@ -222,9 +206,6 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_5_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            let filter = app_data.app_gui.channel_filter_entry.text();
-            app_data.app_gui.channel_filter_entry.set_text(&filter);
-
             let iface = match backend::get_iface() {
                 Some(iface) => iface,
                 None => return,
@@ -250,6 +231,9 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 }
                 run_scan(&app_data);
             }
+
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
         }));
 }
 
@@ -296,7 +280,10 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
                     let bssid = list_store_get!(app_data.app_gui.aps_model, &ap_iter, 1, String);
                     let aps = backend::get_aps();
 
-                    let mut clients = aps[&bssid].clients.keys().clone();
+                    let mut clients = match aps.get(&bssid) {
+                        Some(ap) => ap.clients.keys().clone(),
+                        None => return,
+                    };
                     let mut cli_iter = app_data.app_gui.cli_model.iter_first();
 
                     while let Some(it) = cli_iter {
