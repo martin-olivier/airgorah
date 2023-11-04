@@ -1,6 +1,7 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::*;
+use crate::list_store_get;
 use crate::types::*;
 
 use glib::clone;
@@ -10,32 +11,18 @@ use std::fs::File;
 use std::io::Write;
 use std::rc::Rc;
 
+use chrono::Local;
+
 fn run_scan(app_data: &AppData) {
     let iface = match backend::get_iface() {
         Some(iface) => iface,
         None => return app_data.interface_gui.window.show(),
     };
 
-    if !app_data.app_gui.ghz_2_4_but.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
-        return ErrorDialog::spawn(
-            &app_data.app_gui.window,
-            "Error",
-            "You need to select at least one frequency band",
-        );
-    }
-
     let mut ghz_2_4 = false;
     let mut ghz_5 = false;
 
     if app_data.app_gui.ghz_5_but.is_active() {
-        if !backend::is_5ghz_supported(&iface).unwrap() {
-            ErrorDialog::spawn(
-                &app_data.app_gui.window,
-                "Error",
-                "Your network card doesn't support 5GHz",
-            );
-            return app_data.app_gui.ghz_5_but.set_active(false);
-        }
         ghz_5 = true;
     }
     if app_data.app_gui.ghz_2_4_but.is_active() {
@@ -119,7 +106,10 @@ fn connect_export_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.set_current_name("capture.cap");
+            let local = Local::now();
+            let date = local.format("%Y-%m-%d-%Hh%M");
+
+            file_chooser_dialog.set_current_name(&format!("capture_{}.cap", date));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
@@ -171,7 +161,10 @@ fn connect_report_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             ));
 
-            file_chooser_dialog.set_current_name("report.json");
+            let local = Local::now();
+            let date = local.format("%Y-%m-%d-%Hh%M");
+
+            file_chooser_dialog.set_current_name(&format!("report_{}.json", date));
             file_chooser_dialog.run_async(move |this, response| {
                 if response == ResponseType::Accept {
                     let gio_file = match this.file() {
@@ -191,9 +184,6 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            let filter = app_data.app_gui.channel_filter_entry.text();
-            app_data.app_gui.channel_filter_entry.set_text(&filter);
-
             if backend::is_scan_process() {
                 if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
                     ErrorDialog::spawn(
@@ -205,6 +195,9 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
                 }
                 run_scan(&app_data);
             }
+
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
         }));
 }
 
@@ -213,9 +206,6 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_5_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            let filter = app_data.app_gui.channel_filter_entry.text();
-            app_data.app_gui.channel_filter_entry.set_text(&filter);
-
             let iface = match backend::get_iface() {
                 Some(iface) => iface,
                 None => return,
@@ -241,6 +231,9 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 }
                 run_scan(&app_data);
             }
+
+            let filter = app_data.app_gui.channel_filter_entry.text();
+            app_data.app_gui.channel_filter_entry.set_text(&filter);
         }));
 }
 
@@ -282,6 +275,29 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
                 true => {
                     app_data.app_gui.focus_but.set_sensitive(true);
                     app_data.app_gui.deauth_but.set_sensitive(true);
+
+                    let (_, ap_iter) = this.selection().selected().unwrap();
+                    let bssid = list_store_get!(app_data.app_gui.aps_model, &ap_iter, 1, String);
+                    let aps = backend::get_aps();
+
+                    let mut clients = match aps.get(&bssid) {
+                        Some(ap) => ap.clients.keys().clone(),
+                        None => return,
+                    };
+                    let mut cli_iter = app_data.app_gui.cli_model.iter_first();
+
+                    while let Some(it) = cli_iter {
+                        let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
+
+                        if !clients.any(|x| &mac_val == x) {
+                            break;
+                        }
+
+                        cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
+                            true => Some(it),
+                            false => return,
+                        }
+                    }
                 }
                 false => {
                     app_data.app_gui.focus_but.set_sensitive(false);

@@ -1,43 +1,24 @@
 <h1 align="center">
   <img src="icons/app_icon.png" width=100 height=100/><br>
-  Airgorah
-  </a>
-</h1>
+Airgorah</h1>
 
 <p align="center">
   <span>A WiFi auditing software that can perform deauth attacks and passwords cracking</span>
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a>
+  <a href="https://github.com/martin-olivier/airgorah/wiki/Installation">Installation</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#usage">Usage</a>
+  <a href="https://github.com/martin-olivier/airgorah/wiki/Usage">Usage</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#contributing">Contributing</a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/martin-olivier/airgorah/releases/tag/v0.5.0">
-    <img src="https://img.shields.io/badge/Release-v0.5.0-blue.svg" alt="version"/>
-  </a>
-  <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-darkgreen.svg" alt="license"/>
-  </a>
-  <a href="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml">
-    <img src="https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg" alt="ci"/>
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://crates.io/crates/airgorah">
-    <img src="https://img.shields.io/crates/v/airgorah.svg" alt="crates"/>
-  </a>
-  <a href="https://aur.archlinux.org/packages/airgorah">
-    <img src="https://img.shields.io/aur/version/airgorah" alt="aur"/>
-  </a>
-</p>
-
 ![illustration](.github/assets/illustration.png)
+
+[![crates](https://img.shields.io/crates/v/airgorah.svg)](https://crates.io/crates/airgorah)
+[![aur](https://img.shields.io/aur/version/airgorah)](https://aur.archlinux.org/packages/airgorah)
+[![ci](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg)](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml)
 
 `Airgorah` is a WiFi auditing software that can discover the clients connected to an access point, perform deauthentication attacks against specific clients or all the clients connected to it, capture WPA handshakes, and crack the password of the access point.
 

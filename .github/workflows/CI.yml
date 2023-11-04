@@ -4,21 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - src/*
-      - icons/*
-      - package/*
-      - .github/workflows/*.yml
-      - Cargo.toml
   pull_request:
     branches:
       - main
-    paths:
-      - src/*
-      - icons/*
-      - package/*
-      - .github/workflows/*.yml
-      - Cargo.toml
   release:
     types: [published]
 
@@ -27,7 +15,7 @@ jobs:
     name: commits
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: webiny/action-conventional-commits@v1.1.0
 
   linter:
@@ -35,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
@@ -50,36 +38,50 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-latest-arm64]
+        arch: [x86_64, aarch64]
         include:
-        - os: ubuntu-latest
-          arch: x86_64
-        - os: ubuntu-latest-arm64
-          arch: aarch64
+        - arch: x86_64
+          platform: amd64
+          image: amd64_builder
+        - arch: aarch64
+          platform: arm64
+          image: arm64_builder
 
     name: build ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     needs: linter
     permissions: write-all
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: linux_${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: linux_${{ matrix.arch }}-cargo-
+          path: /var/lib/docker
+          key: docker-${{ matrix.arch }}-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: docker-${{ matrix.arch }}-
 
-      - name: Install dependencies
+      - name: Set up qemu
+        uses: docker/setup-qemu-action@v3
+
+      - name: Create builder image
+        run: >
+          docker build .
+          --platform linux/${{ matrix.platform }}
+          -t ${{ matrix.image }}
+          -f docker/${{ matrix.image }}/Dockerfile
+
+      - name: Build project
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          ${{ matrix.image }}
+          cargo build --release
+
+      - name: Install packaging dependencies
         run: >
           sudo apt update && sudo apt install -y
-          libgtk-4-dev
-          libglib2.0-dev
           build-essential
           ruby
           ruby-dev
@@ -90,12 +92,9 @@ jobs:
       - name: Install fpm
         run: sudo gem install fpm
 
-      - name: Build project
-        run: cargo build --release
-
       - name: Build debian package
         run: >
-          fpm -t deb -p airgorah_${{ matrix.arch }}.deb --architecture native
+          fpm -t deb -p airgorah_${{ matrix.arch }}.deb --architecture ${{ matrix.arch }}
           --depends policykit-1
           --depends "libgtk-4-1 (>= 4.6.0)"
           --depends dbus-x11
@@ -103,6 +102,15 @@ jobs:
           --depends iproute2
           --depends mdk4
           --depends crunch
+
+      - name: Test debian package
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          debian:bookworm-slim
+          sh -c "apt update && apt install -y ./airgorah_${{ matrix.arch }}.deb"
 
       - name: Save debian artifact
         uses: actions/upload-artifact@v3
@@ -113,12 +121,21 @@ jobs:
 
       - name: Build redhat package
         run: >
-          fpm -t rpm -p airgorah_${{ matrix.arch }}.rpm --architecture native
+          fpm -t rpm -p airgorah_${{ matrix.arch }}.rpm --architecture ${{ matrix.arch }}
           --depends polkit
           --depends "gtk4-devel >= 4.6.0"
           --depends dbus-x11
           --depends wireshark-cli
           --depends iproute
+
+      - name: Test redhat package
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          fedora:38
+          dnf install -y ./airgorah_${{ matrix.arch }}.rpm
 
       - name: Save redhat artifact
         uses: actions/upload-artifact@v3
@@ -129,13 +146,22 @@ jobs:
 
       - name: Build archlinux package
         run: >
-          fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture native
+          fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture ${{ matrix.arch }}
           --depends polkit
           --depends gtk4
           --depends dbus
           --depends wireshark-cli
           --depends iproute2
           --depends mdk4
+
+      - name: Test archlinux package
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          manjarolinux/base:latest
+          pacman -U --noconfirm ./airgorah_${{ matrix.arch }}.pkg.tar.zst
 
       - name: Save archlinux artifact
         uses: actions/upload-artifact@v3

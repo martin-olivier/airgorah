@@ -8,6 +8,20 @@ use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
 
+fn connect_controller(app_data: Rc<AppData>) {
+    let controller = gtk4::EventControllerKey::new();
+
+    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
+        if key == gdk::Key::Escape {
+            app_data.decrypt_gui.window.hide();
+        }
+
+        glib::Propagation::Proceed
+    }));
+
+    app_data.decrypt_gui.window.add_controller(controller);
+}
+
 fn update_decrypt_button_status(app_data: Rc<AppData>) {
     if app_data.decrypt_gui.handshake_entry.text_length() == 0 {
         return app_data.decrypt_gui.decrypt_but.set_sensitive(false);
@@ -55,7 +69,8 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
 
                     let gio_path = gio_file.path().unwrap();
                     let file_path = gio_path.to_str().unwrap();
-                    let handshakes = backend::get_handshakes(file_path).unwrap_or_default();
+
+                    let handshakes = backend::get_handshakes([file_path]).unwrap_or_default();
 
                     if handshakes.is_empty() {
                         return ErrorDialog::spawn(
@@ -186,6 +201,8 @@ fn connect_decrypt_button(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    connect_controller(app_data.clone());
+
     connect_handshake_button(app_data.clone());
     connect_stack_notify(app_data.clone());
     connect_wordlist_button(app_data.clone());

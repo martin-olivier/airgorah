@@ -7,6 +7,20 @@ use glib::clone;
 use gtk4::prelude::*;
 use std::rc::Rc;
 
+fn connect_controller(app_data: Rc<AppData>) {
+    let controller = gtk4::EventControllerKey::new();
+
+    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
+        if key == gdk::Key::Escape {
+            app_data.interface_gui.window.hide();
+        }
+
+        glib::Propagation::Proceed
+    }));
+
+    app_data.interface_gui.window.add_controller(controller);
+}
+
 fn connect_interface_refresh(app_data: Rc<AppData>) {
     app_data
         .interface_gui
@@ -82,6 +96,8 @@ fn connect_interface_select(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    connect_controller(app_data.clone());
+
     connect_interface_refresh(app_data.clone());
     connect_interface_select(app_data);
 }

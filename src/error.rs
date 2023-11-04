@@ -38,3 +38,19 @@ impl From<std::string::FromUtf8Error> for Error {
         }
     }
 }
+
+impl From<regex::Error> for Error {
+    fn from(error: regex::Error) -> Error {
+        Error {
+            message: error.to_string(),
+        }
+    }
+}
+
+impl From<nix::errno::Errno> for Error {
+    fn from(error: nix::errno::Errno) -> Error {
+        Error {
+            message: error.to_string(),
+        }
+    }
+}

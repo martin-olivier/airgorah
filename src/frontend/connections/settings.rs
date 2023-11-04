@@ -8,6 +8,20 @@ use gtk4::*;
 use regex::Regex;
 use std::rc::Rc;
 
+fn connect_controller(app_data: Rc<AppData>) {
+    let controller = gtk4::EventControllerKey::new();
+
+    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
+        if key == gdk::Key::Escape {
+            app_data.settings_gui.window.hide();
+        }
+
+        glib::Propagation::Proceed
+    }));
+
+    app_data.settings_gui.window.add_controller(controller);
+}
+
 fn connect_random_mac_button(app_data: Rc<AppData>) {
     app_data
         .settings_gui
@@ -83,6 +97,8 @@ fn connect_save_but(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    connect_controller(app_data.clone());
+
     connect_random_mac_button(app_data.clone());
     connect_default_mac_button(app_data.clone());
     connect_specific_mac_button(app_data.clone());
