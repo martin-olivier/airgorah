@@ -7,9 +7,9 @@ Airgorah</h1>
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a>
+  <a href="https://github.com/martin-olivier/airgorah/wiki/Installation">Installation</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#usage">Usage</a>
+  <a href="https://github.com/martin-olivier/airgorah/wiki/Usage">Usage</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#contributing">Contributing</a>
 </p>
