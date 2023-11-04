@@ -41,10 +41,10 @@ jobs:
         arch: [x86_64, aarch64]
         include:
         - arch: x86_64
-          platform: linux/amd64
+          platform: amd64
           image: amd64_builder
         - arch: aarch64
-          platform: linux/arm64
+          platform: arm64
           image: arm64_builder
 
     name: build ${{ matrix.arch }}
@@ -66,14 +66,14 @@ jobs:
       - name: Create builder image
         run: >
           docker build .
-          --platform ${{ matrix.platform }}
+          --platform linux/${{ matrix.platform }}
           -t ${{ matrix.image }}
           -f docker/${{ matrix.image }}/Dockerfile
 
       - name: Build project
         run: >
           docker run --rm
-          --platform ${{ matrix.platform }}
+          --platform linux/${{ matrix.platform }}
           -v ${{ github.workspace }}:/workspace
           -w /workspace
           ${{ matrix.image }}
@@ -103,6 +103,15 @@ jobs:
           --depends mdk4
           --depends crunch
 
+      - name: Test debian package
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          debian:bookworm-slim
+          sh -c "apt update && apt install -y ./airgorah_${{ matrix.arch }}.deb"
+
       - name: Save debian artifact
         uses: actions/upload-artifact@v3
         with:
@@ -118,6 +127,15 @@ jobs:
           --depends dbus-x11
           --depends wireshark-cli
           --depends iproute
+
+      - name: Test redhat package
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          fedora:38
+          dnf install -y ./airgorah_${{ matrix.arch }}.rpm
 
       - name: Save redhat artifact
         uses: actions/upload-artifact@v3
@@ -135,6 +153,15 @@ jobs:
           --depends wireshark-cli
           --depends iproute2
           --depends mdk4
+
+      - name: Test archlinux package
+        run: >
+          docker run --rm
+          --platform linux/${{ matrix.platform }}
+          -v ${{ github.workspace }}:/workspace
+          -w /workspace
+          manjarolinux/base:latest
+          pacman -U --noconfirm ./airgorah_${{ matrix.arch }}.pkg.tar.zst
 
       - name: Save archlinux artifact
         uses: actions/upload-artifact@v3
