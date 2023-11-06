@@ -13,19 +13,19 @@ readme = "README.md"
 exclude = ["/.github", "/package", "/docker"]
 
 [dependencies]
-gtk4 = { version = "0.7", features = ["v4_6"] }
-glib = "0.18"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-toml = "0.8"
-csv = "1.3"
-sudo = "0.6"
-ctrlc = "3.4"
-regex = "1.10"
-chrono = "0.4"
-lazy_static = "1"
-ureq = { version = "2.8", features = ["json"] }
-which = "5"
-log = "0.4"
-env_logger = "0.10"
-nix = "0.27"
+gtk4 = { version = "0.7.3", features = ["v4_6"] }
+glib = "0.18.3"
+serde = { version = "1.0.191", features = ["derive"] }
+serde_json = "1.0.108"
+toml = "0.8.8"
+csv = "1.3.0"
+sudo = "0.6.0"
+ctrlc = "3.4.1"
+regex = "1.10.2"
+chrono = "0.4.31"
+lazy_static = "1.4.0"
+ureq = { version = "2.8.0", features = ["json"] }
+which = "5.0.0"
+log = "0.4.20"
+env_logger = "0.10.0"
+nix = "0.27.1"
