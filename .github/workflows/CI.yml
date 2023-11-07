@@ -156,7 +156,7 @@ jobs:
           -v ${{ github.workspace }}:/workspace
           -w /workspace
           manjarolinux/base:latest
-          sh -c "pacman -Syu --noconfirm && pacman -U --noconfirm ./airgorah_0.6.0_x86_64.pkg.tar.zst"
+          sh -c "pacman -Syu --noconfirm && pacman -U --noconfirm ./airgorah_${{ matrix.arch }}.pkg.tar.zst"
 
       - name: Save archlinux artifact
         uses: actions/upload-artifact@v3
