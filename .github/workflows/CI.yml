@@ -130,7 +130,7 @@ jobs:
           -v ${{ github.workspace }}:/workspace
           -w /workspace
           fedora:38
-          sh -c "dnf update && dnf install -y ./airgorah_${{ matrix.arch }}.rpm"
+          sh -c "dnf update -y && dnf install -y ./airgorah_${{ matrix.arch }}.rpm"
 
       - name: Save redhat artifact
         uses: actions/upload-artifact@v3
