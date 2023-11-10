@@ -27,5 +27,5 @@ lazy_static = "1.4.0"
 ureq = { version = "2.8.0", features = ["json"] }
 which = "5.0.0"
 log = "0.4.20"
-env_logger = "0.10.0"
+env_logger = "0.10.1"
 nix = "0.27.1"
