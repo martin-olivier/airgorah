@@ -1,10 +1,9 @@
 use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::widgets::ErrorDialog;
-use crate::list_store_get;
+use crate::*;
 
 use glib::clone;
-use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;
 
@@ -191,9 +190,26 @@ fn connect_decrypt_button(app_data: Rc<AppData>) {
             }
 
             if stack == "dictionary" {
-                backend::run_decrypt_wordlist_process(&handshake_entry, &bssid, &essid, &wordlist_entry);
+                if let Err(e) = backend::run_decrypt_wordlist_process(
+                    &handshake_entry,
+                    &bssid,
+                    &essid,
+                    &wordlist_entry
+                ) {
+                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", &e.to_string());
+                }
             } else if stack == "bruteforce" {
-                backend::run_decrypt_bruteforce_process(&handshake_entry, &bssid, &essid, low, up, num, sym);
+                if let Err(e) = backend::run_decrypt_bruteforce_process(
+                    &handshake_entry,
+                    &bssid,
+                    &essid,
+                    low,
+                    up,
+                    num,
+                    sym
+                ) {
+                    return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", &e.to_string());
+                }
             }
 
             app_data.decrypt_gui.window.close();
