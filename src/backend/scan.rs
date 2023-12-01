@@ -183,12 +183,12 @@ pub fn stop_scan_process() -> Result<(), Error> {
 
         kill(child_pid, Signal::SIGTERM)?;
 
+        log::info!("scan stopped, sent kill SIGTERM to pid {}", child_pid);
+
         child.wait()?;
     }
 
     SCAN_PROC.lock().unwrap().take();
-
-    log::info!("scan stopped");
 
     let old_path_exists = Path::new(&(OLD_SCAN_PATH.to_string() + "-01.cap")).exists();
     let live_path_exists = Path::new(&(LIVE_SCAN_PATH.to_string() + "-01.cap")).exists();

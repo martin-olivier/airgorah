@@ -9,7 +9,7 @@ const CRUNCH_SYMBOLS: &str = "!#$%/=?{}[]-*:;";
 
 /// Get the terminal emulator
 pub fn build_terminal(title: String, command: String) -> Result<Command, Error> {
-    let err_msg = Error::new("No supported terminal found, please install one of the following: xfce4-terminal, gnome-terminal, konsole");
+    let err_msg = Error::new("No supported terminal found, please install one of the following:\nxfce4-terminal, gnome-terminal, konsole");
 
     if has_dependency("xfce4-terminal") {
         let mut process = Command::new("xfce4-terminal");
@@ -35,7 +35,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "--",
             "sh",
             "-c",
-            &(command + " ; read"),
+            &(command + " ; exec sh"),
         ]);
         return Ok(process);
     } else if has_dependency("konsole") {
@@ -52,6 +52,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "-c",
             &command,
         ]);
+        return Ok(process);
     }
 
     return Err(err_msg);
