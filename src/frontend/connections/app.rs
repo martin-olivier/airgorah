@@ -280,11 +280,6 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                 };
 
-                let handshake_status = match ap.handshake {
-                    true => "Captured",
-                    false => "",
-                };
-
                 app_data.app_gui.aps_model.set(
                     &it,
                     &[
@@ -298,7 +293,7 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         (7, &(ap.clients.len() as i32)),
                         (8, &ap.first_time_seen),
                         (9, &ap.last_time_seen),
-                        (10, &handshake_status),
+                        (10, &ap.handshake),
                         (11, &background_color.to_str()),
                     ],
                 );

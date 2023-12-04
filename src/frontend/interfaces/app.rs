@@ -139,7 +139,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::I32,    // Clients
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // First time seen
-        glib::Type::STRING, // Handshake
+        glib::Type::BOOL,   // Handshake
         glib::Type::STRING, // <color>
     ])
 }
@@ -176,13 +176,22 @@ fn build_aps_view() -> TreeView {
             icon_renderer.set_property("icon-name", "network-wireless");
 
             column.pack_start(&icon_renderer, false);
+            column.add_attribute(&icon_renderer, "cell-background", 11);
             column.set_expand(true);
         }
 
-        let text_renderer = CellRendererText::new();
-        column.pack_start(&text_renderer, false);
-        column.add_attribute(&text_renderer, "text", pos as i32);
-        column.add_attribute(&text_renderer, "background", 11);
+        if pos == 10 {
+            let toggle = CellRendererToggle::new();
+            toggle.set_sensitive(false);
+            column.pack_start(&toggle, false);
+            column.add_attribute(&toggle, "active", 10);
+            column.add_attribute(&toggle, "cell-background", 11);
+        } else {
+            let text_renderer = CellRendererText::new();
+            column.pack_start(&text_renderer, false);
+            column.add_attribute(&text_renderer, "text", pos as i32);
+            column.add_attribute(&text_renderer, "background", 11);
+        }
 
         view.append_column(&column);
     }
@@ -232,6 +241,7 @@ fn build_cli_view() -> TreeView {
             let icon_renderer = CellRendererPixbuf::new();
             icon_renderer.set_property("icon-name", "computer");
             column.pack_start(&icon_renderer, false);
+            column.add_attribute(&icon_renderer, "cell-background", 5);
         }
 
         let text_renderer = CellRendererText::new();
