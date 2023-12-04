@@ -5,7 +5,7 @@ use super::*;
 const CRUNCH_LOWERCASE: &str = "abcdefghijklmnopqrstuvwxyz";
 const CRUNCH_UPPERCASE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const CRUNCH_NUMBERS: &str = "0123456789";
-const CRUNCH_SYMBOLS: &str = "!#$%/=?{}[]-*:;";
+const CRUNCH_SYMBOLS: &str = " !@#$%^&*()-_+=~`[]{}|\\:;\"'<>,.?/";
 
 /// Get the terminal emulator
 pub fn build_terminal(title: String, command: String) -> Result<Command, Error> {
