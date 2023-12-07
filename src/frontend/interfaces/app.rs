@@ -68,6 +68,7 @@ fn build_hopping_button() -> Button {
     Button::builder()
         .icon_name("edit-select-all-symbolic")
         .tooltip_text("Hop on all channels of the selected bands")
+        .sensitive(false)
         .build()
 }
 
