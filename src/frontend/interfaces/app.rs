@@ -214,6 +214,7 @@ fn build_cli_model() -> ListStore {
         glib::Type::I32,    // Power
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // Last time seen
+        glib::Type::STRING, // Probes
         glib::Type::STRING, // <color>
     ])
 }
@@ -226,6 +227,7 @@ fn build_cli_view() -> TreeView {
         "Power",
         "First time seen",
         "Last time seen",
+        "Probes",
     ];
 
     for (pos, column_name) in column_names.into_iter().enumerate() {
@@ -242,13 +244,13 @@ fn build_cli_view() -> TreeView {
             let icon_renderer = CellRendererPixbuf::new();
             icon_renderer.set_property("icon-name", "computer");
             column.pack_start(&icon_renderer, false);
-            column.add_attribute(&icon_renderer, "cell-background", 5);
+            column.add_attribute(&icon_renderer, "cell-background", 6);
         }
 
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos as i32);
-        column.add_attribute(&text_renderer, "background", 5);
+        column.add_attribute(&text_renderer, "background", 6);
 
         view.append_column(&column);
     }

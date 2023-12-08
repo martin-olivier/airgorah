@@ -64,7 +64,7 @@ struct RawClient {
     #[serde(rename = " BSSID")]
     bssid: String,
     #[serde(rename = " Probed ESSIDs")]
-    _probed_essids: String,
+    probes: String,
 }
 
 /// Check if a scan is currently running
@@ -333,6 +333,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                     power: result.power.trim_start().to_string(),
                     first_time_seen: result.first_time_seen.trim_start().to_string(),
                     last_time_seen: result.last_time_seen.trim_start().to_string(),
+                    probes: result.probes.trim_start().to_string(),
                 },
             );
         }

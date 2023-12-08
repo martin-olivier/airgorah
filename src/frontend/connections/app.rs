@@ -378,7 +378,8 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             (2, &cli.power.parse::<i32>().unwrap_or(-1)),
                             (3, &cli.first_time_seen),
                             (4, &cli.last_time_seen),
-                            (5, &background_color.to_str()),
+                            (5, &cli.probes),
+                            (6, &background_color.to_str()),
                         ],
                     );
 

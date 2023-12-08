@@ -37,6 +37,7 @@ pub struct Client {
     pub power: String,
     pub first_time_seen: String,
     pub last_time_seen: String,
+    pub probes: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
