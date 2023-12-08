@@ -1,6 +1,6 @@
-use std::process::{Command, Stdio};
-use crate::error::Error;
 use super::*;
+use crate::error::Error;
+use std::process::{Command, Stdio};
 
 const CRUNCH_LOWERCASE: &str = "abcdefghijklmnopqrstuvwxyz";
 const CRUNCH_UPPERCASE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -24,7 +24,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "-e",
             &command,
         ]);
-        return Ok(process);
+        Ok(process)
     } else if has_dependency("gnome-terminal") {
         let mut process = Command::new("gnome-terminal");
         process.stdin(Stdio::piped());
@@ -37,7 +37,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "-c",
             &(command + " ; exec sh"),
         ]);
-        return Ok(process);
+        Ok(process)
     } else if has_dependency("konsole") {
         let mut process = Command::new("konsole");
         process.stdin(Stdio::piped());
@@ -52,14 +52,19 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "-c",
             &command,
         ]);
-        return Ok(process);
+        Ok(process)
+    } else {
+        Err(err_msg)
     }
-
-    return Err(err_msg);
 }
 
 /// Launch a new terminal window to run aircrack-ng to decrypt a handshake with the specified wordlist
-pub fn run_decrypt_wordlist_process(handshake: &str, bssid: &str, essid: &str, wordlist: &str) -> Result<(), Error> {
+pub fn run_decrypt_wordlist_process(
+    handshake: &str,
+    bssid: &str,
+    essid: &str,
+    wordlist: &str,
+) -> Result<(), Error> {
     let title = format!("Handshake Decryption ({})", essid);
     let cmd = format!(
         "aircrack-ng '{}' -b '{}' -w '{}'",
