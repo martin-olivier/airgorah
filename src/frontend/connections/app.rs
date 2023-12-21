@@ -33,6 +33,26 @@ fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<Tree
     None
 }
 
+fn connect_controller(app_data: Rc<AppData>) {
+    let controller = gtk4::EventControllerKey::new();
+
+    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
+        if key == gdk::Key::Escape {
+            app_data.app_gui.focus_but.set_sensitive(false);
+            app_data.app_gui.deauth_but.set_sensitive(false);
+            app_data.app_gui.capture_but.set_sensitive(false);
+
+            app_data.app_gui.aps_view.selection().unselect_all();
+
+            app_data.app_gui.cli_model.clear();
+        }
+
+        glib::Propagation::Proceed
+    }));
+
+    app_data.app_gui.window.add_controller(controller);
+}
+
 fn connect_about_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
@@ -378,8 +398,9 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             (2, &cli.power.parse::<i32>().unwrap_or(-1)),
                             (3, &cli.first_time_seen),
                             (4, &cli.last_time_seen),
-                            (5, &cli.probes),
-                            (6, &background_color.to_str()),
+                            (5, &cli.vendor),
+                            (6, &cli.probes),
+                            (7, &background_color.to_str()),
                         ],
                     );
 
@@ -530,6 +551,8 @@ fn connect_capture_button(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    connect_controller(app_data.clone());
+
     connect_about_button(app_data.clone());
     connect_update_button(app_data.clone());
     connect_decrypt_button(app_data.clone());

@@ -43,7 +43,7 @@ fn build_scan_button() -> Button {
 fn build_restart_button() -> Button {
     Button::builder()
         .icon_name("view-refresh-symbolic")
-        .tooltip_text("Clear results and restarts the scan")
+        .tooltip_text("Clear results and restart the scan")
         .sensitive(false)
         .build()
 }
@@ -116,7 +116,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("")
-        .default_width(1280)
+        .default_width(1320)
         .default_height(620)
         .build();
 
@@ -215,42 +215,47 @@ fn build_cli_model() -> ListStore {
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // Last time seen
         glib::Type::STRING, // Probes
+        glib::Type::STRING, // Vendor
         glib::Type::STRING, // <color>
     ])
 }
 
 fn build_cli_view() -> TreeView {
     let view = TreeView::builder().vexpand(true).hexpand(true).build();
-    let column_names = [
-        "Station MAC",
-        "Packets",
-        "Power",
-        "First time seen",
-        "Last time seen",
-        "Probes",
+    let columns = [
+        ("Station MAC", 200),
+        ("Packets", 110),
+        ("Power", 100),
+        ("First time seen", 160),
+        ("Last time seen", 160),
+        ("Vendor", 200),
+        ("Probes", 300),
     ];
 
-    for (pos, column_name) in column_names.into_iter().enumerate() {
+    for (pos, (column_name, column_size)) in columns.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
             .title(column_name)
             .resizable(true)
-            .min_width(50)
+            .fixed_width(column_size)
+            .min_width(column_size)
             .sort_indicator(true)
             .sort_column_id(pos as i32)
-            .expand(true)
+            .expand(false)
             .build();
 
         if pos == 0 {
             let icon_renderer = CellRendererPixbuf::new();
             icon_renderer.set_property("icon-name", "computer");
             column.pack_start(&icon_renderer, false);
-            column.add_attribute(&icon_renderer, "cell-background", 6);
+            column.add_attribute(&icon_renderer, "cell-background", 7);
+        } else if pos == 5 || pos == 6 {
+            column.set_expand(true);
         }
 
         let text_renderer = CellRendererText::new();
         column.pack_start(&text_renderer, true);
         column.add_attribute(&text_renderer, "text", pos as i32);
-        column.add_attribute(&text_renderer, "background", 6);
+        column.add_attribute(&text_renderer, "background", 7);
 
         view.append_column(&column);
     }
