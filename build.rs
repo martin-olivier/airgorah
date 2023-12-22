@@ -1,6 +1,6 @@
+use serde::Deserialize;
 use std::fs::File;
 use std::io::Write;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct RawVendors {
@@ -21,7 +21,7 @@ fn main() {
     // Write Rust source file
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let dest_path = std::path::Path::new(&out_dir).join("vendors.rs");
-    let mut file = File::create(&dest_path).expect("Unable to create output file");
+    let mut file = File::create(dest_path).expect("Unable to create output file");
 
     // Write HashMap initialization code to the generated Rust file
     write!(
@@ -48,13 +48,11 @@ lazy_static! {{
 fn parse_csv(csv_content: &str) -> String {
     let mut code = String::new();
     let mut rdr = csv::ReaderBuilder::new().from_reader(csv_content.as_bytes());
-    for result in rdr.deserialize::<RawVendors>() {
-        if let Ok(record) = result {
-            code.push_str(&format!(
-                "map.insert(\"{}\", r#\"{}\"#);\n",
-                record.mac_prefix, record.vendor_name
-            ));
-        }
+    for result in rdr.deserialize::<RawVendors>().flatten() {
+        code.push_str(&format!(
+            "map.insert(\"{}\", r#\"{}\"#);\n",
+            result.mac_prefix, result.vendor_name
+        ));
     }
     code
 }

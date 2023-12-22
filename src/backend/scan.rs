@@ -334,7 +334,6 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                     let mut vendor = String::from("Unknown");
 
                     while !mac_to_find.is_empty() {
-
                         if let Some(item) = VENDORS.get(mac_to_find.as_str()) {
                             vendor = item.to_string();
 
@@ -345,7 +344,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                     }
 
                     vendor
-                },
+                }
             };
 
             ap.clients.insert(
