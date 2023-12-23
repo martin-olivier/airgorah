@@ -11,7 +11,7 @@ Airgorah</h1>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="https://github.com/martin-olivier/airgorah/wiki/Usage">Usage</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#contributing">Contributing</a>
+  <a href="https://github.com/martin-olivier/airgorah/wiki/Credits">Credits</a>
 </p>
 
 ![illustration](.github/assets/illustration.png)
