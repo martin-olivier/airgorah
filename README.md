@@ -20,7 +20,7 @@ Airgorah</h1>
 [![aur](https://img.shields.io/aur/version/airgorah)](https://aur.archlinux.org/packages/airgorah)
 [![ci](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg)](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml)
 
-`Airgorah` is a WiFi auditing software that can discover the clients connected to an access point, perform deauthentication attacks against specific clients or all the clients connected to it, capture WPA handshakes, and crack the password of the access point.
+`Airgorah` is a WiFi auditing software that can discover the clients connected to an access point, perform deauthentication attacks against specific clients, capture WPA handshakes, and crack the password of the access point.
 
 It is written in Rust and uses [GTK4](https://github.com/gtk-rs/gtk4-rs) for the graphical part. The software is mainly based on [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) tools suite.
 
