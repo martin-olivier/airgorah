@@ -135,13 +135,14 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
 
     log::info!("{}: monitor mode enabled", iface);
 
+    if let Ok(true) = is_monitor_mode(iface) {
+        return Ok(iface.to_string());
+    }
+
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => Err(Error::new(&format!(
-                "Interface \"{}mon\" is in managed mode",
-                iface
-            ))),
+            false => Err(Error::new("Interface is still in managed mode")),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;

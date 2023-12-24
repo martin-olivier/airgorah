@@ -250,6 +250,22 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
                 return this.set_text(&channel_filter);
             }
 
+            match channel_filter.is_empty() {
+                true => app_data.app_gui.hopping_but.set_sensitive(false),
+                false => app_data.app_gui.hopping_but.set_sensitive(true),
+            }
+
+            match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, it)) => {
+                    let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
+                    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+                        true => app_data.app_gui.focus_but.set_sensitive(false),
+                        false => app_data.app_gui.focus_but.set_sensitive(true),
+                    }
+                }
+                None => app_data.app_gui.focus_but.set_sensitive(false),
+            }
+
             let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
             let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
 
@@ -271,9 +287,13 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
         .app_gui
         .aps_view
         .connect_cursor_changed(clone!(@strong app_data => move |this| {
-            match this.selection().selected().is_some() {
-                true => {
-                    app_data.app_gui.focus_but.set_sensitive(true);
+            match this.selection().selected() {
+                Some((_, it)) => {
+                    let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
+                    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+                        true => app_data.app_gui.focus_but.set_sensitive(false),
+                        false => app_data.app_gui.focus_but.set_sensitive(true),
+                    }
                     app_data.app_gui.deauth_but.set_sensitive(true);
 
                     let (_, ap_iter) = this.selection().selected().unwrap();
@@ -299,7 +319,7 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
                         }
                     }
                 }
-                false => {
+                None => {
                     app_data.app_gui.focus_but.set_sensitive(false);
                     app_data.app_gui.deauth_but.set_sensitive(false);
                     app_data.app_gui.capture_but.set_sensitive(false);

@@ -33,6 +33,26 @@ fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<Tree
     None
 }
 
+fn connect_controller(app_data: Rc<AppData>) {
+    let controller = gtk4::EventControllerKey::new();
+
+    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
+        if key == gdk::Key::Escape {
+            app_data.app_gui.focus_but.set_sensitive(false);
+            app_data.app_gui.deauth_but.set_sensitive(false);
+            app_data.app_gui.capture_but.set_sensitive(false);
+
+            app_data.app_gui.aps_view.selection().unselect_all();
+
+            app_data.app_gui.cli_model.clear();
+        }
+
+        glib::Propagation::Proceed
+    }));
+
+    app_data.app_gui.window.add_controller(controller);
+}
+
 fn connect_about_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
@@ -96,8 +116,11 @@ fn connect_hopping_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
         .hopping_but
-        .connect_clicked(clone!(@strong app_data => move |_| {
+        .connect_clicked(clone!(@strong app_data => move |this| {
             app_data.app_gui.channel_filter_entry.set_text("");
+
+            this.set_sensitive(false);
+            app_data.app_gui.focus_but.set_sensitive(true);
         }));
 }
 
@@ -105,10 +128,13 @@ fn connect_focus_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
         .focus_but
-        .connect_clicked(clone!(@strong app_data => move |_| {
+        .connect_clicked(clone!(@strong app_data => move |this| {
             if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
                 let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
                 app_data.app_gui.channel_filter_entry.set_text(&channel.to_string());
+
+                this.set_sensitive(false);
+                app_data.app_gui.hopping_but.set_sensitive(true);
             }
         }));
 }
@@ -133,7 +159,16 @@ fn connect_previous_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            app_data.app_gui.focus_but.set_sensitive(true);
+            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
+                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+                    true => app_data.app_gui.focus_but.set_sensitive(false),
+                    false => app_data.app_gui.focus_but.set_sensitive(true),
+                }
+            } else {
+                app_data.app_gui.focus_but.set_sensitive(false);
+            }
+
             app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
@@ -158,7 +193,16 @@ fn connect_next_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            app_data.app_gui.focus_but.set_sensitive(true);
+            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
+                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+                    true => app_data.app_gui.focus_but.set_sensitive(false),
+                    false => app_data.app_gui.focus_but.set_sensitive(true),
+                }
+            } else {
+                app_data.app_gui.focus_but.set_sensitive(false);
+            }
+
             app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
@@ -178,7 +222,16 @@ fn connect_top_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            app_data.app_gui.focus_but.set_sensitive(true);
+            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
+                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+                    true => app_data.app_gui.focus_but.set_sensitive(false),
+                    false => app_data.app_gui.focus_but.set_sensitive(true),
+                }
+            } else {
+                app_data.app_gui.focus_but.set_sensitive(false);
+            }
+
             app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
@@ -204,7 +257,16 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            app_data.app_gui.focus_but.set_sensitive(true);
+            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
+                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+                    true => app_data.app_gui.focus_but.set_sensitive(false),
+                    false => app_data.app_gui.focus_but.set_sensitive(true),
+                }
+            } else {
+                app_data.app_gui.focus_but.set_sensitive(false);
+            }
+
             app_data.app_gui.deauth_but.set_sensitive(true);
         }));
 }
@@ -280,11 +342,6 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                 };
 
-                let handshake_status = match ap.handshake {
-                    true => "Captured",
-                    false => "",
-                };
-
                 app_data.app_gui.aps_model.set(
                     &it,
                     &[
@@ -298,7 +355,7 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         (7, &(ap.clients.len() as i32)),
                         (8, &ap.first_time_seen),
                         (9, &ap.last_time_seen),
-                        (10, &handshake_status),
+                        (10, &ap.handshake),
                         (11, &background_color.to_str()),
                     ],
                 );
@@ -341,7 +398,9 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             (2, &cli.power.parse::<i32>().unwrap_or(-1)),
                             (3, &cli.first_time_seen),
                             (4, &cli.last_time_seen),
-                            (5, &background_color.to_str()),
+                            (5, &cli.vendor),
+                            (6, &cli.probes),
+                            (7, &background_color.to_str()),
                         ],
                     );
 
@@ -492,6 +551,8 @@ fn connect_capture_button(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    connect_controller(app_data.clone());
+
     connect_about_button(app_data.clone());
     connect_update_button(app_data.clone());
     connect_decrypt_button(app_data.clone());
