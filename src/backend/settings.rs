@@ -7,16 +7,24 @@ use std::path::Path;
 pub fn load_settings() {
     if Path::new(CONFIG_PATH).exists() {
         let config = std::fs::read_to_string(CONFIG_PATH).unwrap_or_default();
-        let settings: Settings = toml::from_str(&config).unwrap_or_default();
+        let mut settings: Settings = toml::from_str(&config).unwrap_or_default();
 
-        log::debug!("settings loaded from \"{}\"", CONFIG_PATH);
+        if settings.kill_network_manager && !super::has_dependency("systemctl") {
+            settings.kill_network_manager = false;
+        }
+
+        log::debug!("settings loaded from '{}'", CONFIG_PATH);
 
         *SETTINGS.lock().unwrap() = settings;
     }
 }
 
 /// Save settings to the config file
-pub fn save_settings(settings: Settings) {
+pub fn save_settings(mut settings: Settings) {
+    if settings.kill_network_manager && !super::has_dependency("systemctl") {
+        settings.kill_network_manager = false;
+    }
+
     if Path::new(CONFIG_PATH).exists() {
         if let Ok(toml_settings) = toml::to_string(&settings) {
             std::fs::write(CONFIG_PATH, toml_settings).ok();

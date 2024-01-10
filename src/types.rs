@@ -53,7 +53,7 @@ impl Default for Settings {
         Self {
             mac_address: "random".to_string(),
             display_hidden_ap: true,
-            kill_network_manager: true,
+            kill_network_manager: false,
         }
     }
 }
