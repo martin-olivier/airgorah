@@ -5,6 +5,7 @@ pub mod decrypt;
 pub mod interface;
 pub mod scan;
 pub mod settings;
+pub mod vendors;
 
 pub use app::*;
 pub use capture::*;
@@ -13,3 +14,4 @@ pub use decrypt::*;
 pub use interface::*;
 pub use scan::*;
 pub use settings::*;
+pub use vendors::*;

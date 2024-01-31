@@ -435,7 +435,16 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 fn start_handshake_refresh() {
     std::thread::spawn(|| loop {
         backend::update_handshakes().ok();
+
         std::thread::sleep(Duration::from_millis(1500));
+    });
+}
+
+fn start_vendor_refresh() {
+    std::thread::spawn(|| loop {
+        backend::update_vendors();
+
+        std::thread::yield_now();
     });
 }
 
@@ -564,7 +573,9 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_bottom_button(app_data.clone());
 
     start_app_refresh(app_data.clone());
+
     start_handshake_refresh();
+    start_vendor_refresh();
     start_update_checker();
 
     connect_hopping_button(app_data.clone());

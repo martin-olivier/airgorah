@@ -1,4 +1,4 @@
-FROM arm64v8/rust:slim-bookworm
+FROM arm64v8/rust:1.75.0-slim-bookworm
 
 WORKDIR /workspace
 

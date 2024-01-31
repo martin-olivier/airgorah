@@ -1,4 +1,4 @@
-FROM amd64/rust:slim-bookworm
+FROM amd64/rust:1.75.0-slim-bookworm
 
 WORKDIR /workspace
 
