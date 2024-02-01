@@ -10,7 +10,6 @@
 --conflicts airgorah
 
 --depends bash
---depends systemd
 --depends iw
 --depends macchanger
 --depends aircrack-ng

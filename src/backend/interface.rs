@@ -196,12 +196,83 @@ pub fn set_iface(iface: String) {
     IFACE.lock().unwrap().replace(iface);
 }
 
+/// List of services that can interfere with the app on the management of wireless cards
+const INTERFERENCE_SERVICES: [&str; 19] = [
+    "wpa_action",
+    "wpa_supplicant",
+    "wpa_cli",
+    "dhclient",
+    "ifplugd",
+    "dhcdbd",
+    "dhcpcd",
+    "udhcpc",
+    "NetworkManager",
+    "knetworkmanager",
+    "avahi-autoipd",
+    "avahi-daemon",
+    "wlassistant",
+    "wifibox",
+    "net_applet",
+    "wicd-daemon",
+    "wicd-client",
+    "iwd",
+    "hostapd",
+];
+
+/// Service manager related information
+struct ServiceManager {
+    cmd: String,
+    status: String,
+    start: String,
+    stop: String,
+}
+
+impl ServiceManager {
+    fn systemd() -> ServiceManager {
+        ServiceManager {
+            cmd: "systemctl".to_string(),
+            status: "is-active".to_string(),
+            start: "start".to_string(),
+            stop: "stop".to_string(),
+        }
+    }
+
+    fn sv() -> ServiceManager {
+        ServiceManager {
+            cmd: "sv".to_string(),
+            status: "status".to_string(),
+            start: "up".to_string(),
+            stop: "down".to_string(),
+        }
+    }
+}
+
 /// Kill the network manager to avoid channel hopping conflicts
 pub fn kill_network_manager() -> Result<(), Error> {
     if get_settings().kill_network_manager {
-        Command::new("airmon-ng").args(["check", "kill"]).output()?;
+        let service_manager = if has_dependency("systemctl") {
+            ServiceManager::systemd()
+        } else if has_dependency("sv") {
+            ServiceManager::sv()
+        } else {
+            return Err(Error::new("No service manager found, 'systemctl' or 'sv' is required"));
+        };
 
-        log::warn!("network manager killed");
+        for service in INTERFERENCE_SERVICES {
+            let is_service_running = Command::new(&service_manager.cmd)
+                .args([&service_manager.status, service])
+                .output()?;
+
+            if is_service_running.status.success() {
+                Command::new(&service_manager.cmd)
+                    .args([&service_manager.stop, service])
+                    .output()?;
+
+                SERVICES_TO_RESTORE.lock().unwrap().push(service.to_string());
+
+                log::warn!("killed '{}'", service);
+            }
+        }
     }
 
     Ok(())
@@ -213,17 +284,21 @@ pub fn restore_network_manager() -> Result<(), Error> {
         return Ok(());
     }
 
-    Command::new("systemctl")
-        .args(["restart", "NetworkManager"])
-        .output()?;
-    Command::new("systemctl")
-        .args(["restart", "network-manager"])
-        .output()?;
-    Command::new("systemctl")
-        .args(["restart", "wpa-supplicant"])
-        .output()?;
+    let service_manager = if has_dependency("systemctl") {
+        ServiceManager::systemd()
+    } else if has_dependency("sv") {
+        ServiceManager::sv()
+    } else {
+        return Err(Error::new("No service manager found, 'systemctl' or 'sv' is required"));
+    };
 
-    log::warn!("network manager restored");
+    for service in SERVICES_TO_RESTORE.lock().unwrap().iter() {
+        Command::new(&service_manager.cmd)
+            .args([&service_manager.start, service])
+            .output()?;
+
+        log::warn!("restored '{}'", service);
+    }
 
     Ok(())
 }

@@ -31,4 +31,5 @@ lazy_static! {
     pub static ref VENDORS_CACHE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
     pub static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
     pub static ref NEW_VERSION: Mutex<Option<String>> = Mutex::new(None);
+    pub static ref SERVICES_TO_RESTORE: Mutex<Vec<String>> = Mutex::new(vec![]);
 }

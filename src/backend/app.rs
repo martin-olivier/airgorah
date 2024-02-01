@@ -20,7 +20,6 @@ pub fn app_setup() -> Result<(), Error> {
 
     check_required_dependencies(&[
         "sh",
-        "systemctl",
         "ip",
         "iw",
         "awk",

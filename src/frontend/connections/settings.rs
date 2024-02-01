@@ -97,6 +97,13 @@ fn connect_save_but(app_data: Rc<AppData>) {
 }
 
 pub fn connect(app_data: Rc<AppData>) {
+    if !backend::has_dependency("systemctl") && !backend::has_dependency("sv") {
+        app_data.settings_gui.kill_network_manager.set_sensitive(false);
+        app_data.settings_gui.kill_network_manager.set_tooltip_text(
+            Some("systemd or runit is required to enable this option")
+        );
+    }
+
     connect_controller(app_data.clone());
 
     connect_random_mac_button(app_data.clone());
