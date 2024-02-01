@@ -292,9 +292,11 @@ pub fn restore_network_manager() -> Result<(), Error> {
         return Err(Error::new("No service manager found, 'systemctl' or 'sv' is required"));
     };
 
-    for service in SERVICES_TO_RESTORE.lock().unwrap().iter() {
+    let services_to_restore: Vec<_> = SERVICES_TO_RESTORE.lock().unwrap().drain(..).collect();
+
+    for service in services_to_restore {
         Command::new(&service_manager.cmd)
-            .args([&service_manager.start, service])
+            .args([&service_manager.start, &service])
             .output()?;
 
         log::warn!("restored '{}'", service);
