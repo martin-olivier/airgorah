@@ -237,7 +237,7 @@ impl ServiceManager {
         }
     }
 
-    fn runit_sv() -> ServiceManager {
+    fn runit() -> ServiceManager {
         ServiceManager {
             cmd: "sv".to_string(),
             status: "status".to_string(),
@@ -253,7 +253,7 @@ pub fn kill_network_manager() -> Result<(), Error> {
         let service_manager = if has_dependency("systemctl") {
             ServiceManager::systemd()
         } else if has_dependency("sv") {
-            ServiceManager::runit_sv()
+            ServiceManager::runit()
         } else {
             return Err(Error::new("No service manager found, 'systemd' or 'runit' is required"));
         };
@@ -287,7 +287,7 @@ pub fn restore_network_manager() -> Result<(), Error> {
     let service_manager = if has_dependency("systemctl") {
         ServiceManager::systemd()
     } else if has_dependency("sv") {
-        ServiceManager::runit_sv()
+        ServiceManager::runit()
     } else {
         return Err(Error::new("No service manager found, 'systemd' or 'runit' is required"));
     };
