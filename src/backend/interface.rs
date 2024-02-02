@@ -237,7 +237,7 @@ impl ServiceManager {
         }
     }
 
-    fn sv() -> ServiceManager {
+    fn runit_sv() -> ServiceManager {
         ServiceManager {
             cmd: "sv".to_string(),
             status: "status".to_string(),
@@ -253,9 +253,9 @@ pub fn kill_network_manager() -> Result<(), Error> {
         let service_manager = if has_dependency("systemctl") {
             ServiceManager::systemd()
         } else if has_dependency("sv") {
-            ServiceManager::sv()
+            ServiceManager::runit_sv()
         } else {
-            return Err(Error::new("No service manager found, 'systemctl' or 'sv' is required"));
+            return Err(Error::new("No service manager found, 'systemd' or 'runit' is required"));
         };
 
         for service in INTERFERENCE_SERVICES {
@@ -287,9 +287,9 @@ pub fn restore_network_manager() -> Result<(), Error> {
     let service_manager = if has_dependency("systemctl") {
         ServiceManager::systemd()
     } else if has_dependency("sv") {
-        ServiceManager::sv()
+        ServiceManager::runit_sv()
     } else {
-        return Err(Error::new("No service manager found, 'systemctl' or 'sv' is required"));
+        return Err(Error::new("No service manager found, 'systemd' or 'runit' is required"));
     };
 
     let services_to_restore: Vec<_> = SERVICES_TO_RESTORE.lock().unwrap().drain(..).collect();
