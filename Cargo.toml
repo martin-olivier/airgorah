@@ -24,7 +24,7 @@ ctrlc = "3.4.2"
 regex = "1.10.2"
 chrono = "0.4.31"
 lazy_static = "1.4.0"
-ureq = { version = "2.9.1", features = ["json"] }
+ureq = { version = "2.9.6", features = ["json"] }
 which = "5.0.0"
 log = "0.4.20"
 env_logger = "0.10.1"
