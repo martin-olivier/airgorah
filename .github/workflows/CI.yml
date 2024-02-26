@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: webiny/action-conventional-commits@v1.1.0
+      - uses: webiny/action-conventional-commits@v1
 
   linter:
     name: linter
@@ -89,7 +89,7 @@ jobs:
           sh -c "apt update && apt install -y ./airgorah_${{ matrix.arch }}.deb"
 
       - name: Save debian artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: airgorah_${{ matrix.arch }}.deb
           path: ./airgorah_${{ matrix.arch }}.deb
@@ -105,7 +105,7 @@ jobs:
           sh -c "dnf update -y && dnf install -y ./airgorah_${{ matrix.arch }}.rpm"
 
       - name: Save redhat artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: airgorah_${{ matrix.arch }}.rpm
           path: ./airgorah_${{ matrix.arch }}.rpm
@@ -121,7 +121,7 @@ jobs:
           sh -c "pacman -Syu --noconfirm && pacman -U --noconfirm ./airgorah_${{ matrix.arch }}.pkg.tar.zst"
 
       - name: Save archlinux artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: airgorah_${{ matrix.arch }}.pkg.tar.zst
           path: ./airgorah_${{ matrix.arch }}.pkg.tar.zst
