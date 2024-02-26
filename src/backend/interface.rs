@@ -128,8 +128,11 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
 
     if !enable_monitor_cmd.status.success() {
         return Err(Error::new(&format!(
-            "Could not enable monitor mode on \"{}\"",
-            iface
+            "Could not enable monitor mode on '{}':\n\n{}",
+            iface,
+            String::from_utf8(enable_monitor_cmd.stderr).unwrap_or(
+                "Invalid stderr returned by airmon-ng".to_string()
+            )
         )));
     }
 
@@ -154,7 +157,7 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
             }
 
             Err(Error::new(
-                &format!("Monitor mode has been enabled on \"{}\", but the new interface name could not been found", iface)
+                &format!("Monitor mode has been enabled on '{}', but the new interface name could not been found", iface)
             ))
         }
     }
@@ -219,53 +222,21 @@ const INTERFERENCE_SERVICES: [&str; 19] = [
     "hostapd",
 ];
 
-/// Service manager related information
-struct ServiceManager {
-    cmd: String,
-    status: String,
-    start: String,
-    stop: String,
-}
-
-impl ServiceManager {
-    fn systemd() -> ServiceManager {
-        ServiceManager {
-            cmd: "systemctl".to_string(),
-            status: "is-active".to_string(),
-            start: "start".to_string(),
-            stop: "stop".to_string(),
-        }
-    }
-
-    fn runit() -> ServiceManager {
-        ServiceManager {
-            cmd: "sv".to_string(),
-            status: "status".to_string(),
-            start: "up".to_string(),
-            stop: "down".to_string(),
-        }
-    }
-}
-
 /// Kill the network manager to avoid channel hopping conflicts
 pub fn kill_network_manager() -> Result<(), Error> {
     if get_settings().kill_network_manager {
-        let service_manager = if has_dependency("systemctl") {
-            ServiceManager::systemd()
-        } else if has_dependency("sv") {
-            ServiceManager::runit()
-        } else {
-            return Err(Error::new("No service manager found, 'systemd' or 'runit' is required"));
-        };
+        if !has_dependency("systemctl") {
+            return Err(Error::new("systemctl is required to kill network managers"));
+        }
 
         for service in INTERFERENCE_SERVICES {
-            let is_service_running = Command::new(&service_manager.cmd)
-                .args([&service_manager.status, service])
+            let is_service_running = Command::new("systemctl")
+                .args(["is-active", service])
                 .output()?;
 
             if is_service_running.status.success() {
-                Command::new(&service_manager.cmd)
-                    .args([&service_manager.stop, service])
+                Command::new("systemctl")
+                    .args(["stop", service])
                     .output()?;
 
                 SERVICES_TO_RESTORE.lock().unwrap().push(service.to_string());
@@ -284,19 +255,15 @@ pub fn restore_network_manager() -> Result<(), Error> {
         return Ok(());
     }
 
-    let service_manager = if has_dependency("systemctl") {
-        ServiceManager::systemd()
-    } else if has_dependency("sv") {
-        ServiceManager::runit()
-    } else {
-        return Err(Error::new("No service manager found, 'systemd' or 'runit' is required"));
+    if !has_dependency("systemctl") {
+        return Err(Error::new("systemctl is required to restore network managers"));
     };
 
     let services_to_restore: Vec<_> = SERVICES_TO_RESTORE.lock().unwrap().drain(..).collect();
 
     for service in services_to_restore {
-        Command::new(&service_manager.cmd)
-            .args([&service_manager.start, &service])
+        Command::new("systemctl")
+            .args(["start", &service])
             .output()?;
 
         log::warn!("restored '{}'", service);

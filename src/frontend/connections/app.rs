@@ -444,7 +444,7 @@ fn start_vendor_refresh() {
     std::thread::spawn(|| loop {
         backend::update_vendors();
 
-        std::thread::yield_now();
+        std::thread::sleep(Duration::from_millis(500));
     });
 }
 
