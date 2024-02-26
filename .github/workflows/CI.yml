@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: webiny/action-conventional-commits@v1
+      - uses: webiny/action-conventional-commits@v1.3.0
 
   linter:
     name: linter
