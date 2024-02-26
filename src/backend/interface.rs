@@ -130,9 +130,8 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
         return Err(Error::new(&format!(
             "Could not enable monitor mode on '{}':\n\n{}",
             iface,
-            String::from_utf8(enable_monitor_cmd.stderr).unwrap_or(
-                "Invalid stderr returned by airmon-ng".to_string()
-            )
+            String::from_utf8(enable_monitor_cmd.stderr)
+                .unwrap_or("Invalid stderr returned by airmon-ng".to_string())
         )));
     }
 
@@ -235,11 +234,12 @@ pub fn kill_network_manager() -> Result<(), Error> {
                 .output()?;
 
             if is_service_running.status.success() {
-                Command::new("systemctl")
-                    .args(["stop", service])
-                    .output()?;
+                Command::new("systemctl").args(["stop", service]).output()?;
 
-                SERVICES_TO_RESTORE.lock().unwrap().push(service.to_string());
+                SERVICES_TO_RESTORE
+                    .lock()
+                    .unwrap()
+                    .push(service.to_string());
 
                 log::warn!("killed '{}'", service);
             }
@@ -256,7 +256,9 @@ pub fn restore_network_manager() -> Result<(), Error> {
     }
 
     if !has_dependency("systemctl") {
-        return Err(Error::new("systemctl is required to restore network managers"));
+        return Err(Error::new(
+            "systemctl is required to restore network managers",
+        ));
     };
 
     let services_to_restore: Vec<_> = SERVICES_TO_RESTORE.lock().unwrap().drain(..).collect();
