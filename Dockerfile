@@ -13,6 +13,10 @@ RUN apt install -y ruby ruby-dev rubygems rpm zstd libarchive-tools
 # Install fpm
 RUN gem install fpm
 
+# Install rustup components
+RUN rustup component add clippy
+RUN rustup component add rustfmt
+
 ##### Commands #####
 
 ENV DEBIAN_DEPS="--depends policykit-1 --depends libgtk-4-1 --depends dbus-x11 --depends wireshark-common --depends iproute2 --depends mdk4 --depends crunch"
