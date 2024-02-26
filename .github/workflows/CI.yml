@@ -25,14 +25,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: sudo apt update && sudo apt install -y libgtk-4-dev libglib2.0-dev
+      - name: Create builder image
+        run: docker build . -t amd64_builder
 
       - name: Clippy
-        run: cargo clippy --all --all-features -- -D warnings
+        run: > 
+          docker run --rm
+          -v ${{ github.workspace }}:/workspace
+          amd64_builder
+          cargo clippy --all --all-features -- -D warnings
 
       - name: Format
-        run: cargo fmt --all -- --check
+        run: >
+          docker run --rm
+          -v ${{ github.workspace }}:/workspace
+          amd64_builder
+          cargo fmt --all -- --check
 
   build:
     strategy:
@@ -63,40 +71,13 @@ jobs:
           docker build .
           --platform linux/${{ matrix.platform }}
           -t ${{ matrix.image }}
-          -f docker/${{ matrix.image }}.Dockerfile
 
       - name: Build project
         run: >
           docker run --rm
           --platform linux/${{ matrix.platform }}
           -v ${{ github.workspace }}:/workspace
-          -w /workspace
           ${{ matrix.image }}
-          cargo build --release
-
-      - name: Install packaging dependencies
-        run: >
-          sudo apt update && sudo apt install -y
-          build-essential
-          ruby
-          ruby-dev
-          rubygems
-          rpm
-          libarchive-tools
-
-      - name: Install fpm
-        run: sudo gem install fpm
-
-      - name: Build debian package
-        run: >
-          fpm -t deb -p airgorah_${{ matrix.arch }}.deb --architecture ${{ matrix.arch }}
-          --depends policykit-1
-          --depends "libgtk-4-1 (>= 4.6.0)"
-          --depends dbus-x11
-          --depends wireshark-common
-          --depends iproute2
-          --depends mdk4
-          --depends crunch
 
       - name: Test debian package
         run: >
@@ -114,15 +95,6 @@ jobs:
           path: ./airgorah_${{ matrix.arch }}.deb
           if-no-files-found: error
 
-      - name: Build redhat package
-        run: >
-          fpm -t rpm -p airgorah_${{ matrix.arch }}.rpm --architecture ${{ matrix.arch }}
-          --depends polkit
-          --depends "gtk4-devel >= 4.6.0"
-          --depends dbus-x11
-          --depends wireshark-cli
-          --depends iproute
-
       - name: Test redhat package
         run: >
           docker run --rm
@@ -138,16 +110,6 @@ jobs:
           name: airgorah_${{ matrix.arch }}.rpm
           path: ./airgorah_${{ matrix.arch }}.rpm
           if-no-files-found: error
-
-      - name: Build archlinux package
-        run: >
-          fpm -t pacman -p airgorah_${{ matrix.arch }}.pkg.tar.zst --architecture ${{ matrix.arch }}
-          --depends polkit
-          --depends gtk4
-          --depends dbus
-          --depends wireshark-cli
-          --depends iproute2
-          --depends mdk4
 
       - name: Test archlinux package
         run: >
