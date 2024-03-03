@@ -1,7 +1,7 @@
 use super::*;
 use crate::error::Error;
 use crate::globals::*;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 /// Get the available interfaces
 pub fn get_interfaces() -> Result<Vec<String>, Error> {
@@ -124,14 +124,19 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     }
 
     let old_interface_list = get_interfaces()?;
-    let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;
+
+    let yes_pipe = Command::new("yes").stdout(Stdio::piped()).spawn()?;
+    let enable_monitor_cmd = Command::new("airmon-ng")
+        .args(["start", iface])
+        .stdin(yes_pipe.stdout.unwrap())
+        .output()?;
 
     if !enable_monitor_cmd.status.success() {
         return Err(Error::new(&format!(
-            "Could not enable monitor mode on '{}':\n\n{}",
+            "Could not enable monitor mode on '{}':\n{}",
             iface,
-            String::from_utf8(enable_monitor_cmd.stderr)
-                .unwrap_or("Invalid stderr returned by airmon-ng".to_string())
+            String::from_utf8(enable_monitor_cmd.stdout)
+                .unwrap_or("Invalid output returned by airmon-ng".to_string())
         )));
     }
 
@@ -144,7 +149,14 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => Err(Error::new("Interface is still in managed mode")),
+            false => {
+                Err(Error::new(&format!(
+                    "Could not enable monitor mode on '{}':\n{}",
+                    iface,
+                    String::from_utf8(enable_monitor_cmd.stdout)
+                        .unwrap_or("Invalid output returned by airmon-ng".to_string())
+                )))
+            },
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -155,9 +167,12 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
                 }
             }
 
-            Err(Error::new(
-                &format!("Monitor mode has been enabled on '{}', but the new interface name could not been found", iface)
-            ))
+            Err(Error::new(&format!(
+                "Could not enable monitor mode on '{}':\n{}",
+                iface,
+                String::from_utf8(enable_monitor_cmd.stdout)
+                    .unwrap_or("Invalid output returned by airmon-ng".to_string())
+            )))
         }
     }
 }
