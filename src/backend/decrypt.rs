@@ -22,7 +22,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "-T",
             &title,
             "-e",
-            &format!("sh -c \"{}\"", command)
+            &format!("sh -c \"{}\"", command),
         ]);
         Ok(process)
     } else if has_dependency("gnome-terminal") {
