@@ -77,6 +77,19 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     backend::set_iface(res.clone());
 
                     app_data.app_gui.iface_label.set_text(&res);
+                    app_data.app_gui.channel_filter_entry.set_sensitive(true);
+
+                    match backend::is_5ghz_supported(&iface).unwrap_or(false) {
+                        true => {
+                            app_data.app_gui.ghz_2_4_but.set_sensitive(true);
+                            app_data.app_gui.ghz_5_but.set_sensitive(true);
+                            app_data.app_gui.ghz_5_but.set_active(true);
+                        }
+                        false => app_data.app_gui.ghz_5_but.set_tooltip_text(Some(
+                            "Your network card doesn't support 5 GHz"
+                        ))
+                    }
+
                     app_data.interface_gui.window.hide();
                     app_data.app_gui.scan_but.emit_clicked();
                 }

@@ -149,14 +149,12 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => {
-                Err(Error::new(&format!(
-                    "Could not enable monitor mode on '{}':\n{}",
-                    iface,
-                    String::from_utf8(enable_monitor_cmd.stdout)
-                        .unwrap_or("Invalid output returned by airmon-ng".to_string())
-                )))
-            },
+            false => Err(Error::new(&format!(
+                "Could not enable monitor mode on '{}':\n{}",
+                iface,
+                String::from_utf8(enable_monitor_cmd.stdout)
+                    .unwrap_or("Invalid output returned by airmon-ng".to_string())
+            ))),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;

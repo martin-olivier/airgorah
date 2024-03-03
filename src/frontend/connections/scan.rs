@@ -215,7 +215,7 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 ErrorDialog::spawn(
                     &app_data.app_gui.window,
                     "Error",
-                    "Your network card doesn't support 5GHz",
+                    "Your network card doesn't support 5 GHz",
                 );
                 return this.set_active(false);
             }
