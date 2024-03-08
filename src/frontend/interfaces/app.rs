@@ -335,14 +335,23 @@ impl AppGui {
 
         // Scan filters
 
-        let ghz_2_4_but = CheckButton::builder().active(true).label("2.4 GHz").build();
-        let ghz_5_but = CheckButton::builder().active(false).label("5 GHz").build();
+        let ghz_2_4_but = CheckButton::builder()
+            .active(true)
+            .sensitive(false)
+            .label("2.4 GHz")
+            .build();
+        let ghz_5_but = CheckButton::builder()
+            .active(false)
+            .sensitive(false)
+            .label("5 GHz")
+            .build();
 
         // Channel
 
         let channel_filter_entry = Entry::builder()
             .placeholder_text("Channel (ex: 1,6,11)")
             .hexpand(true)
+            .sensitive(false)
             .build();
 
         let css_provider = CssProvider::new();

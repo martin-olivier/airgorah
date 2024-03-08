@@ -1,7 +1,7 @@
 use super::*;
 use crate::error::Error;
 use crate::globals::*;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 /// Get the available interfaces
 pub fn get_interfaces() -> Result<Vec<String>, Error> {
@@ -124,12 +124,19 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     }
 
     let old_interface_list = get_interfaces()?;
-    let enable_monitor_cmd = Command::new("airmon-ng").args(["start", iface]).output()?;
+
+    let yes_pipe = Command::new("yes").stdout(Stdio::piped()).spawn()?;
+    let enable_monitor_cmd = Command::new("airmon-ng")
+        .args(["start", iface])
+        .stdin(yes_pipe.stdout.unwrap())
+        .output()?;
 
     if !enable_monitor_cmd.status.success() {
         return Err(Error::new(&format!(
-            "Could not enable monitor mode on \"{}\"",
-            iface
+            "Could not enable monitor mode on '{}':\n{}",
+            iface,
+            String::from_utf8(enable_monitor_cmd.stdout)
+                .unwrap_or("Invalid output returned by airmon-ng".to_string())
         )));
     }
 
@@ -142,7 +149,12 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => Err(Error::new("Interface is still in managed mode")),
+            false => Err(Error::new(&format!(
+                "Could not enable monitor mode on '{}':\n{}",
+                iface,
+                String::from_utf8(enable_monitor_cmd.stdout)
+                    .unwrap_or("Invalid output returned by airmon-ng".to_string())
+            ))),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -153,9 +165,12 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
                 }
             }
 
-            Err(Error::new(
-                &format!("Monitor mode has been enabled on \"{}\", but the new interface name could not been found", iface)
-            ))
+            Err(Error::new(&format!(
+                "Could not enable monitor mode on '{}':\n{}",
+                iface,
+                String::from_utf8(enable_monitor_cmd.stdout)
+                    .unwrap_or("Invalid output returned by airmon-ng".to_string())
+            )))
         }
     }
 }
@@ -196,12 +211,52 @@ pub fn set_iface(iface: String) {
     IFACE.lock().unwrap().replace(iface);
 }
 
+/// List of services that can interfere with the app on the management of wireless cards
+const INTERFERENCE_SERVICES: [&str; 19] = [
+    "wpa_action",
+    "wpa_supplicant",
+    "wpa_cli",
+    "dhclient",
+    "ifplugd",
+    "dhcdbd",
+    "dhcpcd",
+    "udhcpc",
+    "NetworkManager",
+    "knetworkmanager",
+    "avahi-autoipd",
+    "avahi-daemon",
+    "wlassistant",
+    "wifibox",
+    "net_applet",
+    "wicd-daemon",
+    "wicd-client",
+    "iwd",
+    "hostapd",
+];
+
 /// Kill the network manager to avoid channel hopping conflicts
 pub fn kill_network_manager() -> Result<(), Error> {
     if get_settings().kill_network_manager {
-        Command::new("airmon-ng").args(["check", "kill"]).output()?;
+        if !has_dependency("systemctl") {
+            return Err(Error::new("systemctl is required to kill network managers"));
+        }
 
-        log::warn!("network manager killed");
+        for service in INTERFERENCE_SERVICES {
+            let is_service_running = Command::new("systemctl")
+                .args(["is-active", service])
+                .output()?;
+
+            if is_service_running.status.success() {
+                Command::new("systemctl").args(["stop", service]).output()?;
+
+                SERVICES_TO_RESTORE
+                    .lock()
+                    .unwrap()
+                    .push(service.to_string());
+
+                log::warn!("killed '{}'", service);
+            }
+        }
     }
 
     Ok(())
@@ -213,17 +268,21 @@ pub fn restore_network_manager() -> Result<(), Error> {
         return Ok(());
     }
 
-    Command::new("systemctl")
-        .args(["restart", "NetworkManager"])
-        .output()?;
-    Command::new("systemctl")
-        .args(["restart", "network-manager"])
-        .output()?;
-    Command::new("systemctl")
-        .args(["restart", "wpa-supplicant"])
-        .output()?;
+    if !has_dependency("systemctl") {
+        return Err(Error::new(
+            "systemctl is required to restore network managers",
+        ));
+    };
 
-    log::warn!("network manager restored");
+    let services_to_restore: Vec<_> = SERVICES_TO_RESTORE.lock().unwrap().drain(..).collect();
+
+    for service in services_to_restore {
+        Command::new("systemctl")
+            .args(["start", &service])
+            .output()?;
+
+        log::warn!("restored '{}'", service);
+    }
 
     Ok(())
 }

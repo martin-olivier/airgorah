@@ -58,7 +58,7 @@ impl SettingsGui {
         let display_frame = Frame::new(Some("Display"));
         display_frame.set_child(Some(&display_hidden_ap));
 
-        let kill_network_manager = CheckButton::with_label("Kill NetworkManager");
+        let kill_network_manager = CheckButton::with_label("Kill network managers");
         kill_network_manager.set_active(true);
 
         let process_frame = Frame::new(Some("Process"));

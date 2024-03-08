@@ -22,7 +22,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "-T",
             &title,
             "-e",
-            &command,
+            &format!("sh -c \"{}\"", command),
         ]);
         Ok(process)
     } else if has_dependency("gnome-terminal") {
@@ -35,7 +35,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "--",
             "sh",
             "-c",
-            &(command + " ; exec sh"),
+            &format!("{} ; exec sh", command),
         ]);
         Ok(process)
     } else if has_dependency("konsole") {
@@ -46,7 +46,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
             "--hide-tabbar",
             "--hold",
             "-p",
-            &("title=".to_owned() + &title),
+            &format!("title={}", title),
             "-e",
             "sh",
             "-c",
@@ -111,7 +111,7 @@ pub fn run_decrypt_bruteforce_process(
     );
     let title = format!("Handshake Decryption ({})", essid);
     let cmd = format!(
-        "sh -c \"crunch 8 64 '{}' | aircrack-ng -w - -b '{}' '{}'\"",
+        "crunch 8 64 '{}' | aircrack-ng -w - -b '{}' '{}'",
         charset, bssid, handshake
     );
 
