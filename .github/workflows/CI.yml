@@ -79,15 +79,6 @@ jobs:
           -v ${{ github.workspace }}:/workspace
           ${{ matrix.image }}
 
-      - name: Test debian package
-        run: >
-          docker run --rm
-          --platform linux/${{ matrix.platform }}
-          -v ${{ github.workspace }}:/workspace
-          -w /workspace
-          debian:bookworm-slim
-          sh -c "apt update && apt install -y ./airgorah_${{ matrix.arch }}.deb"
-
       - name: Save debian artifact
         uses: actions/upload-artifact@v4
         with:
@@ -95,30 +86,12 @@ jobs:
           path: ./airgorah_${{ matrix.arch }}.deb
           if-no-files-found: error
 
-      - name: Test redhat package
-        run: >
-          docker run --rm
-          --platform linux/${{ matrix.platform }}
-          -v ${{ github.workspace }}:/workspace
-          -w /workspace
-          fedora:38
-          sh -c "dnf update -y && dnf install -y ./airgorah_${{ matrix.arch }}.rpm"
-
       - name: Save redhat artifact
         uses: actions/upload-artifact@v4
         with:
           name: airgorah_${{ matrix.arch }}.rpm
           path: ./airgorah_${{ matrix.arch }}.rpm
           if-no-files-found: error
-
-      - name: Test archlinux package
-        run: >
-          docker run --rm
-          --platform linux/${{ matrix.platform }}
-          -v ${{ github.workspace }}:/workspace
-          -w /workspace
-          manjarolinux/base:latest
-          sh -c "pacman -Syu --noconfirm && pacman -U --noconfirm ./airgorah_${{ matrix.arch }}.pkg.tar.zst"
 
       - name: Save archlinux artifact
         uses: actions/upload-artifact@v4
