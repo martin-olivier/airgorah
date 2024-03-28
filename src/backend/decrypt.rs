@@ -1,5 +1,4 @@
 use super::*;
-use crate::error::Error;
 use std::process::{Command, Stdio};
 
 const CRUNCH_LOWERCASE: &str = "abcdefghijklmnopqrstuvwxyz";
@@ -7,10 +6,14 @@ const CRUNCH_UPPERCASE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const CRUNCH_NUMBERS: &str = "0123456789";
 const CRUNCH_SYMBOLS: &str = " @!#$%^&*()-_+=~`[]{}|:;<>,.?/\\";
 
-/// Get the terminal emulator
-pub fn build_terminal(title: String, command: String) -> Result<Command, Error> {
-    let err_msg = Error::new("No supported terminal found, please install one of the following:\nxfce4-terminal, gnome-terminal, konsole");
+#[derive(thiserror::Error, Debug)]
+pub enum DecryptError {
+    #[error("No supported terminal found, please install one of the following:\nxfce4-terminal, gnome-terminal, konsole")]
+    NoTerm,
+}
 
+/// Get the terminal emulator
+pub fn build_terminal(title: String, command: String) -> Result<Command, DecryptError> {
     if has_dependency("xfce4-terminal") {
         let mut process = Command::new("xfce4-terminal");
         process.stdin(Stdio::piped());
@@ -54,7 +57,7 @@ pub fn build_terminal(title: String, command: String) -> Result<Command, Error> 
         ]);
         Ok(process)
     } else {
-        Err(err_msg)
+        Err(DecryptError::NoTerm)
     }
 }
 
@@ -64,7 +67,7 @@ pub fn run_decrypt_wordlist_process(
     bssid: &str,
     essid: &str,
     wordlist: &str,
-) -> Result<(), Error> {
+) -> Result<(), DecryptError> {
     let title = format!("Handshake Decryption ({})", essid);
     let cmd = format!(
         "aircrack-ng '{}' -b '{}' -w '{}'",
@@ -89,7 +92,7 @@ pub fn run_decrypt_bruteforce_process(
     up: bool,
     num: bool,
     sym: bool,
-) -> Result<(), Error> {
+) -> Result<(), DecryptError> {
     let charset = format!(
         "{}{}{}{}",
         match low {

@@ -4,7 +4,6 @@ use std::process::{Command, Stdio};
 use std::sync::MutexGuard;
 
 use super::*;
-use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
 
@@ -67,6 +66,18 @@ struct RawClient {
     probes: String,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum ScanError {
+    #[error("Could not setup scan process: no band selected")]
+    NoBandSelected,
+
+    #[error("Input/Output error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Kill error: errno code: {0}")]
+    KillError(#[from] nix::errno::Errno),
+}
+
 /// Check if a scan is currently running
 pub fn is_scan_process() -> bool {
     SCAN_PROC.lock().unwrap().is_some()
@@ -119,9 +130,9 @@ pub fn set_scan_process(
     ghz_2_4: bool,
     ghz_5: bool,
     channel_filter: Option<String>,
-) -> Result<(), Error> {
+) -> Result<(), ScanError> {
     if !ghz_2_4 && !ghz_5 {
-        return Err(Error::new("No band selected"));
+        return Err(ScanError::NoBandSelected);
     }
 
     stop_scan_process()?;
@@ -177,7 +188,7 @@ pub fn set_scan_process(
 }
 
 /// Stop the scan process
-pub fn stop_scan_process() -> Result<(), Error> {
+pub fn stop_scan_process() -> Result<(), ScanError> {
     if let Some(child) = SCAN_PROC.lock().unwrap().as_mut() {
         let child_pid = Pid::from_raw(child.id() as i32);
 

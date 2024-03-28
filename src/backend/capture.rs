@@ -1,12 +1,20 @@
 use super::*;
-use crate::error::Error;
 use crate::globals::*;
 
 use regex::Regex;
 use std::process::Command;
 
+#[derive(thiserror::Error, Debug)]
+pub enum CapError {
+    #[error("Input/Output error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Regex error: {0}")]
+    RegexError(#[from] regex::Error),
+}
+
 /// Update the handshake capture status of all APs
-pub fn update_handshakes() -> Result<(), Error> {
+pub fn update_handshakes() -> Result<(), CapError> {
     let handshakes = get_handshakes([
         &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
         &(OLD_SCAN_PATH.to_string() + "-01.cap"),
@@ -26,7 +34,7 @@ pub fn update_handshakes() -> Result<(), Error> {
 }
 
 /// Get the access points infos of the handshakes contained in the capture file
-pub fn get_handshakes<I, S>(args: I) -> Result<Vec<(String, String)>, Error>
+pub fn get_handshakes<I, S>(args: I) -> Result<Vec<(String, String)>, CapError>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<std::ffi::OsStr>,
@@ -64,7 +72,7 @@ where
 }
 
 /// Save the current capture to a file
-pub fn save_capture(path: &str) -> Result<(), Error> {
+pub fn save_capture(path: &str) -> Result<(), CapError> {
     std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path)?;
 
     log::info!("capture saved to \"{}\"", path);

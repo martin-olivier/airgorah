@@ -1,16 +1,51 @@
 use super::*;
-use crate::error::Error;
 use crate::globals::*;
 use std::process::{Command, Stdio};
 
+#[derive(thiserror::Error, Debug)]
+pub enum IfaceError {
+    #[error("Input/Output error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Failed to retreive interfaces list")]
+    IfaceList,
+
+    #[error("Utf8 conversion error")]
+    Utf8Error(#[from] std::string::FromUtf8Error),
+
+    #[error("PHY parsing error")]
+    PhyParsing,
+
+    #[error("PHY '{0}' could not be found")]
+    PhyNotFound(String),
+
+    #[error("Interface '{0}' could not be found")]
+    IfaceNotFound(String),
+
+    #[error("Could not change MAC address: interface not in monitor mode")]
+    IfaceNotMonitor,
+
+    #[error("MAC address is invalid: change its value in the settings page.")]
+    InvalidMac,
+
+    #[error("Could not enable monitor mode on '{0}':\n{1}")]
+    MonitorFailed(String, String),
+
+    #[error("Could not disable monitor mode on '{0}':\n{1}")]
+    ManagedFailed(String, String),
+
+    #[error("systemctl is required to kill/restore network managers")]
+    MissingSystemd,
+}
+
 /// Get the available interfaces
-pub fn get_interfaces() -> Result<Vec<String>, Error> {
+pub fn get_interfaces() -> Result<Vec<String>, IfaceError> {
     let cmd = Command::new("sh")
         .args(["-c", "iw dev | awk \'$1==\"Interface\"{print $2}\'"])
         .output()?;
 
     if !cmd.status.success() {
-        return Err(Error::new("Failed to get interfaces"));
+        return Err(IfaceError::IfaceList);
     }
 
     let out = String::from_utf8(cmd.stdout)?;
@@ -19,19 +54,19 @@ pub fn get_interfaces() -> Result<Vec<String>, Error> {
 }
 
 /// Check if an interface supports 5GHz
-pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
+pub fn is_5ghz_supported(iface: &str) -> Result<bool, IfaceError> {
     let phy_path = format!("/sys/class/net/{}/phy80211", iface);
 
     let phy_link = std::fs::read_link(phy_path)?;
 
     let phy_name = match phy_link.file_name() {
         Some(name) => name,
-        None => return Err(Error::new("phy parsing error")),
+        None => return Err(IfaceError::PhyParsing),
     };
 
     let phy_name_str = match phy_name.to_str() {
         Some(name) => name,
-        None => return Err(Error::new("phy parsing error")),
+        None => return Err(IfaceError::PhyParsing),
     };
 
     let check_band_cmd = Command::new("iw")
@@ -39,7 +74,7 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
         .output()?;
 
     if !check_band_cmd.status.success() {
-        return Err(Error::new(&format!("{}: No such phy", phy_name_str)));
+        return Err(IfaceError::PhyNotFound(phy_name_str.to_string()));
     }
 
     let check_band_output = String::from_utf8(check_band_cmd.stdout)?;
@@ -52,11 +87,11 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, Error> {
 }
 
 /// Check if an interface is in monitor mode
-pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
+pub fn is_monitor_mode(iface: &str) -> Result<bool, IfaceError> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
     if !check_monitor_cmd.status.success() {
-        return Err(Error::new(&format!("{}: No such interface", iface)));
+        return Err(IfaceError::IfaceNotFound(iface.to_string()));
     }
 
     let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
@@ -69,11 +104,9 @@ pub fn is_monitor_mode(iface: &str) -> Result<bool, Error> {
 }
 
 // Set the MAC address of an interface
-pub fn set_mac_address(iface: &str) -> Result<(), Error> {
+pub fn set_mac_address(iface: &str) -> Result<(), IfaceError> {
     if !is_monitor_mode(iface)? {
-        return Err(Error::new(
-            "Can't change MAC address, interface is not in monitor mode",
-        ));
+        return Err(IfaceError::IfaceNotMonitor);
     }
 
     Command::new("ip")
@@ -101,9 +134,7 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
         .output()?;
 
     if !success {
-        return Err(Error::new(
-            "The MAC address is invalid. Change the value in the settings page.",
-        ));
+        return Err(IfaceError::InvalidMac);
     }
 
     log::info!(
@@ -116,7 +147,7 @@ pub fn set_mac_address(iface: &str) -> Result<(), Error> {
 }
 
 /// enable monitor mode on an interface
-pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
+pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
     kill_network_manager()?;
 
     if is_monitor_mode(iface)? {
@@ -132,12 +163,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
         .output()?;
 
     if !enable_monitor_cmd.status.success() {
-        return Err(Error::new(&format!(
-            "Could not enable monitor mode on '{}':\n{}",
-            iface,
-            String::from_utf8(enable_monitor_cmd.stdout)
-                .unwrap_or("Invalid output returned by airmon-ng".to_string())
-        )));
+        return Err(IfaceError::MonitorFailed(
+            iface.to_string(), String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default()
+        ))
     }
 
     log::info!("{}: monitor mode enabled", iface);
@@ -149,12 +177,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
     match is_monitor_mode(&(iface.to_string() + "mon")) {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
-            false => Err(Error::new(&format!(
-                "Could not enable monitor mode on '{}':\n{}",
-                iface,
-                String::from_utf8(enable_monitor_cmd.stdout)
-                    .unwrap_or("Invalid output returned by airmon-ng".to_string())
-            ))),
+            false => Err(IfaceError::MonitorFailed(
+                iface.to_string(), String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default()
+            ))
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -165,22 +190,19 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, Error> {
                 }
             }
 
-            Err(Error::new(&format!(
-                "Could not enable monitor mode on '{}':\n{}",
-                iface,
-                String::from_utf8(enable_monitor_cmd.stdout)
-                    .unwrap_or("Invalid output returned by airmon-ng".to_string())
-            )))
+            return Err(IfaceError::MonitorFailed(
+                iface.to_string(), String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default()
+            ))
         }
     }
 }
 
 /// disable monitor mode on an interface
-pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
+pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
     let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
 
     if !check_monitor_cmd.status.success() {
-        return Err(Error::new("Failed to get current interface"));
+        return Err(IfaceError::IfaceNotFound(iface.to_string()));
     }
 
     let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
@@ -195,8 +217,8 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), Error> {
 
     match disable_monitor_cmd.status.success() {
         true => Ok(()),
-        false => Err(Error::new(
-            "Failed to disable monitor mode on current interface",
+        false => Err(IfaceError::ManagedFailed(
+            iface.to_string(), String::from_utf8(disable_monitor_cmd.stdout).unwrap_or_default()
         )),
     }
 }
@@ -235,27 +257,29 @@ const INTERFERENCE_SERVICES: [&str; 19] = [
 ];
 
 /// Kill the network manager to avoid channel hopping conflicts
-pub fn kill_network_manager() -> Result<(), Error> {
-    if get_settings().kill_network_manager {
-        if !has_dependency("systemctl") {
-            return Err(Error::new("systemctl is required to kill network managers"));
-        }
+pub fn kill_network_manager() -> Result<(), IfaceError> {
+    if !get_settings().kill_network_manager {
+        return Ok(());
+    }
 
-        for service in INTERFERENCE_SERVICES {
-            let is_service_running = Command::new("systemctl")
-                .args(["is-active", service])
-                .output()?;
+    if !has_dependency("systemctl") {
+        return Err(IfaceError::MissingSystemd);
+    }
 
-            if is_service_running.status.success() {
-                Command::new("systemctl").args(["stop", service]).output()?;
+    for service in INTERFERENCE_SERVICES {
+        let is_service_running = Command::new("systemctl")
+            .args(["is-active", service])
+            .output()?;
 
-                SERVICES_TO_RESTORE
-                    .lock()
-                    .unwrap()
-                    .push(service.to_string());
+        if is_service_running.status.success() {
+            Command::new("systemctl").args(["stop", service]).output()?;
 
-                log::warn!("killed '{}'", service);
-            }
+            SERVICES_TO_RESTORE
+                .lock()
+                .unwrap()
+                .push(service.to_string());
+
+            log::warn!("killed '{}'", service);
         }
     }
 
@@ -263,15 +287,13 @@ pub fn kill_network_manager() -> Result<(), Error> {
 }
 
 /// Restore the network manager
-pub fn restore_network_manager() -> Result<(), Error> {
+pub fn restore_network_manager() -> Result<(), IfaceError> {
     if !get_settings().kill_network_manager {
         return Ok(());
     }
 
     if !has_dependency("systemctl") {
-        return Err(Error::new(
-            "systemctl is required to restore network managers",
-        ));
+        return Err(IfaceError::MissingSystemd);
     };
 
     let services_to_restore: Vec<_> = SERVICES_TO_RESTORE.lock().unwrap().drain(..).collect();

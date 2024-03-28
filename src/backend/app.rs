@@ -1,19 +1,29 @@
 use super::*;
-use crate::error::Error;
 use crate::globals::*;
 
-/// Check if the user is root, and if all the dependencies are installed
-pub fn app_setup() -> Result<(), Error> {
+#[derive(thiserror::Error, Debug)]
+pub enum AppError {
+    #[error("Could not setup Ctrl-C (SIGINT) handler: {0}")]
+    SigintHandler(#[from] ctrlc::Error),
+
+    #[error("Airgorah need root privilege to run")]
+    NotRoot,
+
+    #[error("Missing required dependency: {0}")]
+    MissingDependency(String),
+}
+
+/// Check if the user is root, load settings, and check if all the required dependencies are installed
+pub fn app_setup() -> Result<(), AppError> {
     app_cleanup();
 
     ctrlc::set_handler(move || {
         app_cleanup();
         std::process::exit(1);
-    })
-    .expect("Error setting Ctrl-C handler");
+    })?;
 
     if sudo::check() != sudo::RunningAs::Root {
-        return Err(Error::new("Airgorah need root privilege to run"));
+        return Err(AppError::NotRoot);
     }
 
     load_settings();
@@ -53,13 +63,10 @@ pub fn has_dependency(dep: &str) -> bool {
 }
 
 /// Check if all the required dependencies are installed
-pub fn check_required_dependencies(deps: &[&str]) -> Result<(), Error> {
+pub fn check_required_dependencies(deps: &[&str]) -> Result<(), AppError> {
     for dep in deps {
         if !has_dependency(dep) {
-            return Err(Error::new(&format!(
-                "Missing required dependency: \"{}\"",
-                dep,
-            )));
+            return Err(AppError::MissingDependency(dep.to_string()))
         }
     }
     Ok(())

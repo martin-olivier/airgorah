@@ -101,7 +101,7 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     ErrorDialog::spawn(
                         &app_data.interface_gui.window,
                         "Monitor mode failed",
-                        &e.message,
+                        &e.to_string(),
                     );
                 }
             };
