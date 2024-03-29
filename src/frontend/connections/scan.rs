@@ -43,7 +43,7 @@ fn run_scan(app_data: &AppData) {
         return ErrorDialog::spawn(
             &app_data.app_gui.window,
             "Error",
-            &format!("Could not start scan process:\n\n{}", e),
+            e.to_string().as_str(),
         );
     }
 
@@ -255,16 +255,7 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
                 false => app_data.app_gui.hopping_but.set_sensitive(true),
             }
 
-            match app_data.app_gui.aps_view.selection().selected() {
-                Some((_, it)) => {
-                    let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                        true => app_data.app_gui.focus_but.set_sensitive(false),
-                        false => app_data.app_gui.focus_but.set_sensitive(true),
-                    }
-                }
-                None => app_data.app_gui.focus_but.set_sensitive(false),
-            }
+            super::app::update_buttons_sensitivity(&app_data);
 
             let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
             let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
@@ -287,44 +278,31 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
         .app_gui
         .aps_view
         .connect_cursor_changed(clone!(@strong app_data => move |this| {
-            match this.selection().selected() {
-                Some((_, it)) => {
-                    let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                        true => app_data.app_gui.focus_but.set_sensitive(false),
-                        false => app_data.app_gui.focus_but.set_sensitive(true),
+            super::app::update_buttons_sensitivity(&app_data);
+
+            if let Some((_, it)) = this.selection().selected() {
+                let bssid = list_store_get!(app_data.app_gui.aps_model, &it, 1, String);
+                let aps = backend::get_aps();
+
+                let mut clients = match aps.get(&bssid) {
+                    Some(ap) => ap.clients.keys().clone(),
+                    None => return,
+                };
+                let mut cli_iter = app_data.app_gui.cli_model.iter_first();
+
+                while let Some(it) = cli_iter {
+                    let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
+
+                    if !clients.any(|x| &mac_val == x) {
+                        break;
                     }
-                    app_data.app_gui.deauth_but.set_sensitive(true);
 
-                    let (_, ap_iter) = this.selection().selected().unwrap();
-                    let bssid = list_store_get!(app_data.app_gui.aps_model, &ap_iter, 1, String);
-                    let aps = backend::get_aps();
-
-                    let mut clients = match aps.get(&bssid) {
-                        Some(ap) => ap.clients.keys().clone(),
-                        None => return,
-                    };
-                    let mut cli_iter = app_data.app_gui.cli_model.iter_first();
-
-                    while let Some(it) = cli_iter {
-                        let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
-
-                        if !clients.any(|x| &mac_val == x) {
-                            break;
-                        }
-
-                        cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
-                            true => Some(it),
-                            false => return,
-                        }
+                    cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
+                        true => Some(it),
+                        false => return,
                     }
                 }
-                None => {
-                    app_data.app_gui.focus_but.set_sensitive(false);
-                    app_data.app_gui.deauth_but.set_sensitive(false);
-                    app_data.app_gui.capture_but.set_sensitive(false);
-                }
-            };
+            }
             app_data.app_gui.cli_model.clear();
         }));
 }
