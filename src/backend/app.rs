@@ -33,6 +33,7 @@ pub fn app_setup() -> Result<(), AppError> {
         "ip",
         "iw",
         "awk",
+        "xterm",
         "airmon-ng",
         "airodump-ng",
         "aireplay-ng",
