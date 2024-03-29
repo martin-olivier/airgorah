@@ -76,8 +76,13 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     }
                     backend::set_iface(res.clone());
 
+                    app_data.app_gui.restart_but.set_sensitive(true);
+                    app_data.app_gui.iface_ico.set_sensitive(true);
+                    app_data.app_gui.iface_label.set_sensitive(true);
                     app_data.app_gui.iface_label.set_text(&res);
                     app_data.app_gui.channel_filter_entry.set_sensitive(true);
+
+                    app_data.app_gui.scan_but.emit_clicked();
 
                     match backend::is_5ghz_supported(&iface).unwrap_or(false) {
                         true => {
@@ -91,7 +96,6 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     }
 
                     app_data.interface_gui.window.hide();
-                    app_data.app_gui.scan_but.emit_clicked();
                 }
                 Err(e) => {
                     backend::restore_network_manager().ok();

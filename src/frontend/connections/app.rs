@@ -405,7 +405,6 @@ fn start_app_refresh(app_data: Rc<AppData>) {
             }
 
             if !backend::get_aps().is_empty() {
-                app_data.app_gui.restart_but.set_sensitive(true);
                 app_data.app_gui.export_but.set_sensitive(true);
                 app_data.app_gui.report_but.set_sensitive(true);
             }

@@ -184,17 +184,24 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            if backend::is_scan_process() {
-                if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
-                    ErrorDialog::spawn(
-                        &app_data.app_gui.window,
-                        "Error",
-                        "You need to select at least one frequency band",
-                    );
-                    return this.set_active(true);
+            // if no band selected
+            if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
+                if backend::is_scan_process() {
+                    app_data.app_gui.scan_but.emit_clicked();
                 }
-                run_scan(&app_data);
+                app_data.app_gui.scan_but.set_sensitive(false);
+                app_data.app_gui.restart_but.set_sensitive(false);
+
+                let filter = app_data.app_gui.channel_filter_entry.text();
+                app_data.app_gui.channel_filter_entry.set_text(&filter);
+
+                return;
             }
+
+            run_scan(&app_data);
+
+            app_data.app_gui.scan_but.set_sensitive(true);
+            app_data.app_gui.restart_but.set_sensitive(true);
 
             let filter = app_data.app_gui.channel_filter_entry.text();
             app_data.app_gui.channel_filter_entry.set_text(&filter);
@@ -220,17 +227,23 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 return this.set_active(false);
             }
 
-            if backend::is_scan_process() {
-                if !this.is_active() && !app_data.app_gui.ghz_2_4_but.is_active() {
-                    ErrorDialog::spawn(
-                        &app_data.app_gui.window,
-                        "Error",
-                        "You need to select at least one frequency band",
-                    );
-                    return this.set_active(true);
+            if !this.is_active() && !app_data.app_gui.ghz_2_4_but.is_active() {
+                if backend::is_scan_process() {
+                    app_data.app_gui.scan_but.emit_clicked();
                 }
-                run_scan(&app_data);
+                app_data.app_gui.scan_but.set_sensitive(false);
+                app_data.app_gui.restart_but.set_sensitive(false);
+
+                let filter = app_data.app_gui.channel_filter_entry.text();
+                app_data.app_gui.channel_filter_entry.set_text(&filter);
+
+                return;
             }
+
+            run_scan(&app_data);
+
+            app_data.app_gui.scan_but.set_sensitive(true);
+            app_data.app_gui.restart_but.set_sensitive(true);
 
             let filter = app_data.app_gui.channel_filter_entry.text();
             app_data.app_gui.channel_filter_entry.set_text(&filter);

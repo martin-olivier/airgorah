@@ -282,6 +282,7 @@ pub struct AppGui {
     pub aps_view: TreeView,
     pub cli_model: ListStore,
     pub cli_view: TreeView,
+    pub iface_ico: Image,
     pub iface_label: Label,
     pub ghz_2_4_but: CheckButton,
     pub ghz_5_but: CheckButton,
@@ -330,7 +331,9 @@ impl AppGui {
         // Interface Display
 
         let iface_ico = Image::from_icon_name("network-wired");
+        iface_ico.set_sensitive(false);
         let iface_label = Label::new(Some("None"));
+        iface_label.set_sensitive(false);
         iface_label.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
 
         // Scan filters
@@ -458,6 +461,7 @@ impl AppGui {
             aps_view,
             cli_model,
             cli_view,
+            iface_ico,
             iface_label,
             ghz_2_4_but,
             ghz_5_but,
