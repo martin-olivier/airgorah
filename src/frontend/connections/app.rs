@@ -33,7 +33,7 @@ fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<Tree
     None
 }
 
-fn connect_controller(app_data: Rc<AppData>) {
+fn connect_window_controller(app_data: Rc<AppData>) {
     let controller = gtk4::EventControllerKey::new();
 
     controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
@@ -48,6 +48,130 @@ fn connect_controller(app_data: Rc<AppData>) {
     }));
 
     app_data.app_gui.window.add_controller(controller);
+}
+
+fn connect_aps_controller(app: &Application, app_data: Rc<AppData>) {
+    let gesture = GestureClick::new();
+    gesture.set_button(gdk::ffi::GDK_BUTTON_SECONDARY as u32);
+    gesture.connect_pressed(clone!(@strong app_data => move |gesture, _, x, y| {
+        gesture.set_state(EventSequenceState::Claimed);
+
+        if app_data.app_gui.aps_view.selection().selected().is_some() {
+            let pos = gdk::Rectangle::new(x as i32, y as i32, 0, 0);
+
+            app_data.app_gui.aps_menu.set_pointing_to(Some(&pos));
+            app_data.app_gui.aps_menu.popup();
+        }
+    }));
+
+    app_data.app_gui.aps_scroll.add_controller(gesture);
+
+    let copy_bssid = gio::SimpleAction::new("copy_bssid", None);
+    copy_bssid.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&bssid);
+        }
+    }));
+    app.add_action(&copy_bssid);
+
+    let copy_essid = gio::SimpleAction::new("copy_essid", None);
+    copy_essid.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let essid = list_store_get!(app_data.app_gui.aps_model, &iter, 0, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&essid);
+        }
+    }));
+    app.add_action(&copy_essid);
+
+    let copy_channel = gio::SimpleAction::new("copy_channel", None);
+    copy_channel.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&channel.to_string());
+        }
+    }));
+    app.add_action(&copy_channel);
+}
+
+fn connect_cli_controller(app: &Application, app_data: Rc<AppData>) {
+    let gesture = GestureClick::new();
+    gesture.set_button(gdk::ffi::GDK_BUTTON_SECONDARY as u32);
+    gesture.connect_pressed(clone!(@strong app_data => move |gesture, _, x, y| {
+        gesture.set_state(EventSequenceState::Claimed);
+
+        if app_data.app_gui.cli_view.selection().selected().is_some() {
+            let pos = gdk::Rectangle::new(x as i32, y as i32, 0, 0);
+
+            app_data.app_gui.aps_menu.set_pointing_to(Some(&pos));
+            app_data.app_gui.cli_menu.popup();
+        }
+    }));
+
+    app_data.app_gui.cli_scroll.add_controller(gesture);
+
+    let copy_mac = gio::SimpleAction::new("copy_mac", None);
+    copy_mac.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.cli_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let mac = list_store_get!(app_data.app_gui.cli_model, &iter, 0, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&mac);
+        }
+    }));
+    app.add_action(&copy_mac);
+
+    let copy_vendor = gio::SimpleAction::new("copy_vendor", None);
+    copy_vendor.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.cli_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let vendor = list_store_get!(app_data.app_gui.cli_model, &iter, 5, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&vendor);
+        }
+    }));
+    app.add_action(&copy_vendor);
+
+    let copy_probes = gio::SimpleAction::new("copy_probes", None);
+    copy_probes.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.cli_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let probes = list_store_get!(app_data.app_gui.cli_model, &iter, 6, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&probes);
+        }
+    }));
+    app.add_action(&copy_probes);
 }
 
 fn connect_about_button(app_data: Rc<AppData>) {
@@ -560,8 +684,11 @@ fn connect_capture_button(app_data: Rc<AppData>) {
         }));
 }
 
-pub fn connect(app_data: Rc<AppData>) {
-    connect_controller(app_data.clone());
+pub fn connect(app: &Application, app_data: Rc<AppData>) {
+    connect_window_controller(app_data.clone());
+
+    connect_aps_controller(app, app_data.clone());
+    connect_cli_controller(app, app_data.clone());
 
     connect_about_button(app_data.clone());
     connect_update_button(app_data.clone());
