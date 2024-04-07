@@ -125,7 +125,7 @@ fn connect_cli_controller(app: &Application, app_data: Rc<AppData>) {
         if app_data.app_gui.cli_view.selection().selected().is_some() {
             let pos = gdk::Rectangle::new(x as i32, y as i32, 0, 0);
 
-            app_data.app_gui.aps_menu.set_pointing_to(Some(&pos));
+            app_data.app_gui.cli_menu.set_pointing_to(Some(&pos));
             app_data.app_gui.cli_menu.popup();
         }
     }));

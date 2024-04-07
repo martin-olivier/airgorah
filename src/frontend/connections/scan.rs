@@ -67,15 +67,13 @@ fn connect_restart_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
         .restart_but
-        .connect_clicked(clone!(@strong app_data => move |this| {
+        .connect_clicked(clone!(@strong app_data => move |_| {
             backend::stop_scan_process().ok();
             backend::get_aps().clear();
             backend::get_unlinked_clients().clear();
 
             app_data.app_gui.aps_model.clear();
             app_data.app_gui.cli_model.clear();
-
-            this.set_sensitive(false);
 
             run_scan(&app_data);
         }));
@@ -181,7 +179,6 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            // if no band selected
             if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
                 if backend::is_scan_process() {
                     app_data.app_gui.scan_but.emit_clicked();
