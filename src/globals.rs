@@ -27,6 +27,7 @@ lazy_static! {
     pub static ref UPDATE_PROC: Mutex<Option<JoinHandle<bool>>> = Mutex::new(None);
     pub static ref SCAN_PROC: Mutex<Option<Child>> = Mutex::new(None);
     pub static ref APS: Mutex<HashMap<String, AP>> = Mutex::new(HashMap::new());
+    pub static ref UNLINKED_CLIENTS: Mutex<HashMap<String, Client>> = Mutex::new(HashMap::new());
     pub static ref ATTACK_POOL: Mutex<AttackPool> = Mutex::new(HashMap::new());
     pub static ref VENDORS_CACHE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
     pub static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());

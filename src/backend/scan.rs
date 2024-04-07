@@ -334,22 +334,38 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
     }
 
     for result in cli_reader.deserialize::<RawClient>().flatten() {
-        if let Some(ap) = aps.get_mut(result.bssid.trim_start()) {
-            let mac = result.station_mac.trim_start().to_string();
-            let client_vendor = super::find_vendor(&mac);
+        let mac = result.station_mac.trim_start().to_string();
+        let client_vendor = super::find_vendor(&mac);
 
-            ap.clients.insert(
-                mac.clone(),
-                Client {
-                    mac,
-                    packets: result.packets.trim_start().to_string(),
-                    power: result.power.trim_start().to_string(),
-                    first_time_seen: result.first_time_seen.trim_start().to_string(),
-                    last_time_seen: result.last_time_seen.trim_start().to_string(),
-                    vendor: client_vendor,
-                    probes: result.probes.trim_start().to_string(),
-                },
-            );
+        match aps.get_mut(result.bssid.trim_start()) {
+            Some(ap) => {
+                ap.clients.insert(
+                    mac.clone(),
+                    Client {
+                        mac,
+                        packets: result.packets.trim_start().to_string(),
+                        power: result.power.trim_start().to_string(),
+                        first_time_seen: result.first_time_seen.trim_start().to_string(),
+                        last_time_seen: result.last_time_seen.trim_start().to_string(),
+                        vendor: client_vendor,
+                        probes: result.probes.trim_start().to_string(),
+                    },
+                );
+            },
+            None => {
+                get_unlinked_clients().insert(
+                    mac.clone(),
+                    Client {
+                        mac,
+                        packets: result.packets.trim_start().to_string(),
+                        power: result.power.trim_start().to_string(),
+                        first_time_seen: result.first_time_seen.trim_start().to_string(),
+                        last_time_seen: result.last_time_seen.trim_start().to_string(),
+                        vendor: client_vendor,
+                        probes: result.probes.trim_start().to_string(),
+                    },
+                );
+            }
         }
     }
 
@@ -363,4 +379,9 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
 /// Get the APs data collected
 pub fn get_aps() -> MutexGuard<'static, HashMap<String, AP>> {
     APS.lock().unwrap()
+}
+
+/// Get unlinked clients
+pub fn get_unlinked_clients() -> MutexGuard<'static, HashMap<String, Client>> {
+    UNLINKED_CLIENTS.lock().unwrap()
 }

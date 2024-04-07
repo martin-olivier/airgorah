@@ -40,8 +40,12 @@ fn connect_window_controller(app_data: Rc<AppData>) {
         if key == gdk::Key::Escape {
             update_buttons_sensitivity(&app_data);
 
-            app_data.app_gui.aps_view.selection().unselect_all();
-            app_data.app_gui.cli_model.clear();
+            app_data.app_gui.cli_view.selection().unselect_all();
+
+            if app_data.app_gui.aps_view.selection().selected().is_some() {
+                app_data.app_gui.aps_view.selection().unselect_all();
+                app_data.app_gui.cli_model.clear();
+            }
         }
 
         glib::Propagation::Proceed
@@ -525,6 +529,29 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     if app_data.deauth_gui.window.is_visible() && list_store_find(app_data.deauth_gui.store.as_ref(), 1, cli.mac.as_str()).is_none() {
                         app_data.deauth_gui.store.set(&app_data.deauth_gui.store.append(), &[(0, &false), (1, &cli.mac)]);
                     }
+                }
+            } else {
+                let clients = backend::get_unlinked_clients().clone();
+
+                for (_, cli) in clients {
+                    let it = match list_store_find(app_data.app_gui.cli_model.as_ref(), 0, cli.mac.as_str()) {
+                        Some(it) => it,
+                        None => app_data.app_gui.cli_model.append(),
+                    };
+
+                    app_data.app_gui.cli_model.set(
+                        &it,
+                        &[
+                            (0, &cli.mac),
+                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                            (3, &cli.first_time_seen),
+                            (4, &cli.last_time_seen),
+                            (5, &cli.vendor),
+                            (6, &cli.probes),
+                            (7, &gdk::RGBA::new(0.0, 0.0, 0.0, 0.0).to_str()),
+                        ],
+                    );
                 }
             }
 
