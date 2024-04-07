@@ -76,15 +76,7 @@ pub fn run_decrypt_bruteforce_process(
 
     Command::new("xterm")
         .stdin(Stdio::null())
-        .args([
-            "-hold",
-            "-T",
-            &title,
-            "-e",
-            "sh",
-            "-c",
-            &cmd,
-        ])
+        .args(["-hold", "-T", &title, "-e", "sh", "-c", &cmd])
         .spawn()?;
 
     Ok(())

@@ -40,11 +40,7 @@ fn run_scan(app_data: &AppData) {
     };
 
     if let Err(e) = backend::set_scan_process(&iface, ghz_2_4, ghz_5, channel_filter) {
-        return ErrorDialog::spawn(
-            &app_data.app_gui.window,
-            "Error",
-            e.to_string().as_str(),
-        );
+        return ErrorDialog::spawn(&app_data.app_gui.window, "Error", e.to_string().as_str());
     }
 
     app_data
@@ -74,6 +70,7 @@ fn connect_restart_button(app_data: Rc<AppData>) {
         .connect_clicked(clone!(@strong app_data => move |this| {
             backend::stop_scan_process().ok();
             backend::get_aps().clear();
+            backend::get_unlinked_clients().clear();
 
             app_data.app_gui.aps_model.clear();
             app_data.app_gui.cli_model.clear();

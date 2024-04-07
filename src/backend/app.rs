@@ -67,7 +67,7 @@ pub fn has_dependency(dep: &str) -> bool {
 pub fn check_required_dependencies(deps: &[&str]) -> Result<(), AppError> {
     for dep in deps {
         if !has_dependency(dep) {
-            return Err(AppError::MissingDependency(dep.to_string()))
+            return Err(AppError::MissingDependency(dep.to_string()));
         }
     }
     Ok(())

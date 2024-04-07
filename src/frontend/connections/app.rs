@@ -287,11 +287,18 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
             }
 
             return;
-        },
+        }
     };
 
     let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
-    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
+    match channel
+        == app_data
+            .app_gui
+            .channel_filter_entry
+            .text()
+            .parse::<i32>()
+            .unwrap_or(-1)
+    {
         true => app_data.app_gui.focus_but.set_sensitive(false),
         false => app_data.app_gui.focus_but.set_sensitive(true),
     }
@@ -319,7 +326,7 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
             app_data.app_gui.next_but.set_sensitive(false);
             app_data.app_gui.bottom_but.set_sensitive(false);
         }
-    }    
+    }
 }
 
 fn connect_previous_button(app_data: Rc<AppData>) {

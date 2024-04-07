@@ -164,8 +164,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
 
     if !enable_monitor_cmd.status.success() {
         return Err(IfaceError::MonitorFailed(
-            iface.to_string(), String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default()
-        ))
+            iface.to_string(),
+            String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
+        ));
     }
 
     log::info!("{}: monitor mode enabled", iface);
@@ -178,8 +179,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
         Ok(res) => match res {
             true => Ok(iface.to_string() + "mon"),
             false => Err(IfaceError::MonitorFailed(
-                iface.to_string(), String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default()
-            ))
+                iface.to_string(),
+                String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
+            )),
         },
         Err(_) => {
             let new_interface_list = get_interfaces()?;
@@ -190,8 +192,9 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
                 }
             }
 
-            return Err(IfaceError::MonitorFailed(
-                iface.to_string(), String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default()
+            Err(IfaceError::MonitorFailed(
+                iface.to_string(),
+                String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
             ))
         }
     }
@@ -218,7 +221,8 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
     match disable_monitor_cmd.status.success() {
         true => Ok(()),
         false => Err(IfaceError::ManagedFailed(
-            iface.to_string(), String::from_utf8(disable_monitor_cmd.stdout).unwrap_or_default()
+            iface.to_string(),
+            String::from_utf8(disable_monitor_cmd.stdout).unwrap_or_default(),
         )),
     }
 }

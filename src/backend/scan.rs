@@ -351,7 +351,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
                         probes: result.probes.trim_start().to_string(),
                     },
                 );
-            },
+            }
             None => {
                 get_unlinked_clients().insert(
                     mac.clone(),
