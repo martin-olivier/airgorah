@@ -120,6 +120,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
         .default_height(620)
         .build();
 
+    window.set_size_request(500, 500);
     window.connect_close_request(|_| {
         backend::app_cleanup();
         glib::Propagation::Proceed
