@@ -2,11 +2,11 @@ use super::*;
 use crate::globals::*;
 use crate::types::*;
 
-use serde::Serialize;
 use regex::Regex;
-use std::process::Command;
+use serde::Serialize;
 use std::fs::File;
 use std::io::Write;
+use std::process::Command;
 
 #[derive(Debug, Serialize)]
 struct Report {
@@ -20,7 +20,7 @@ pub enum CapError {
     IoError(#[from] std::io::Error),
 
     #[error("Regex error: {0}")]
-    RegexError(#[from] regex::Error),
+    BadRegex(#[from] regex::Error),
 
     #[error("Json error: {0}")]
     JsonError(#[from] serde_json::Error),
@@ -96,7 +96,10 @@ pub fn save_capture(path: &str) -> Result<(), CapError> {
 /// Save the capture report to a file
 pub fn save_report(path: &str) -> Result<(), CapError> {
     let access_points = get_aps().values().cloned().collect::<Vec<AP>>();
-    let unlinked_clients = get_unlinked_clients().values().cloned().collect::<Vec<Client>>();
+    let unlinked_clients = get_unlinked_clients()
+        .values()
+        .cloned()
+        .collect::<Vec<Client>>();
 
     let report = Report {
         access_points,
