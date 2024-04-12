@@ -1,8 +1,18 @@
 use super::*;
 use crate::globals::*;
+use crate::types::*;
 
+use serde::Serialize;
 use regex::Regex;
 use std::process::Command;
+use std::fs::File;
+use std::io::Write;
+
+#[derive(Debug, Serialize)]
+struct Report {
+    pub access_points: Vec<AP>,
+    pub unlinked_clients: Vec<Client>,
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum CapError {
@@ -11,6 +21,9 @@ pub enum CapError {
 
     #[error("Regex error: {0}")]
     RegexError(#[from] regex::Error),
+
+    #[error("Json error: {0}")]
+    JsonError(#[from] serde_json::Error),
 }
 
 /// Update the handshake capture status of all APs
@@ -75,7 +88,27 @@ where
 pub fn save_capture(path: &str) -> Result<(), CapError> {
     std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path)?;
 
-    log::info!("capture saved to \"{}\"", path);
+    log::info!("capture saved to '{}'", path);
+
+    Ok(())
+}
+
+/// Save the capture report to a file
+pub fn save_report(path: &str) -> Result<(), CapError> {
+    let access_points = get_aps().values().cloned().collect::<Vec<AP>>();
+    let unlinked_clients = get_unlinked_clients().values().cloned().collect::<Vec<Client>>();
+
+    let report = Report {
+        access_points,
+        unlinked_clients,
+    };
+
+    let json_data = serde_json::to_string::<Report>(&report)?;
+
+    let mut file = File::create(path)?;
+    file.write_all(json_data.as_bytes())?;
+
+    log::info!("report saved to '{}'", path);
 
     Ok(())
 }

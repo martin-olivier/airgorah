@@ -2,13 +2,10 @@ use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::*;
 use crate::list_store_get;
-use crate::types::*;
 
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::fs::File;
-use std::io::Write;
 use std::rc::Rc;
 
 use chrono::Local;
@@ -145,10 +142,6 @@ fn connect_report_button(app_data: Rc<AppData>) {
                 return;
             }
 
-            let aps = backend::get_aps().values().cloned().collect::<Vec<AP>>();
-
-            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
-
             let file_chooser_dialog = Rc::new(FileChooserDialog::new(
                 Some("Save capture report"),
                 Some(&app_data.app_gui.window),
@@ -160,17 +153,22 @@ fn connect_report_button(app_data: Rc<AppData>) {
             let date = local.format("%Y-%m-%d-%Hh%M");
 
             file_chooser_dialog.set_current_name(&format!("report_{}.json", date));
-            file_chooser_dialog.run_async(move |this, response| {
+            file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
+                    this.close();
+
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
-                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
-                    file.write_all(json_data.as_bytes()).unwrap();
+
+                    let path = gio_file.path().unwrap().to_str().unwrap().to_string();
+
+                    if let Err(e) = backend::save_report(&path) {
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string());
+                    }
                 }
-                this.close();
-            });
+            }));
         }));
 }
 
