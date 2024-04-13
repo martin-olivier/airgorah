@@ -1,7 +1,7 @@
 -s dir ./target/release/airgorah ./icons/app_icon.png package README.md LICENSE
 --name airgorah
 --license MIT
---version 0.7.1
+--version 0.7.2
 --description "A WiFi auditing software that can perform deauth attacks and passwords cracking"
 --url "https://github.com/martin-olivier/airgorah"
 --maintainer "Martin Olivier <martin.olivier@live.fr>"
@@ -10,6 +10,7 @@
 --conflicts airgorah
 
 --depends bash
+--depends xterm
 --depends iw
 --depends macchanger
 --depends aircrack-ng

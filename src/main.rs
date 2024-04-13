@@ -2,7 +2,6 @@ use gtk4::prelude::*;
 use gtk4::{Application, Settings};
 
 mod backend;
-mod error;
 mod frontend;
 mod globals;
 mod types;

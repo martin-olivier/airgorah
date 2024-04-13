@@ -2,13 +2,10 @@ use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::*;
 use crate::list_store_get;
-use crate::types::*;
 
 use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
-use std::fs::File;
-use std::io::Write;
 use std::rc::Rc;
 
 use chrono::Local;
@@ -40,11 +37,7 @@ fn run_scan(app_data: &AppData) {
     };
 
     if let Err(e) = backend::set_scan_process(&iface, ghz_2_4, ghz_5, channel_filter) {
-        return ErrorDialog::spawn(
-            &app_data.app_gui.window,
-            "Error",
-            &format!("Could not start scan process:\n\n{}", e),
-        );
+        return ErrorDialog::spawn(&app_data.app_gui.window, "Error", e.to_string().as_str());
     }
 
     app_data
@@ -71,14 +64,13 @@ fn connect_restart_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
         .restart_but
-        .connect_clicked(clone!(@strong app_data => move |this| {
+        .connect_clicked(clone!(@strong app_data => move |_| {
             backend::stop_scan_process().ok();
             backend::get_aps().clear();
+            backend::get_unlinked_clients().clear();
 
             app_data.app_gui.aps_model.clear();
             app_data.app_gui.cli_model.clear();
-
-            this.set_sensitive(false);
 
             run_scan(&app_data);
         }));
@@ -150,10 +142,6 @@ fn connect_report_button(app_data: Rc<AppData>) {
                 return;
             }
 
-            let aps = backend::get_aps().values().cloned().collect::<Vec<AP>>();
-
-            let json_data = serde_json::to_string::<Vec<AP>>(&aps).unwrap();
-
             let file_chooser_dialog = Rc::new(FileChooserDialog::new(
                 Some("Save capture report"),
                 Some(&app_data.app_gui.window),
@@ -165,17 +153,22 @@ fn connect_report_button(app_data: Rc<AppData>) {
             let date = local.format("%Y-%m-%d-%Hh%M");
 
             file_chooser_dialog.set_current_name(&format!("report_{}.json", date));
-            file_chooser_dialog.run_async(move |this, response| {
+            file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
+                    this.close();
+
                     let gio_file = match this.file() {
                         Some(file) => file,
                         None => return,
                     };
-                    let mut file = File::create(gio_file.path().unwrap()).unwrap();
-                    file.write_all(json_data.as_bytes()).unwrap();
+
+                    let path = gio_file.path().unwrap().to_str().unwrap().to_string();
+
+                    if let Err(e) = backend::save_report(&path) {
+                        return ErrorDialog::spawn(&app_data.app_gui.window, "Save failed", &e.to_string());
+                    }
                 }
-                this.close();
-            });
+            }));
         }));
 }
 
@@ -184,17 +177,23 @@ fn connect_ghz_2_4_button(app_data: Rc<AppData>) {
         .app_gui
         .ghz_2_4_but
         .connect_toggled(clone!(@strong app_data => move |this| {
-            if backend::is_scan_process() {
-                if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
-                    ErrorDialog::spawn(
-                        &app_data.app_gui.window,
-                        "Error",
-                        "You need to select at least one frequency band",
-                    );
-                    return this.set_active(true);
+            if !this.is_active() && !app_data.app_gui.ghz_5_but.is_active() {
+                if backend::is_scan_process() {
+                    app_data.app_gui.scan_but.emit_clicked();
                 }
-                run_scan(&app_data);
+                app_data.app_gui.scan_but.set_sensitive(false);
+                app_data.app_gui.restart_but.set_sensitive(false);
+
+                let filter = app_data.app_gui.channel_filter_entry.text();
+                app_data.app_gui.channel_filter_entry.set_text(&filter);
+
+                return;
             }
+
+            run_scan(&app_data);
+
+            app_data.app_gui.scan_but.set_sensitive(true);
+            app_data.app_gui.restart_but.set_sensitive(true);
 
             let filter = app_data.app_gui.channel_filter_entry.text();
             app_data.app_gui.channel_filter_entry.set_text(&filter);
@@ -220,17 +219,23 @@ pub fn connect_ghz_5_button(app_data: Rc<AppData>) {
                 return this.set_active(false);
             }
 
-            if backend::is_scan_process() {
-                if !this.is_active() && !app_data.app_gui.ghz_2_4_but.is_active() {
-                    ErrorDialog::spawn(
-                        &app_data.app_gui.window,
-                        "Error",
-                        "You need to select at least one frequency band",
-                    );
-                    return this.set_active(true);
+            if !this.is_active() && !app_data.app_gui.ghz_2_4_but.is_active() {
+                if backend::is_scan_process() {
+                    app_data.app_gui.scan_but.emit_clicked();
                 }
-                run_scan(&app_data);
+                app_data.app_gui.scan_but.set_sensitive(false);
+                app_data.app_gui.restart_but.set_sensitive(false);
+
+                let filter = app_data.app_gui.channel_filter_entry.text();
+                app_data.app_gui.channel_filter_entry.set_text(&filter);
+
+                return;
             }
+
+            run_scan(&app_data);
+
+            app_data.app_gui.scan_but.set_sensitive(true);
+            app_data.app_gui.restart_but.set_sensitive(true);
 
             let filter = app_data.app_gui.channel_filter_entry.text();
             app_data.app_gui.channel_filter_entry.set_text(&filter);
@@ -255,16 +260,7 @@ fn connect_channel_entry(app_data: Rc<AppData>) {
                 false => app_data.app_gui.hopping_but.set_sensitive(true),
             }
 
-            match app_data.app_gui.aps_view.selection().selected() {
-                Some((_, it)) => {
-                    let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                        true => app_data.app_gui.focus_but.set_sensitive(false),
-                        false => app_data.app_gui.focus_but.set_sensitive(true),
-                    }
-                }
-                None => app_data.app_gui.focus_but.set_sensitive(false),
-            }
+            super::app::update_buttons_sensitivity(&app_data);
 
             let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
             let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
@@ -287,44 +283,31 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
         .app_gui
         .aps_view
         .connect_cursor_changed(clone!(@strong app_data => move |this| {
-            match this.selection().selected() {
-                Some((_, it)) => {
-                    let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                    match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                        true => app_data.app_gui.focus_but.set_sensitive(false),
-                        false => app_data.app_gui.focus_but.set_sensitive(true),
+            super::app::update_buttons_sensitivity(&app_data);
+
+            if let Some((_, it)) = this.selection().selected() {
+                let bssid = list_store_get!(app_data.app_gui.aps_model, &it, 1, String);
+                let aps = backend::get_aps();
+
+                let mut clients = match aps.get(&bssid) {
+                    Some(ap) => ap.clients.keys().clone(),
+                    None => return,
+                };
+                let mut cli_iter = app_data.app_gui.cli_model.iter_first();
+
+                while let Some(it) = cli_iter {
+                    let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
+
+                    if !clients.any(|x| &mac_val == x) {
+                        break;
                     }
-                    app_data.app_gui.deauth_but.set_sensitive(true);
 
-                    let (_, ap_iter) = this.selection().selected().unwrap();
-                    let bssid = list_store_get!(app_data.app_gui.aps_model, &ap_iter, 1, String);
-                    let aps = backend::get_aps();
-
-                    let mut clients = match aps.get(&bssid) {
-                        Some(ap) => ap.clients.keys().clone(),
-                        None => return,
-                    };
-                    let mut cli_iter = app_data.app_gui.cli_model.iter_first();
-
-                    while let Some(it) = cli_iter {
-                        let mac_val = list_store_get!(app_data.app_gui.cli_model, &it, 0, String);
-
-                        if !clients.any(|x| &mac_val == x) {
-                            break;
-                        }
-
-                        cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
-                            true => Some(it),
-                            false => return,
-                        }
+                    cli_iter = match app_data.app_gui.cli_model.iter_next(&it) {
+                        true => Some(it),
+                        false => return,
                     }
                 }
-                None => {
-                    app_data.app_gui.focus_but.set_sensitive(false);
-                    app_data.app_gui.deauth_but.set_sensitive(false);
-                    app_data.app_gui.capture_but.set_sensitive(false);
-                }
-            };
+            }
             app_data.app_gui.cli_model.clear();
         }));
 }

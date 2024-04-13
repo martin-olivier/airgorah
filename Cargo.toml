@@ -1,9 +1,9 @@
 [package]
 name = "airgorah"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2021"
 license = "MIT"
-description = "A WiFi auditing software that can perform deauth attacks and passwords cracking"
+description = "A WiFi security auditing software mainly based on aircrack-ng tools suite"
 authors = ["Martin Olivier <martin.olivier@live.fr>"]
 homepage = "https://github.com/martin-olivier/airgorah"
 repository = "https://github.com/martin-olivier/airgorah"
@@ -29,6 +29,7 @@ nix = { version = "0.28", features = ["signal"] }
 ureq = { version = "2.9", features = ["json"] }
 log = "0.4"
 env_logger = "0.11"
+thiserror = "1"
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }

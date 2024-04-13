@@ -1,8 +1,13 @@
-use crate::error::Error;
 use crate::globals::*;
 use crate::types::*;
 use std::process::{Command, Stdio};
 use std::sync::MutexGuard;
+
+#[derive(thiserror::Error, Debug)]
+pub enum DeathError {
+    #[error("Input/Output error: {0}")]
+    IoError(#[from] std::io::Error),
+}
 
 /// Launch a deauth attack on a specific AP
 pub fn launch_deauth_attack(
@@ -10,7 +15,7 @@ pub fn launch_deauth_attack(
     ap: AP,
     specific_clients: Option<Vec<String>>,
     software: AttackSoftware,
-) -> Result<(), Error> {
+) -> Result<(), DeathError> {
     let mut attack_pool = get_attack_pool();
 
     let attack_targets = match specific_clients {

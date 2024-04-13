@@ -22,7 +22,7 @@ pub fn build_ui(app: &Application) {
 
     gui_data.interface_gui.window.show();
 
-    connections::connect(gui_data);
+    connections::connect(app, gui_data);
 }
 
 #[macro_export]

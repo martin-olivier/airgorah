@@ -33,24 +33,149 @@ fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<Tree
     None
 }
 
-fn connect_controller(app_data: Rc<AppData>) {
+fn connect_window_controller(app_data: Rc<AppData>) {
     let controller = gtk4::EventControllerKey::new();
 
     controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
         if key == gdk::Key::Escape {
-            app_data.app_gui.focus_but.set_sensitive(false);
-            app_data.app_gui.deauth_but.set_sensitive(false);
-            app_data.app_gui.capture_but.set_sensitive(false);
+            update_buttons_sensitivity(&app_data);
 
-            app_data.app_gui.aps_view.selection().unselect_all();
+            app_data.app_gui.cli_view.selection().unselect_all();
 
-            app_data.app_gui.cli_model.clear();
+            if app_data.app_gui.aps_view.selection().selected().is_some() {
+                app_data.app_gui.aps_view.selection().unselect_all();
+                app_data.app_gui.cli_model.clear();
+            }
         }
 
         glib::Propagation::Proceed
     }));
 
     app_data.app_gui.window.add_controller(controller);
+}
+
+fn connect_aps_controller(app: &Application, app_data: Rc<AppData>) {
+    let gesture = GestureClick::new();
+    gesture.set_button(gdk::ffi::GDK_BUTTON_SECONDARY as u32);
+    gesture.connect_pressed(clone!(@strong app_data => move |gesture, _, x, y| {
+        gesture.set_state(EventSequenceState::Claimed);
+
+        if app_data.app_gui.aps_view.selection().selected().is_some() {
+            let pos = gdk::Rectangle::new(x as i32, y as i32, 0, 0);
+
+            app_data.app_gui.aps_menu.set_pointing_to(Some(&pos));
+            app_data.app_gui.aps_menu.popup();
+        }
+    }));
+
+    app_data.app_gui.aps_scroll.add_controller(gesture);
+
+    let copy_bssid = gio::SimpleAction::new("copy_bssid", None);
+    copy_bssid.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&bssid);
+        }
+    }));
+    app.add_action(&copy_bssid);
+
+    let copy_essid = gio::SimpleAction::new("copy_essid", None);
+    copy_essid.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let essid = list_store_get!(app_data.app_gui.aps_model, &iter, 0, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&essid);
+        }
+    }));
+    app.add_action(&copy_essid);
+
+    let copy_channel = gio::SimpleAction::new("copy_channel", None);
+    copy_channel.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.aps_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&channel.to_string());
+        }
+    }));
+    app.add_action(&copy_channel);
+}
+
+fn connect_cli_controller(app: &Application, app_data: Rc<AppData>) {
+    let gesture = GestureClick::new();
+    gesture.set_button(gdk::ffi::GDK_BUTTON_SECONDARY as u32);
+    gesture.connect_pressed(clone!(@strong app_data => move |gesture, _, x, y| {
+        gesture.set_state(EventSequenceState::Claimed);
+
+        if app_data.app_gui.cli_view.selection().selected().is_some() {
+            let pos = gdk::Rectangle::new(x as i32, y as i32, 0, 0);
+
+            app_data.app_gui.cli_menu.set_pointing_to(Some(&pos));
+            app_data.app_gui.cli_menu.popup();
+        }
+    }));
+
+    app_data.app_gui.cli_scroll.add_controller(gesture);
+
+    let copy_mac = gio::SimpleAction::new("copy_mac", None);
+    copy_mac.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.cli_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let mac = list_store_get!(app_data.app_gui.cli_model, &iter, 0, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&mac);
+        }
+    }));
+    app.add_action(&copy_mac);
+
+    let copy_vendor = gio::SimpleAction::new("copy_vendor", None);
+    copy_vendor.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.cli_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let vendor = list_store_get!(app_data.app_gui.cli_model, &iter, 5, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&vendor);
+        }
+    }));
+    app.add_action(&copy_vendor);
+
+    let copy_probes = gio::SimpleAction::new("copy_probes", None);
+    copy_probes.connect_activate(clone!(@strong app_data => move |_, _| {
+        let iter = match app_data.app_gui.cli_view.selection().selected() {
+            Some((_, iter)) => iter,
+            None => return,
+        };
+
+        let probes = list_store_get!(app_data.app_gui.cli_model, &iter, 6, String);
+
+        if let Some(display) = gdk::Display::default() {
+            display.clipboard().set_text(&probes);
+        }
+    }));
+    app.add_action(&copy_probes);
 }
 
 fn connect_about_button(app_data: Rc<AppData>) {
@@ -139,6 +264,71 @@ fn connect_focus_button(app_data: Rc<AppData>) {
         }));
 }
 
+pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
+    let iter = match app_data.app_gui.aps_view.selection().selected() {
+        Some((_, iter)) => iter,
+        None => {
+            app_data.app_gui.focus_but.set_sensitive(false);
+            app_data.app_gui.deauth_but.set_sensitive(false);
+            app_data.app_gui.capture_but.set_sensitive(false);
+
+            app_data.app_gui.previous_but.set_sensitive(false);
+            app_data.app_gui.next_but.set_sensitive(false);
+
+            match app_data.app_gui.aps_model.iter_first() {
+                Some(_) => {
+                    app_data.app_gui.top_but.set_sensitive(true);
+                    app_data.app_gui.bottom_but.set_sensitive(true);
+                }
+                None => {
+                    app_data.app_gui.top_but.set_sensitive(false);
+                    app_data.app_gui.bottom_but.set_sensitive(false);
+                }
+            }
+
+            return;
+        }
+    };
+
+    let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+    match channel
+        == app_data
+            .app_gui
+            .channel_filter_entry
+            .text()
+            .parse::<i32>()
+            .unwrap_or(-1)
+    {
+        true => app_data.app_gui.focus_but.set_sensitive(false),
+        false => app_data.app_gui.focus_but.set_sensitive(true),
+    }
+    app_data.app_gui.deauth_but.set_sensitive(true);
+
+    let prev_iter = iter;
+    match app_data.app_gui.aps_model.iter_previous(&prev_iter) {
+        true => {
+            app_data.app_gui.previous_but.set_sensitive(true);
+            app_data.app_gui.top_but.set_sensitive(true);
+        }
+        false => {
+            app_data.app_gui.previous_but.set_sensitive(false);
+            app_data.app_gui.top_but.set_sensitive(false);
+        }
+    }
+
+    let next_iter = iter;
+    match app_data.app_gui.aps_model.iter_next(&next_iter) {
+        true => {
+            app_data.app_gui.next_but.set_sensitive(true);
+            app_data.app_gui.bottom_but.set_sensitive(true);
+        }
+        false => {
+            app_data.app_gui.next_but.set_sensitive(false);
+            app_data.app_gui.bottom_but.set_sensitive(false);
+        }
+    }
+}
+
 fn connect_previous_button(app_data: Rc<AppData>) {
     app_data
         .app_gui
@@ -146,12 +336,12 @@ fn connect_previous_button(app_data: Rc<AppData>) {
         .connect_clicked(clone!(@strong app_data => move |_| {
             let iter = match app_data.app_gui.aps_view.selection().selected() {
                 Some((_, iter)) => iter,
-                None => return,
+                None => return update_buttons_sensitivity(&app_data),
             };
 
             let prev_iter = iter;
             if !app_data.app_gui.aps_model.iter_previous(&prev_iter) {
-                return;
+                return update_buttons_sensitivity(&app_data);
             }
 
             let path = app_data.app_gui.aps_model.path(&prev_iter);
@@ -159,17 +349,7 @@ fn connect_previous_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
-                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                    true => app_data.app_gui.focus_but.set_sensitive(false),
-                    false => app_data.app_gui.focus_but.set_sensitive(true),
-                }
-            } else {
-                app_data.app_gui.focus_but.set_sensitive(false);
-            }
-
-            app_data.app_gui.deauth_but.set_sensitive(true);
+            update_buttons_sensitivity(&app_data);
         }));
 }
 
@@ -180,12 +360,12 @@ fn connect_next_button(app_data: Rc<AppData>) {
         .connect_clicked(clone!(@strong app_data => move |_| {
             let iter = match app_data.app_gui.aps_view.selection().selected() {
                 Some((_, iter)) => iter,
-                None => return,
+                None => return update_buttons_sensitivity(&app_data),
             };
 
             let next_iter = iter;
             if !app_data.app_gui.aps_model.iter_next(&next_iter) {
-                return;
+                return update_buttons_sensitivity(&app_data);
             }
 
             let path = app_data.app_gui.aps_model.path(&next_iter);
@@ -193,17 +373,7 @@ fn connect_next_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
-                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                    true => app_data.app_gui.focus_but.set_sensitive(false),
-                    false => app_data.app_gui.focus_but.set_sensitive(true),
-                }
-            } else {
-                app_data.app_gui.focus_but.set_sensitive(false);
-            }
-
-            app_data.app_gui.deauth_but.set_sensitive(true);
+            update_buttons_sensitivity(&app_data);
         }));
 }
 
@@ -214,7 +384,7 @@ fn connect_top_button(app_data: Rc<AppData>) {
         .connect_clicked(clone!(@strong app_data => move |_| {
             let first_iter = match app_data.app_gui.aps_model.iter_first() {
                 Some(iter) => iter,
-                None => return,
+                None => return update_buttons_sensitivity(&app_data),
             };
 
             let path = app_data.app_gui.aps_model.path(&first_iter);
@@ -222,17 +392,7 @@ fn connect_top_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
-                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                    true => app_data.app_gui.focus_but.set_sensitive(false),
-                    false => app_data.app_gui.focus_but.set_sensitive(true),
-                }
-            } else {
-                app_data.app_gui.focus_but.set_sensitive(false);
-            }
-
-            app_data.app_gui.deauth_but.set_sensitive(true);
+            update_buttons_sensitivity(&app_data);
         }));
 }
 
@@ -243,7 +403,7 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
         .connect_clicked(clone!(@strong app_data => move |_| {
             let iter = match app_data.app_gui.aps_model.iter_first() {
                 Some(iter) => iter,
-                None => return,
+                None => return update_buttons_sensitivity(&app_data),
             };
 
             let mut last_iter = iter;
@@ -257,17 +417,7 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
-            if let Some((_, it)) = app_data.app_gui.aps_view.selection().selected() {
-                let channel = list_store_get!(app_data.app_gui.aps_model, &it, 3, i32);
-                match channel == app_data.app_gui.channel_filter_entry.text().parse::<i32>().unwrap_or(-1) {
-                    true => app_data.app_gui.focus_but.set_sensitive(false),
-                    false => app_data.app_gui.focus_but.set_sensitive(true),
-                }
-            } else {
-                app_data.app_gui.focus_but.set_sensitive(false);
-            }
-
-            app_data.app_gui.deauth_but.set_sensitive(true);
+            update_buttons_sensitivity(&app_data);
         }));
 }
 
@@ -298,27 +448,6 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
                 }
             };
-
-            match backend::get_aps().is_empty() {
-                true => {
-                    app_data.app_gui.restart_but.set_sensitive(false);
-                    app_data.app_gui.export_but.set_sensitive(false);
-                    app_data.app_gui.report_but.set_sensitive(false);
-                    app_data.app_gui.top_but.set_sensitive(false);
-                    app_data.app_gui.bottom_but.set_sensitive(false);
-                    app_data.app_gui.previous_but.set_sensitive(false);
-                    app_data.app_gui.next_but.set_sensitive(false);
-                }
-                false => {
-                    app_data.app_gui.restart_but.set_sensitive(true);
-                    app_data.app_gui.export_but.set_sensitive(true);
-                    app_data.app_gui.report_but.set_sensitive(true);
-                    app_data.app_gui.top_but.set_sensitive(true);
-                    app_data.app_gui.bottom_but.set_sensitive(true);
-                    app_data.app_gui.previous_but.set_sensitive(true);
-                    app_data.app_gui.next_but.set_sensitive(true);
-                }
-            }
 
             let aps = backend::get_airodump_data();
 
@@ -408,7 +537,37 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         app_data.deauth_gui.store.set(&app_data.deauth_gui.store.append(), &[(0, &false), (1, &cli.mac)]);
                     }
                 }
+            } else {
+                let clients = backend::get_unlinked_clients().clone();
+
+                for (_, cli) in clients {
+                    let it = match list_store_find(app_data.app_gui.cli_model.as_ref(), 0, cli.mac.as_str()) {
+                        Some(it) => it,
+                        None => app_data.app_gui.cli_model.append(),
+                    };
+
+                    app_data.app_gui.cli_model.set(
+                        &it,
+                        &[
+                            (0, &cli.mac),
+                            (1, &cli.packets.parse::<i32>().unwrap_or(-1)),
+                            (2, &cli.power.parse::<i32>().unwrap_or(-1)),
+                            (3, &cli.first_time_seen),
+                            (4, &cli.last_time_seen),
+                            (5, &cli.vendor),
+                            (6, &cli.probes),
+                            (7, &gdk::RGBA::new(0.0, 0.0, 0.0, 0.0).to_str()),
+                        ],
+                    );
+                }
             }
+
+            if !backend::get_aps().is_empty() {
+                app_data.app_gui.export_but.set_sensitive(true);
+                app_data.app_gui.report_but.set_sensitive(true);
+            }
+
+            update_buttons_sensitivity(&app_data);
 
             ControlFlow::Continue
         }),
@@ -559,8 +718,11 @@ fn connect_capture_button(app_data: Rc<AppData>) {
         }));
 }
 
-pub fn connect(app_data: Rc<AppData>) {
-    connect_controller(app_data.clone());
+pub fn connect(app: &Application, app_data: Rc<AppData>) {
+    connect_window_controller(app_data.clone());
+
+    connect_aps_controller(app, app_data.clone());
+    connect_cli_controller(app, app_data.clone());
 
     connect_about_button(app_data.clone());
     connect_update_button(app_data.clone());

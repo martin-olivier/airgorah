@@ -120,6 +120,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
         .default_height(620)
         .build();
 
+    window.set_size_request(500, 500);
     window.connect_close_request(|_| {
         backend::app_cleanup();
         glib::Propagation::Proceed
@@ -196,6 +197,7 @@ fn build_aps_view() -> TreeView {
 
         view.append_column(&column);
     }
+
     view
 }
 
@@ -207,6 +209,20 @@ fn build_aps_scroll() -> ScrolledWindow {
     aps_scroll
 }
 
+fn build_aps_menu() -> PopoverMenu {
+    let copy_bssid_item = gio::MenuItem::new(Some("Copy BSSID"), Some("app.copy_bssid"));
+    let copy_essid_item = gio::MenuItem::new(Some("Copy ESSID"), Some("app.copy_essid"));
+    let copy_channel_item = gio::MenuItem::new(Some("Copy Channel"), Some("app.copy_channel"));
+
+    let submenu = gio::Menu::new();
+
+    submenu.append_item(&copy_bssid_item);
+    submenu.append_item(&copy_essid_item);
+    submenu.append_item(&copy_channel_item);
+
+    PopoverMenu::from_model(Some(&submenu))
+}
+
 fn build_cli_model() -> ListStore {
     ListStore::new(&[
         glib::Type::STRING, // Station MAC
@@ -214,8 +230,8 @@ fn build_cli_model() -> ListStore {
         glib::Type::I32,    // Power
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // Last time seen
-        glib::Type::STRING, // Probes
         glib::Type::STRING, // Vendor
+        glib::Type::STRING, // Probes
         glib::Type::STRING, // <color>
     ])
 }
@@ -259,6 +275,7 @@ fn build_cli_view() -> TreeView {
 
         view.append_column(&column);
     }
+
     view
 }
 
@@ -267,6 +284,20 @@ fn build_cli_scroll() -> ScrolledWindow {
     aps_scroll.set_policy(PolicyType::Never, PolicyType::Automatic);
 
     aps_scroll
+}
+
+fn build_cli_menu() -> PopoverMenu {
+    let copy_mac_item = gio::MenuItem::new(Some("Copy MAC"), Some("app.copy_mac"));
+    let copy_vendor_item = gio::MenuItem::new(Some("Copy Vendor"), Some("app.copy_vendor"));
+    let copy_probes_item = gio::MenuItem::new(Some("Copy Probes"), Some("app.copy_probes"));
+
+    let submenu = gio::Menu::new();
+
+    submenu.append_item(&copy_mac_item);
+    submenu.append_item(&copy_vendor_item);
+    submenu.append_item(&copy_probes_item);
+
+    PopoverMenu::from_model(Some(&submenu))
 }
 
 pub struct AppGui {
@@ -280,8 +311,13 @@ pub struct AppGui {
     pub window: ApplicationWindow,
     pub aps_model: ListStore,
     pub aps_view: TreeView,
+    pub aps_scroll: ScrolledWindow,
+    pub aps_menu: PopoverMenu,
     pub cli_model: ListStore,
     pub cli_view: TreeView,
+    pub cli_scroll: ScrolledWindow,
+    pub cli_menu: PopoverMenu,
+    pub iface_ico: Image,
     pub iface_label: Label,
     pub ghz_2_4_but: CheckButton,
     pub ghz_5_but: CheckButton,
@@ -330,7 +366,9 @@ impl AppGui {
         // Interface Display
 
         let iface_ico = Image::from_icon_name("network-wired");
+        iface_ico.set_sensitive(false);
         let iface_label = Label::new(Some("None"));
+        iface_label.set_sensitive(false);
         iface_label.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
 
         // Scan filters
@@ -426,14 +464,18 @@ impl AppGui {
         let aps_model = build_aps_model();
         let aps_view = build_aps_view();
         let aps_scroll = build_aps_scroll();
+        let aps_menu = build_aps_menu();
 
+        aps_menu.set_parent(&aps_scroll);
         aps_scroll.set_child(Some(&aps_view));
         aps_view.set_model(Some(&aps_model));
 
         let cli_model = build_cli_model();
         let cli_view = build_cli_view();
         let cli_scroll = build_cli_scroll();
+        let cli_menu = build_cli_menu();
 
+        cli_menu.set_parent(&cli_scroll);
         cli_scroll.set_child(Some(&cli_view));
         cli_view.set_model(Some(&cli_model));
 
@@ -456,8 +498,13 @@ impl AppGui {
             window,
             aps_model,
             aps_view,
+            aps_scroll,
+            aps_menu,
             cli_model,
             cli_view,
+            cli_scroll,
+            cli_menu,
+            iface_ico,
             iface_label,
             ghz_2_4_but,
             ghz_5_but,
