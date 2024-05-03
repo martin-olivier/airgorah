@@ -79,7 +79,7 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, IfaceError> {
 
     let check_band_output = String::from_utf8(check_band_cmd.stdout)?;
 
-    if check_band_output.contains("5200 MHz") {
+    if check_band_output.contains("5200 MHz") || check_band_output.contains("5200.0 MHz") {
         return Ok(true);
     }
 
