@@ -1,5 +1,4 @@
 use super::*;
-use crate::globals::*;
 use crate::types::*;
 
 use regex::Regex;
@@ -29,8 +28,8 @@ pub enum CapError {
 /// Update the handshake capture status of all APs
 pub fn update_handshakes() -> Result<(), CapError> {
     let handshakes = get_handshakes([
-        &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
-        &(OLD_SCAN_PATH.to_string() + "-01.cap"),
+        &(get_live_scan_path() + get_cap_ext()),
+        &(get_old_scan_path() + get_cap_ext()),
     ])?;
 
     let mut aps = get_aps();
@@ -86,7 +85,7 @@ where
 
 /// Save the current capture to a file
 pub fn save_capture(path: &str) -> Result<(), CapError> {
-    std::fs::copy(OLD_SCAN_PATH.to_string() + "-01.cap", path)?;
+    std::fs::copy(get_old_scan_path() + get_cap_ext(), path)?;
 
     log::info!("capture saved to '{}'", path);
 
