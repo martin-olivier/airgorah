@@ -49,8 +49,9 @@ pub fn app_cleanup() {
 
     if let Some(ref iface) = get_iface() {
         disable_monitor_mode(iface).ok();
-        restore_network_manager().ok();
     }
+
+    restore_network_manager().ok();
 
     std::fs::remove_file(get_live_scan_path() + get_csv_ext()).ok();
     std::fs::remove_file(get_live_scan_path() + get_cap_ext()).ok();

@@ -148,13 +148,13 @@ pub fn set_mac_address(iface: &str) -> Result<(), IfaceError> {
 
 /// enable monitor mode on an interface
 pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
+    if is_monitor_mode(iface)? {
+        *IFACE_WAS_MONITOR.lock().unwrap() = true;
+    }
+
     kill_network_manager()?;
 
     if is_monitor_mode(iface)? {
-        log::info!("{}: monitor mode is already enabled", iface);
-
-        *IFACE_WAS_MONITOR.lock().unwrap() = true;
-
         return Ok(iface.to_string());
     }
 
@@ -218,7 +218,9 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
         return Ok(());
     }
 
-    if *IFACE_WAS_MONITOR.lock().unwrap() {
+    let mut iface_was_monitor = IFACE_WAS_MONITOR.lock().unwrap();
+    if *iface_was_monitor {
+        *iface_was_monitor = false;
         return Ok(());
     }
 
