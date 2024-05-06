@@ -24,6 +24,7 @@ pub type AttackPool = HashMap<String, (AP, AttackedClients)>;
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);
+    pub static ref IFACE_WAS_MONITOR: Mutex<bool> = Mutex::new(false);
     pub static ref UPDATE_PROC: Mutex<Option<JoinHandle<bool>>> = Mutex::new(None);
     pub static ref SCAN_PROC: Mutex<Option<Child>> = Mutex::new(None);
     pub static ref APS: Mutex<HashMap<String, AP>> = Mutex::new(HashMap::new());

@@ -151,6 +151,10 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
     kill_network_manager()?;
 
     if is_monitor_mode(iface)? {
+        log::info!("{}: monitor mode is already enabled", iface);
+
+        *IFACE_WAS_MONITOR.lock().unwrap() = true;
+
         return Ok(iface.to_string());
     }
 
@@ -211,6 +215,10 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
     let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
 
     if !check_monitor_output.contains("type monitor") {
+        return Ok(());
+    }
+
+    if *IFACE_WAS_MONITOR.lock().unwrap() {
         return Ok(());
     }
 
