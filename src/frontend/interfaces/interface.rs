@@ -33,7 +33,7 @@ impl InterfaceGui {
         let window = Window::builder()
             .title("Select a wireless interface")
             .hide_on_close(true)
-            .default_width(280)
+            .default_width(300)
             .default_height(70)
             .resizable(false)
             .modal(true)
