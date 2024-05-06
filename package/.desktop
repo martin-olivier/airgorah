@@ -4,6 +4,6 @@ Comment=A WiFi auditing software that can perform deauth attacks and passwords c
 Exec=pkexec airgorah
 Icon=/usr/share/pixmaps/airgorah.png
 ApplicationId=com.molivier.airgorah
-Categories=System;Utility;
+Categories=Network;Monitor;Utility;GTK;
 Type=Application
 Terminal=false
