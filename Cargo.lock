@@ -19,13 +19,12 @@ dependencies = [
 
 [[package]]
 name = "airgorah"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "chrono",
  "csv",
  "ctrlc",
  "env_logger",
- "glib",
  "gtk4",
  "lazy_static",
  "log",

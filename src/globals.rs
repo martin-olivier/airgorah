@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use std::thread::JoinHandle;
 
 pub static APP_ID: &str = "com.molivier.airgorah";
-pub static VERSION: &str = "v0.7.2";
+pub static VERSION: &str = "v0.7.3";
 
 pub static LIVE_SCAN_PATH: &str = "/tmp/airgorah_live_scan";
 pub static OLD_SCAN_PATH: &str = "/tmp/airgorah_old_scan";
@@ -24,6 +24,7 @@ pub type AttackPool = HashMap<String, (AP, AttackedClients)>;
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);
+    pub static ref IFACE_WAS_MONITOR: Mutex<bool> = Mutex::new(false);
     pub static ref UPDATE_PROC: Mutex<Option<JoinHandle<bool>>> = Mutex::new(None);
     pub static ref SCAN_PROC: Mutex<Option<Child>> = Mutex::new(None);
     pub static ref APS: Mutex<HashMap<String, AP>> = Mutex::new(HashMap::new());

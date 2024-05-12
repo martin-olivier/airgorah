@@ -64,7 +64,6 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                 Ok(res) => {
                     if let Err(e) = backend::set_mac_address(&res) {
                         backend::disable_monitor_mode(&iface).ok();
-                        backend::restore_network_manager().ok();
 
                         app_data.interface_gui.refresh_but.emit_clicked();
 
@@ -98,8 +97,6 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     app_data.interface_gui.window.hide();
                 }
                 Err(e) => {
-                    backend::restore_network_manager().ok();
-
                     app_data.interface_gui.refresh_but.emit_clicked();
 
                     ErrorDialog::spawn(

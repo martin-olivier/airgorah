@@ -137,13 +137,14 @@ pub fn set_scan_process(
 
     stop_scan_process()?;
 
+    let live_scan_path = get_live_scan_path();
     let mut proc_args = vec![
         iface,
         "-a",
         "--output-format",
         "csv,cap",
         "-w",
-        LIVE_SCAN_PATH,
+        &live_scan_path,
         "--write-interval",
         "1",
     ];
@@ -194,17 +195,17 @@ pub fn stop_scan_process() -> Result<(), ScanError> {
 
         kill(child_pid, Signal::SIGTERM)?;
 
-        log::info!("scan stopped, sent kill SIGTERM to pid {}", child_pid);
+        log::info!("scan stopped, sent SIGTERM to pid {}", child_pid);
 
         child.wait()?;
     }
 
     SCAN_PROC.lock().unwrap().take();
 
-    let old_path_exists = Path::new(&(OLD_SCAN_PATH.to_string() + "-01.cap")).exists();
-    let live_path_exists = Path::new(&(LIVE_SCAN_PATH.to_string() + "-01.cap")).exists();
+    let old_path_exists = Path::new(&(get_old_scan_path() + get_cap_ext())).exists();
+    let live_path_exists = Path::new(&(get_live_scan_path() + get_cap_ext())).exists();
 
-    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.csv").ok();
+    std::fs::remove_file(get_live_scan_path() + get_csv_ext()).ok();
 
     if !live_path_exists {
         return Ok(());
@@ -212,8 +213,8 @@ pub fn stop_scan_process() -> Result<(), ScanError> {
 
     if !old_path_exists {
         std::fs::rename(
-            LIVE_SCAN_PATH.to_string() + "-01.cap",
-            OLD_SCAN_PATH.to_string() + "-01.cap",
+            get_live_scan_path() + get_cap_ext(),
+            get_old_scan_path() + get_cap_ext(),
         )
         .ok();
         return Ok(());
@@ -225,17 +226,17 @@ pub fn stop_scan_process() -> Result<(), ScanError> {
             "-F",
             "pcap",
             "-w",
-            &(MERGE_SCAN_PATH.to_string() + "-01.cap"),
-            &(OLD_SCAN_PATH.to_string() + "-01.cap"),
-            &(LIVE_SCAN_PATH.to_string() + "-01.cap"),
+            &(get_merge_scan_path() + get_cap_ext()),
+            &(get_old_scan_path() + get_cap_ext()),
+            &(get_live_scan_path() + get_cap_ext()),
         ])
         .status()?;
 
-    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
-    std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
+    std::fs::remove_file(get_live_scan_path() + get_cap_ext()).ok();
+    std::fs::remove_file(get_old_scan_path() + get_cap_ext()).ok();
     std::fs::rename(
-        MERGE_SCAN_PATH.to_string() + "-01.cap",
-        OLD_SCAN_PATH.to_string() + "-01.cap",
+        get_merge_scan_path() + get_cap_ext(),
+        get_old_scan_path() + get_cap_ext(),
     )
     .ok();
 
@@ -256,7 +257,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
         aps.insert(ap.0.clone(), ap.1.clone());
     }
 
-    let full_path = LIVE_SCAN_PATH.to_string() + "-01.csv";
+    let full_path = get_live_scan_path() + get_csv_ext();
     let csv_file = match std::fs::read_to_string(full_path) {
         Ok(file) => file,
         Err(_) => return aps,
@@ -405,12 +406,30 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
     aps
 }
 
-/// Get the APs data collected
 pub fn get_aps() -> MutexGuard<'static, HashMap<String, AP>> {
     APS.lock().unwrap()
 }
 
-/// Get unlinked clients
 pub fn get_unlinked_clients() -> MutexGuard<'static, HashMap<String, Client>> {
     UNLINKED_CLIENTS.lock().unwrap()
+}
+
+pub fn get_cap_ext() -> &'static str {
+    "-01.cap"
+}
+
+pub fn get_csv_ext() -> &'static str {
+    "-01.csv"
+}
+
+pub fn get_live_scan_path() -> String {
+    format!("{}-{}", LIVE_SCAN_PATH, std::process::id())
+}
+
+pub fn get_old_scan_path() -> String {
+    format!("{}-{}", OLD_SCAN_PATH, std::process::id())
+}
+
+pub fn get_merge_scan_path() -> String {
+    format!("{}-{}", MERGE_SCAN_PATH, std::process::id())
 }

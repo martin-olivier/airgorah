@@ -79,7 +79,7 @@ pub fn is_5ghz_supported(iface: &str) -> Result<bool, IfaceError> {
 
     let check_band_output = String::from_utf8(check_band_cmd.stdout)?;
 
-    if check_band_output.contains("5200 MHz") {
+    if check_band_output.contains("5200 MHz") || check_band_output.contains("5200.0 MHz") {
         return Ok(true);
     }
 
@@ -148,6 +148,10 @@ pub fn set_mac_address(iface: &str) -> Result<(), IfaceError> {
 
 /// enable monitor mode on an interface
 pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
+    if is_monitor_mode(iface)? {
+        *IFACE_WAS_MONITOR.lock().unwrap() = true;
+    }
+
     kill_network_manager()?;
 
     if is_monitor_mode(iface)? {
@@ -211,6 +215,12 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
     let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
 
     if !check_monitor_output.contains("type monitor") {
+        return Ok(());
+    }
+
+    let mut iface_was_monitor = IFACE_WAS_MONITOR.lock().unwrap();
+    if *iface_was_monitor {
+        *iface_was_monitor = false;
         return Ok(());
     }
 

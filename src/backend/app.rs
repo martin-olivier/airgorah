@@ -1,5 +1,4 @@
 use super::*;
-use crate::globals::*;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
@@ -50,12 +49,13 @@ pub fn app_cleanup() {
 
     if let Some(ref iface) = get_iface() {
         disable_monitor_mode(iface).ok();
-        restore_network_manager().ok();
     }
 
-    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.csv").ok();
-    std::fs::remove_file(LIVE_SCAN_PATH.to_string() + "-01.cap").ok();
-    std::fs::remove_file(OLD_SCAN_PATH.to_string() + "-01.cap").ok();
+    restore_network_manager().ok();
+
+    std::fs::remove_file(get_live_scan_path() + get_csv_ext()).ok();
+    std::fs::remove_file(get_live_scan_path() + get_cap_ext()).ok();
+    std::fs::remove_file(get_old_scan_path() + get_cap_ext()).ok();
 }
 
 /// Check if a dependency is installed

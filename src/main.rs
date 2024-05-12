@@ -1,3 +1,4 @@
+use gtk4::gio::ApplicationFlags;
 use gtk4::prelude::*;
 use gtk4::{Application, Settings};
 
@@ -17,6 +18,7 @@ fn main() {
 
     let application = Application::builder()
         .application_id(globals::APP_ID)
+        .flags(ApplicationFlags::NON_UNIQUE)
         .build();
 
     application.connect_activate(frontend::build_ui);
