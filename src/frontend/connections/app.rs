@@ -183,8 +183,8 @@ fn connect_about_button(app_data: Rc<AppData>) {
         .app_gui
         .about_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-        let ico = Pixbuf::from_read(BufReader::new(globals::APP_ICON)).unwrap();
-        let des = "A WiFi auditing software that can perform deauth attacks and passwords cracking";
+        let icon = Pixbuf::from_read(BufReader::new(globals::APP_ICON)).unwrap();
+        let desc = "A WiFi security auditing software mainly based on aircrack-ng tools suite";
 
         AboutDialog::builder()
             .program_name("Airgorah")
@@ -192,8 +192,8 @@ fn connect_about_button(app_data: Rc<AppData>) {
             .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
-            .logo(&Picture::for_pixbuf(&ico).paintable().unwrap())
-            .comments(des)
+            .logo(&Picture::for_pixbuf(&icon).paintable().unwrap())
+            .comments(desc)
             .website_label("https://github.com/martin-olivier/airgorah")
             .transient_for(&app_data.app_gui.window)
             .modal(true)

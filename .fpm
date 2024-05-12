@@ -2,7 +2,7 @@
 --name airgorah
 --license MIT
 --version 0.7.3
---description "A WiFi auditing software that can perform deauth attacks and passwords cracking"
+--description "A WiFi security auditing software mainly based on aircrack-ng tools suite"
 --url "https://github.com/martin-olivier/airgorah"
 --maintainer "Martin Olivier <martin.olivier@live.fr>"
 
