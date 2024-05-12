@@ -25,7 +25,6 @@ dependencies = [
  "csv",
  "ctrlc",
  "env_logger",
- "glib",
  "gtk4",
  "lazy_static",
  "log",
