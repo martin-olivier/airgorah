@@ -1,6 +1,6 @@
+use gtk4::gio::ApplicationFlags;
 use gtk4::prelude::*;
 use gtk4::{Application, Settings};
-use gtk4::gio::ApplicationFlags;
 
 mod backend;
 mod frontend;
