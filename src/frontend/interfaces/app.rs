@@ -306,7 +306,6 @@ pub struct AppGui {
     pub update_button: Button,
     pub decrypt_button: Button,
     pub settings_button: Button,
-
     // Main window
     pub window: ApplicationWindow,
     pub aps_model: ListStore,
@@ -317,8 +316,6 @@ pub struct AppGui {
     pub cli_view: TreeView,
     pub cli_scroll: ScrolledWindow,
     pub cli_menu: PopoverMenu,
-    pub iface_ico: Image,
-    pub iface_label: Label,
     pub ghz_2_4_but: CheckButton,
     pub ghz_5_but: CheckButton,
     pub channel_filter_entry: Entry,
@@ -334,6 +331,8 @@ pub struct AppGui {
     pub focus_but: Button,
     pub deauth_but: IconButton,
     pub capture_but: IconButton,
+    pub client_status_bar: Statusbar,
+    pub iface_status_bar: Statusbar,
 }
 
 impl AppGui {
@@ -362,14 +361,6 @@ impl AppGui {
         let update_button = build_update_button();
 
         update_button.hide();
-
-        // Interface Display
-
-        let iface_ico = Image::from_icon_name("network-wired");
-        iface_ico.set_sensitive(false);
-        let iface_label = Label::new(Some("None"));
-        iface_label.set_sensitive(false);
-        iface_label.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
 
         // Scan filters
 
@@ -448,9 +439,6 @@ impl AppGui {
         header_bar.pack_start(&about_button);
         header_bar.pack_start(&update_button);
 
-        header_bar.pack_end(&iface_label);
-        header_bar.pack_end(&iface_ico);
-
         header_bar.pack_end(&ghz_5_but);
         header_bar.pack_end(&ghz_2_4_but);
 
@@ -479,14 +467,32 @@ impl AppGui {
         cli_scroll.set_child(Some(&cli_view));
         cli_view.set_model(Some(&cli_model));
 
-        // Set main window child
+        // Set main window childs
 
-        let panned = Paned::new(Orientation::Vertical);
-        panned.set_wide_handle(true);
-        panned.set_start_child(Some(&aps_scroll));
-        panned.set_end_child(Some(&cli_scroll));
+        let panned_cli_aps = Paned::new(Orientation::Vertical);
+        panned_cli_aps.set_wide_handle(true);
+        panned_cli_aps.set_start_child(Some(&aps_scroll));
+        panned_cli_aps.set_end_child(Some(&cli_scroll));
 
-        window.set_child(Some(&panned));
+        let client_status_bar = Statusbar::new();
+        client_status_bar.push(0, "Showing unassociated clients");
+
+        let iface_status_bar = Statusbar::new();
+        iface_status_bar.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
+        iface_status_bar.push(0, "No interface selected");
+
+        let panned_status_bar = Paned::new(Orientation::Horizontal);
+        panned_status_bar.set_wide_handle(true);
+        panned_status_bar.set_start_child(Some(&client_status_bar));
+        panned_status_bar.set_end_child(Some(&iface_status_bar));
+
+        client_status_bar.set_size_request(110, -1);
+
+        let vbox = Box::new(Orientation::Vertical, 0);
+        vbox.append(&panned_cli_aps);
+        vbox.append(&panned_status_bar);
+
+        window.set_child(Some(&vbox));
 
         Self {
             // Header bar
@@ -504,8 +510,6 @@ impl AppGui {
             cli_view,
             cli_scroll,
             cli_menu,
-            iface_ico,
-            iface_label,
             ghz_2_4_but,
             ghz_5_but,
             channel_filter_entry,
@@ -521,6 +525,8 @@ impl AppGui {
             focus_but,
             deauth_but,
             capture_but,
+            client_status_bar,
+            iface_status_bar,
         }
     }
 }

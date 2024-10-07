@@ -73,12 +73,12 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                             &e.to_string(),
                         );
                     }
+
                     backend::set_iface(res.clone());
 
+                    app_data.app_gui.iface_status_bar.push(0, &res.clone());
+
                     app_data.app_gui.restart_but.set_sensitive(true);
-                    app_data.app_gui.iface_ico.set_sensitive(true);
-                    app_data.app_gui.iface_label.set_sensitive(true);
-                    app_data.app_gui.iface_label.set_text(&res);
                     app_data.app_gui.channel_filter_entry.set_sensitive(true);
 
                     app_data.app_gui.scan_but.emit_clicked();
