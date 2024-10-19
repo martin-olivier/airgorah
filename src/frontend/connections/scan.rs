@@ -286,8 +286,12 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
             super::app::update_buttons_sensitivity(&app_data);
 
             if let Some((_, it)) = this.selection().selected() {
+                let essid = list_store_get!(app_data.app_gui.aps_model, &it, 0, String);
                 let bssid = list_store_get!(app_data.app_gui.aps_model, &it, 1, String);
                 let aps = backend::get_aps();
+
+                app_data.app_gui.client_status_bar.pop(0);
+                app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
 
                 let mut clients = match aps.get(&bssid) {
                     Some(ap) => ap.clients.keys().clone(),
@@ -307,6 +311,9 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
                         false => return,
                     }
                 }
+            } else {
+                app_data.app_gui.client_status_bar.pop(0);
+                app_data.app_gui.client_status_bar.push(0, "Showing unassociated clients");
             }
             app_data.app_gui.cli_model.clear();
         }));

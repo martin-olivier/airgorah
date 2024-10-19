@@ -38,14 +38,17 @@ fn connect_window_controller(app_data: Rc<AppData>) {
 
     controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
         if key == gdk::Key::Escape {
-            update_buttons_sensitivity(&app_data);
-
             app_data.app_gui.cli_view.selection().unselect_all();
 
             if app_data.app_gui.aps_view.selection().selected().is_some() {
                 app_data.app_gui.aps_view.selection().unselect_all();
                 app_data.app_gui.cli_model.clear();
             }
+
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, "Showing unassociated clients");
+
+            update_buttons_sensitivity(&app_data);
         }
 
         glib::Propagation::Proceed
@@ -349,6 +352,10 @@ fn connect_previous_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
+            let essid = list_store_get!(app_data.app_gui.aps_model, &prev_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
+
             update_buttons_sensitivity(&app_data);
         }));
 }
@@ -373,6 +380,10 @@ fn connect_next_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
+            let essid = list_store_get!(app_data.app_gui.aps_model, &next_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
+
             update_buttons_sensitivity(&app_data);
         }));
 }
@@ -391,6 +402,10 @@ fn connect_top_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&first_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            let essid = list_store_get!(app_data.app_gui.aps_model, &first_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
 
             update_buttons_sensitivity(&app_data);
         }));
@@ -416,6 +431,10 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&last_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            let essid = list_store_get!(app_data.app_gui.aps_model, &last_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
 
             update_buttons_sensitivity(&app_data);
         }));
