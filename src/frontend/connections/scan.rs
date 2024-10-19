@@ -13,7 +13,7 @@ use chrono::Local;
 fn run_scan(app_data: &AppData) {
     let iface = match backend::get_iface() {
         Some(iface) => iface,
-        None => return app_data.interface_gui.window.show(),
+        None => return app_data.interface_gui.show(),
     };
 
     let mut ghz_2_4 = false;

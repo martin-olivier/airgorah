@@ -529,4 +529,8 @@ impl AppGui {
             iface_status_bar,
         }
     }
+
+    pub fn show(&self) {
+        self.window.show();
+    }
 }
