@@ -33,6 +33,21 @@ fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<Tree
     None
 }
 
+fn get_channel_entries(entry: &Entry) -> Vec<i32> {
+    let entry_text = String::from(entry.text().as_str());
+
+    if entry_text.is_empty() {
+        return Vec::new();
+    }
+
+    let channels: Vec<i32> = entry_text
+        .split(',')
+        .map(|num| num.parse::<i32>().unwrap())
+        .collect();
+
+    return channels;
+}
+
 fn connect_window_controller(app_data: Rc<AppData>) {
     let controller = gtk4::EventControllerKey::new();
 
@@ -248,7 +263,7 @@ fn connect_hopping_button(app_data: Rc<AppData>) {
             app_data.app_gui.channel_filter_entry.set_text("");
 
             this.set_sensitive(false);
-            app_data.app_gui.focus_but.set_sensitive(true);
+            update_buttons_sensitivity(&app_data);
         }));
 }
 
@@ -267,11 +282,49 @@ fn connect_focus_button(app_data: Rc<AppData>) {
         }));
 }
 
+fn connect_add_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .add_but
+        .connect_clicked(clone!(@strong app_data => move |this| {
+            if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+                let entry = app_data.app_gui.channel_filter_entry.text();
+                let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
+                let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
+
+                if !backend::is_valid_channel_filter(&entry, ghz_2_4_but, ghz_5_but) {
+                    return;
+                }
+
+                let entries = get_channel_entries(&app_data.app_gui.channel_filter_entry);
+
+                if entries.contains(&channel) {
+                    return;
+                }
+
+                let extend = match !entries.is_empty() {
+                    true => format!(",{channel}"),
+                    false => format!("{channel}")
+                };
+
+                if !backend::is_valid_channel_filter(&format!("{entry}{extend}"), ghz_2_4_but, ghz_5_but) {
+                    return;
+                }
+
+                app_data.app_gui.channel_filter_entry.set_text(&format!("{entry}{extend}"));
+                app_data.app_gui.hopping_but.set_sensitive(true);
+                this.set_sensitive(false);
+            }
+        }));
+}
+
 pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
     let iter = match app_data.app_gui.aps_view.selection().selected() {
         Some((_, iter)) => iter,
         None => {
             app_data.app_gui.focus_but.set_sensitive(false);
+            app_data.app_gui.add_but.set_sensitive(false);
             app_data.app_gui.deauth_but.set_sensitive(false);
             app_data.app_gui.capture_but.set_sensitive(false);
 
@@ -294,17 +347,42 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
     };
 
     let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+    let entry = app_data.app_gui.channel_filter_entry.text();
+    let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
+    let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
+
     match channel
-        == app_data
+        != app_data
             .app_gui
             .channel_filter_entry
             .text()
             .parse::<i32>()
-            .unwrap_or(-1)
+            .unwrap_or(-1) && backend::is_valid_channel_filter(&format!("{channel}"), ghz_2_4_but, ghz_5_but)
     {
-        true => app_data.app_gui.focus_but.set_sensitive(false),
-        false => app_data.app_gui.focus_but.set_sensitive(true),
+        true => app_data.app_gui.focus_but.set_sensitive(true),
+        false => app_data.app_gui.focus_but.set_sensitive(false),
     }
+
+    match backend::is_valid_channel_filter(&entry, ghz_2_4_but, ghz_5_but) {
+        true => {
+            let entries = get_channel_entries(&app_data.app_gui.channel_filter_entry);
+            match entries.contains(&channel) {
+                true => app_data.app_gui.add_but.set_sensitive(false),
+                false => {
+                    let extand = match !entries.is_empty() {
+                        true => format!(",{channel}"),
+                        false => format!("{channel}")
+                    };
+                    match backend::is_valid_channel_filter(&format!("{entry}{extand}"), ghz_2_4_but, ghz_5_but) {
+                        true => app_data.app_gui.add_but.set_sensitive(true),
+                        false => app_data.app_gui.add_but.set_sensitive(false),
+                    }
+                }
+            }
+        },
+        false => app_data.app_gui.add_but.set_sensitive(false),
+    }
+
     app_data.app_gui.deauth_but.set_sensitive(true);
 
     let prev_iter = iter;
@@ -761,6 +839,8 @@ pub fn connect(app: &Application, app_data: Rc<AppData>) {
 
     connect_hopping_button(app_data.clone());
     connect_focus_button(app_data.clone());
+    connect_add_button(app_data.clone());
+
     connect_deauth_button(app_data.clone());
     connect_capture_button(app_data);
 }

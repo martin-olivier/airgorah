@@ -80,6 +80,14 @@ fn build_focus_button() -> Button {
         .build()
 }
 
+fn build_add_button() -> Button {
+    Button::builder()
+        .icon_name("list-add-symbolic")
+        .tooltip_text("Add the channel of the selected access point to the channel hop list")
+        .sensitive(false)
+        .build()
+}
+
 fn build_previous_but() -> Button {
     Button::builder()
         .icon_name("go-up-symbolic")
@@ -329,6 +337,7 @@ pub struct AppGui {
     pub bottom_but: Button,
     pub hopping_but: Button,
     pub focus_but: Button,
+    pub add_but: Button,
     pub deauth_but: IconButton,
     pub capture_but: IconButton,
     pub client_status_bar: Statusbar,
@@ -349,6 +358,7 @@ impl AppGui {
 
         let hopping_but = build_hopping_button();
         let focus_but = build_focus_button();
+        let add_but = build_add_button();
 
         let previous_but = build_previous_but();
         let next_but = build_next_but();
@@ -446,6 +456,7 @@ impl AppGui {
 
         header_bar.pack_end(&hopping_but);
         header_bar.pack_end(&focus_but);
+        header_bar.pack_end(&add_but);
 
         // Left View (Access Points and Clients)
 
@@ -523,6 +534,7 @@ impl AppGui {
             bottom_but,
             hopping_but,
             focus_but,
+            add_but,
             deauth_but,
             capture_but,
             client_status_bar,
