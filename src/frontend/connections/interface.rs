@@ -75,7 +75,7 @@ fn connect_interface_select(app_data: Rc<AppData>) {
 
                     backend::set_iface(res.clone());
 
-                    app_data.app_gui.iface_status_bar.push(0, &res.clone());
+                    app_data.app_gui.iface_status_bar.push(0, &format!("Interface: {res}"));
 
                     app_data.app_gui.restart_but.set_sensitive(true);
                     app_data.app_gui.channel_filter_entry.set_sensitive(true);
