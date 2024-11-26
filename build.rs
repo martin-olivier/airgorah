@@ -11,19 +11,15 @@ struct RawVendors {
 }
 
 fn main() {
-    // Path to your CSV file
     let csv_path = "package/vendors.csv";
 
-    // Read CSV file and generate Rust source file
     let file_content = std::fs::read_to_string(csv_path).expect("Unable to read CSV file");
     let parsed_data = parse_csv(&file_content);
 
-    // Write Rust source file
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let dest_path = std::path::Path::new(&out_dir).join("vendors.rs");
     let mut file = File::create(dest_path).expect("Unable to create output file");
 
-    // Write HashMap initialization code to the generated Rust file
     write!(
         &mut file,
         "
@@ -41,7 +37,6 @@ lazy_static! {{
     )
     .expect("Unable to write to output file");
 
-    // Print information for Cargo to re-run the build script if the CSV file changes
     println!("cargo:rerun-if-changed={}", csv_path);
 }
 
