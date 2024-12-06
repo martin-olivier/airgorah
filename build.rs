@@ -28,8 +28,8 @@ use lazy_static::lazy_static;
 lazy_static! {{
     pub static ref VENDORS: HashMap<&'static str, &'static str> = {{
         let mut map = HashMap::new();
-        {}
 
+{}
         map
     }};
 }}",
@@ -45,7 +45,7 @@ fn parse_csv(csv_content: &str) -> String {
     let mut rdr = csv::ReaderBuilder::new().from_reader(csv_content.as_bytes());
     for result in rdr.deserialize::<RawVendors>().flatten() {
         code.push_str(&format!(
-            "map.insert(\"{}\", r#\"{}\"#);\n",
+            "        map.insert(\"{}\", r#\"{}\"#);\n",
             result.mac_prefix, result.vendor_name
         ));
     }
