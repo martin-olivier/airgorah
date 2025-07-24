@@ -25,7 +25,7 @@ regex = "1.10"
 chrono = "0.4"
 lazy_static = "1"
 nix = { version = "0.28", features = ["signal"] }
-ureq = { version = "2.9", features = ["json"] }
+ureq = { version = "3", features = ["json"] }
 log = "0.4"
 env_logger = "0.11"
 thiserror = "2"
