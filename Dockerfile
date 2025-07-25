@@ -1,4 +1,4 @@
-FROM rust:1.75.0-slim-bookworm
+FROM rust:1.88.0-slim-bookworm
 
 # Fetch package list
 RUN apt update
