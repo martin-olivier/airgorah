@@ -45,7 +45,7 @@ fn get_channel_entries(entry: &Entry) -> Vec<i32> {
         .map(|num| num.parse::<i32>().unwrap())
         .collect();
 
-    return channels;
+    channels
 }
 
 fn connect_window_controller(app_data: Rc<AppData>) {
@@ -784,7 +784,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 &[("Save", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.set_current_name(&format!("{}.cap", essid));
+            file_chooser_dialog.set_current_name(&format!("{essid}.cap"));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();

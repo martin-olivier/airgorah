@@ -87,7 +87,7 @@ where
 pub fn save_capture(path: &str) -> Result<(), CapError> {
     std::fs::copy(get_old_scan_path() + get_cap_ext(), path)?;
 
-    log::info!("capture saved to '{}'", path);
+    log::info!("capture saved to '{path}'");
 
     Ok(())
 }
@@ -110,7 +110,7 @@ pub fn save_report(path: &str) -> Result<(), CapError> {
     let mut file = File::create(path)?;
     file.write_all(json_data.as_bytes())?;
 
-    log::info!("report saved to '{}'", path);
+    log::info!("report saved to '{path}'");
 
     Ok(())
 }

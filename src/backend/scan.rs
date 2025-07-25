@@ -179,10 +179,7 @@ pub fn set_scan_process(
     SCAN_PROC.lock().unwrap().replace(child);
 
     log::info!(
-        "scan started: 2.4ghz: {}, 5ghz: {}, channel filter: {:?}",
-        ghz_2_4,
-        ghz_5,
-        channel_filter
+        "scan started: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}"
     );
 
     Ok(())
@@ -195,7 +192,7 @@ pub fn stop_scan_process() -> Result<(), ScanError> {
 
         kill(child_pid, Signal::SIGTERM)?;
 
-        log::info!("scan stopped, sent SIGTERM to pid {}", child_pid);
+        log::info!("scan stopped, sent SIGTERM to pid {child_pid}");
 
         child.wait()?;
     }

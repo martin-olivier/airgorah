@@ -29,15 +29,14 @@ lazy_static! {{
     pub static ref VENDORS: HashMap<&'static str, &'static str> = {{
         let mut map = HashMap::new();
 
-{}
+{parsed_data}
         map
     }};
-}}",
-        parsed_data
+}}"
     )
     .expect("Unable to write to output file");
 
-    println!("cargo:rerun-if-changed={}", csv_path);
+    println!("cargo:rerun-if-changed={csv_path}");
 }
 
 fn parse_csv(csv_content: &str) -> String {

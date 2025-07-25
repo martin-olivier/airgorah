@@ -18,7 +18,7 @@ pub fn run_decrypt_wordlist_process(
     essid: &str,
     wordlist: &str,
 ) -> Result<(), DecryptError> {
-    let title = format!("Handshake Decryption ({})", essid);
+    let title = format!("Handshake Decryption ({essid})");
 
     Command::new("xterm")
         .stdin(Stdio::null())
@@ -68,10 +68,9 @@ pub fn run_decrypt_bruteforce_process(
             false => "",
         },
     );
-    let title = format!("Handshake Decryption ({})", essid);
+    let title = format!("Handshake Decryption ({essid})");
     let cmd = format!(
-        "crunch 8 64 '{}' | aircrack-ng -w - -b '{}' '{}'",
-        charset, bssid, handshake
+        "crunch 8 64 '{charset}' | aircrack-ng -w - -b '{bssid}' '{handshake}'"
     );
 
     Command::new("xterm")

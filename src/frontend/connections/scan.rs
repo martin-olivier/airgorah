@@ -101,7 +101,7 @@ fn connect_export_button(app_data: Rc<AppData>) {
             let local = Local::now();
             let date = local.format("%Y-%m-%d-%Hh%M");
 
-            file_chooser_dialog.set_current_name(&format!("capture_{}.cap", date));
+            file_chooser_dialog.set_current_name(&format!("capture_{date}.cap"));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
@@ -152,7 +152,7 @@ fn connect_report_button(app_data: Rc<AppData>) {
             let local = Local::now();
             let date = local.format("%Y-%m-%d-%Hh%M");
 
-            file_chooser_dialog.set_current_name(&format!("report_{}.json", date));
+            file_chooser_dialog.set_current_name(&format!("report_{date}.json"));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();

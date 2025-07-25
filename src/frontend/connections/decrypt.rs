@@ -75,7 +75,7 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                         return ErrorDialog::spawn(
                             &app_data.decrypt_gui.window,
                             "Invalid capture",
-                            &format!("\"{}\" doesn't contain any valid handshake", file_path)
+                            &format!("\"{file_path}\" doesn't contain any valid handshake")
                         );
                     }
 

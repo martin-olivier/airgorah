@@ -55,7 +55,7 @@ pub struct UpdateDialog;
 
 impl UpdateDialog {
     pub fn spawn(parent: &impl IsA<Window>, version: &str, new_version: &str) {
-        let title = format!("Update available ({} -> {})", version, new_version);
+        let title = format!("Update available ({version} -> {new_version})");
         let link = "https://github.com/martin-olivier/airgorah/releases/latest";
 
         let dialog = MessageDialog::builder()
