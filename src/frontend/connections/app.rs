@@ -5,8 +5,8 @@ use crate::globals;
 use crate::list_store_get;
 use crate::types::*;
 
-use glib::clone;
 use glib::ControlFlow;
+use glib::clone;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
@@ -357,7 +357,8 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
             .channel_filter_entry
             .text()
             .parse::<i32>()
-            .unwrap_or(-1) && backend::is_valid_channel_filter(&format!("{channel}"), ghz_2_4_but, ghz_5_but)
+            .unwrap_or(-1)
+        && backend::is_valid_channel_filter(&format!("{channel}"), ghz_2_4_but, ghz_5_but)
     {
         true => app_data.app_gui.focus_but.set_sensitive(true),
         false => app_data.app_gui.focus_but.set_sensitive(false),
@@ -371,15 +372,19 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
                 false => {
                     let extand = match !entries.is_empty() {
                         true => format!(",{channel}"),
-                        false => format!("{channel}")
+                        false => format!("{channel}"),
                     };
-                    match backend::is_valid_channel_filter(&format!("{entry}{extand}"), ghz_2_4_but, ghz_5_but) {
+                    match backend::is_valid_channel_filter(
+                        &format!("{entry}{extand}"),
+                        ghz_2_4_but,
+                        ghz_5_but,
+                    ) {
                         true => app_data.app_gui.add_but.set_sensitive(true),
                         false => app_data.app_gui.add_but.set_sensitive(false),
                     }
                 }
             }
-        },
+        }
         false => app_data.app_gui.add_but.set_sensitive(false),
     }
 
@@ -689,18 +694,22 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 }
 
 fn start_handshake_refresh() {
-    std::thread::spawn(|| loop {
-        backend::update_handshakes().ok();
+    std::thread::spawn(|| {
+        loop {
+            backend::update_handshakes().ok();
 
-        std::thread::sleep(Duration::from_millis(1500));
+            std::thread::sleep(Duration::from_millis(1500));
+        }
     });
 }
 
 fn start_vendor_refresh() {
-    std::thread::spawn(|| loop {
-        backend::update_vendors();
+    std::thread::spawn(|| {
+        loop {
+            backend::update_vendors();
 
-        std::thread::sleep(Duration::from_millis(500));
+            std::thread::sleep(Duration::from_millis(500));
+        }
     });
 }
 

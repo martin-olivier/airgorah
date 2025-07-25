@@ -69,9 +69,7 @@ pub fn run_decrypt_bruteforce_process(
         },
     );
     let title = format!("Handshake Decryption ({essid})");
-    let cmd = format!(
-        "crunch 8 64 '{charset}' | aircrack-ng -w - -b '{bssid}' '{handshake}'"
-    );
+    let cmd = format!("crunch 8 64 '{charset}' | aircrack-ng -w - -b '{bssid}' '{handshake}'");
 
     Command::new("xterm")
         .stdin(Stdio::null())
