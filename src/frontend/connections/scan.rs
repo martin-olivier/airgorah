@@ -92,7 +92,7 @@ fn connect_export_button(app_data: Rc<AppData>) {
             }
 
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Save Capture"),
+                Some("Save capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
                 &[
@@ -146,7 +146,7 @@ fn connect_report_button(app_data: Rc<AppData>) {
             }
 
             let file_chooser_dialog = Rc::new(FileChooserDialog::new(
-                Some("Save capture report"),
+                Some("Save report"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
                 &[

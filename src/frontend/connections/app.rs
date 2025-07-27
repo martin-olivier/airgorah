@@ -787,7 +787,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             }
 
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Save Capture"),
+                Some("Save capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
                 &[

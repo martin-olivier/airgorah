@@ -51,7 +51,7 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |_| {
 
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Select Capture"),
+                Some("Select capture"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
                 &[
@@ -112,7 +112,7 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.wordlist_but.connect_clicked(
         clone!(@strong app_data => move |_| {
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Select Wordlist"),
+                Some("Select wordlist"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
                 &[
