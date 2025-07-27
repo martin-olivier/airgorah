@@ -54,7 +54,10 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                 Some("Select Capture"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
-                &[("Open", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Open", ResponseType::Accept)
+                ],
             );
 
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
@@ -112,7 +115,10 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
                 Some("Select Wordlist"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
-                &[("Open", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Open", ResponseType::Accept)
+                ],
             );
 
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {

@@ -790,7 +790,10 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 Some("Save Capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Save", ResponseType::Accept)
+                ],
             );
 
             file_chooser_dialog.set_current_name(&format!("{essid}.cap"));

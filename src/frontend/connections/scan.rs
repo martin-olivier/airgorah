@@ -95,7 +95,10 @@ fn connect_export_button(app_data: Rc<AppData>) {
                 Some("Save Capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Save", ResponseType::Accept)
+                ],
             );
 
             let local = Local::now();
@@ -146,7 +149,10 @@ fn connect_report_button(app_data: Rc<AppData>) {
                 Some("Save capture report"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Save", ResponseType::Accept)
+                ],
             ));
 
             let local = Local::now();
