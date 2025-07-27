@@ -57,11 +57,6 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                 &[("Open", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.connect_close(
-                clone!(@strong app_data => move |this| {
-                    this.close();
-                })
-            );
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 this.close();
 
@@ -120,11 +115,6 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
                 &[("Open", ResponseType::Accept)],
             );
 
-            file_chooser_dialog.connect_close(
-                clone!(@strong app_data => move |this| {
-                    this.close();
-                })
-            );
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 this.close();
 
