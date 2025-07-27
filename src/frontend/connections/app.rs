@@ -794,6 +794,11 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             );
 
             file_chooser_dialog.set_current_name(&format!("{essid}.cap"));
+            file_chooser_dialog.connect_close(
+                clone!(@strong app_data => move |this| {
+                    this.close();
+                })
+            );
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
