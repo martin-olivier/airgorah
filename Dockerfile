@@ -25,7 +25,7 @@ ENV REDHAT_DEPS="--depends gtk4-devel --depends dbus-x11 --depends wireshark-cli
 ENV ARCHLINUX_DEPS="--depends gtk4 --depends dbus --depends wireshark-cli --depends iproute2 --depends mdk4"
 
 # Build and package the project
-CMD cargo build --release && \
+CMD cargo build && \
     fpm -f -t deb -p airgorah_`arch`.deb -a native $DEBIAN_DEPS && \
     fpm -f -t rpm -p airgorah_`arch`.rpm -a native $REDHAT_DEPS && \
     fpm -f -t pacman -p airgorah_`arch`.pkg.tar.zst -a native $ARCHLINUX_DEPS

@@ -16,7 +16,7 @@
 --depends aircrack-ng
 --depends adwaita-icon-theme
 
-target/release/airgorah=/usr/bin/airgorah
+target/debug/airgorah=/usr/bin/airgorah
 icons/app_icon.png=/usr/share/pixmaps/airgorah.png
 
 package/config.toml=/etc/airgorah/config.toml
