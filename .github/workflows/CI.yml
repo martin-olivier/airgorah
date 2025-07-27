@@ -9,7 +9,7 @@ on:
 jobs:
   linter:
     name: linter
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -38,9 +38,9 @@ jobs:
         arch: [x86_64, aarch64]
         include:
         - arch: x86_64
-          runner: ubuntu-latest
+          runner: ubuntu-24.04
         - arch: aarch64
-          runner: ubuntu-latest-arm
+          runner: ubuntu-24.04-arm
 
     name: build ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
