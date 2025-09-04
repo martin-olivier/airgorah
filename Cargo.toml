@@ -1,6 +1,6 @@
 [package]
 name = "airgorah"
-version = "0.7.3"
+version = "0.7.4"
 edition = "2024"
 license = "MIT"
 description = "A WiFi security auditing software mainly based on aircrack-ng tools suite"
