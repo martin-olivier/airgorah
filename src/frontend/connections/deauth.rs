@@ -4,8 +4,8 @@ use crate::frontend::widgets::*;
 use crate::list_store_get;
 use crate::types::AttackSoftware;
 
-use glib::clone;
 use glib::Value;
+use glib::clone;
 use gtk4::prelude::*;
 use gtk4::*;
 use std::rc::Rc;

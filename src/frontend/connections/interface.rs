@@ -46,7 +46,6 @@ fn connect_interface_refresh(app_data: Rc<AppData>) {
             app_data.interface_gui.interface_view.set_active(if !ifaces.is_empty() { Some(0) } else { None });
             app_data.interface_gui.select_but.set_sensitive(!ifaces.is_empty());
         }));
-    app_data.interface_gui.refresh_but.emit_clicked();
 }
 
 fn connect_interface_select(app_data: Rc<AppData>) {
@@ -73,12 +72,12 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                             &e.to_string(),
                         );
                     }
+
                     backend::set_iface(res.clone());
 
+                    app_data.app_gui.iface_status_bar.push(0, &format!("Interface: {res}"));
+
                     app_data.app_gui.restart_but.set_sensitive(true);
-                    app_data.app_gui.iface_ico.set_sensitive(true);
-                    app_data.app_gui.iface_label.set_sensitive(true);
-                    app_data.app_gui.iface_label.set_text(&res);
                     app_data.app_gui.channel_filter_entry.set_sensitive(true);
 
                     app_data.app_gui.scan_but.emit_clicked();

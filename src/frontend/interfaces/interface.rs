@@ -71,4 +71,9 @@ impl InterfaceGui {
             interface_view,
         }
     }
+
+    pub fn show(&self) {
+        self.refresh_but.emit_clicked();
+        self.window.show();
+    }
 }

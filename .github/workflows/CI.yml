@@ -2,44 +2,33 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
   release:
     types: [published]
 
 jobs:
-  commits:
-    name: commits
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: webiny/action-conventional-commits@v1.3.0
-
   linter:
     name: linter
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Create builder image
-        run: docker build . -t amd64_builder
+        run: docker build . -t airgorah_builder
 
       - name: Clippy
         run: > 
           docker run --rm
           -v ${{ github.workspace }}:/workspace
-          amd64_builder
+          airgorah_builder
           cargo clippy --all --all-features -- -D warnings
 
       - name: Format
         run: >
           docker run --rm
           -v ${{ github.workspace }}:/workspace
-          amd64_builder
+          airgorah_builder
           cargo fmt --all -- --check
 
   build:
@@ -49,35 +38,28 @@ jobs:
         arch: [x86_64, aarch64]
         include:
         - arch: x86_64
-          platform: amd64
-          image: amd64_builder
+          runner: ubuntu-24.04
         - arch: aarch64
-          platform: arm64
-          image: arm64_builder
+          runner: ubuntu-24.04-arm
 
     name: build ${{ matrix.arch }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     needs: linter
     permissions: write-all
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up qemu
-        uses: docker/setup-qemu-action@v3
-
       - name: Create builder image
         run: >
           docker build .
-          --platform linux/${{ matrix.platform }}
-          -t ${{ matrix.image }}
+          -t airgorah_builder
 
       - name: Build project
         run: >
           docker run --rm
-          --platform linux/${{ matrix.platform }}
           -v ${{ github.workspace }}:/workspace
-          ${{ matrix.image }}
+          airgorah_builder
 
       - name: Save debian artifact
         uses: actions/upload-artifact@v4

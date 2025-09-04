@@ -55,7 +55,7 @@ pub fn get_interfaces() -> Result<Vec<String>, IfaceError> {
 
 /// Check if an interface supports 5GHz
 pub fn is_5ghz_supported(iface: &str) -> Result<bool, IfaceError> {
-    let phy_path = format!("/sys/class/net/{}/phy80211", iface);
+    let phy_path = format!("/sys/class/net/{iface}/phy80211");
 
     let phy_link = std::fs::read_link(phy_path)?;
 
@@ -173,7 +173,7 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
         ));
     }
 
-    log::info!("{}: monitor mode enabled", iface);
+    log::info!("{iface}: monitor mode enabled");
 
     if let Ok(true) = is_monitor_mode(iface) {
         return Ok(iface.to_string());
@@ -226,7 +226,7 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
 
     let disable_monitor_cmd = Command::new("airmon-ng").args(["stop", iface]).output()?;
 
-    log::info!("{}: monitor mode disabled", iface);
+    log::info!("{iface}: monitor mode disabled");
 
     match disable_monitor_cmd.status.success() {
         true => Ok(()),
@@ -293,7 +293,7 @@ pub fn kill_network_manager() -> Result<(), IfaceError> {
                 .unwrap()
                 .push(service.to_string());
 
-            log::warn!("killed '{}'", service);
+            log::warn!("killed '{service}'");
         }
     }
 
@@ -317,7 +317,7 @@ pub fn restore_network_manager() -> Result<(), IfaceError> {
             .args(["start", &service])
             .output()?;
 
-        log::warn!("restored '{}'", service);
+        log::warn!("restored '{service}'");
     }
 
     Ok(())

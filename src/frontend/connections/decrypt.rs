@@ -51,10 +51,13 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
         clone!(@strong app_data => move |_| {
 
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Select Capture"),
+                Some("Select capture"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
-                &[("Open", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Open", ResponseType::Accept)
+                ],
             );
 
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
@@ -75,7 +78,7 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                         return ErrorDialog::spawn(
                             &app_data.decrypt_gui.window,
                             "Invalid capture",
-                            &format!("\"{}\" doesn't contain any valid handshake", file_path)
+                            &format!("\"{file_path}\" doesn't contain any valid handshake")
                         );
                     }
 
@@ -109,10 +112,13 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.wordlist_but.connect_clicked(
         clone!(@strong app_data => move |_| {
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Select Wordlist"),
+                Some("Select wordlist"),
                 Some(&app_data.decrypt_gui.window),
                 FileChooserAction::Open,
-                &[("Open", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Open", ResponseType::Accept)
+                ],
             );
 
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {

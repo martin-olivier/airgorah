@@ -5,8 +5,8 @@ use crate::globals;
 use crate::list_store_get;
 use crate::types::*;
 
-use glib::clone;
 use glib::ControlFlow;
+use glib::clone;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
@@ -33,19 +33,37 @@ fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<Tree
     None
 }
 
+fn get_channel_entries(entry: &Entry) -> Vec<i32> {
+    let entry_text = String::from(entry.text().as_str());
+
+    if entry_text.is_empty() {
+        return Vec::new();
+    }
+
+    let channels: Vec<i32> = entry_text
+        .split(',')
+        .map(|num| num.parse::<i32>().unwrap())
+        .collect();
+
+    channels
+}
+
 fn connect_window_controller(app_data: Rc<AppData>) {
     let controller = gtk4::EventControllerKey::new();
 
     controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
         if key == gdk::Key::Escape {
-            update_buttons_sensitivity(&app_data);
-
             app_data.app_gui.cli_view.selection().unselect_all();
 
             if app_data.app_gui.aps_view.selection().selected().is_some() {
                 app_data.app_gui.aps_view.selection().unselect_all();
                 app_data.app_gui.cli_model.clear();
             }
+
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, "Showing unassociated clients");
+
+            update_buttons_sensitivity(&app_data);
         }
 
         glib::Propagation::Proceed
@@ -183,8 +201,8 @@ fn connect_about_button(app_data: Rc<AppData>) {
         .app_gui
         .about_button
         .connect_clicked(clone!(@strong app_data => move |_| {
-        let ico = Pixbuf::from_read(BufReader::new(globals::APP_ICON)).unwrap();
-        let des = "A WiFi auditing software that can perform deauth attacks and passwords cracking";
+        let icon = Pixbuf::from_read(BufReader::new(globals::APP_ICON)).unwrap();
+        let desc = "A WiFi security auditing software mainly based on aircrack-ng tools suite";
 
         AboutDialog::builder()
             .program_name("Airgorah")
@@ -192,8 +210,8 @@ fn connect_about_button(app_data: Rc<AppData>) {
             .authors(vec!["Martin OLIVIER (martin.olivier@live.fr)".to_string()])
             .copyright("Copyright (c) Martin OLIVIER")
             .license_type(License::MitX11)
-            .logo(&Picture::for_pixbuf(&ico).paintable().unwrap())
-            .comments(des)
+            .logo(&Picture::for_pixbuf(&icon).paintable().unwrap())
+            .comments(desc)
             .website_label("https://github.com/martin-olivier/airgorah")
             .transient_for(&app_data.app_gui.window)
             .modal(true)
@@ -245,7 +263,7 @@ fn connect_hopping_button(app_data: Rc<AppData>) {
             app_data.app_gui.channel_filter_entry.set_text("");
 
             this.set_sensitive(false);
-            app_data.app_gui.focus_but.set_sensitive(true);
+            update_buttons_sensitivity(&app_data);
         }));
 }
 
@@ -264,11 +282,49 @@ fn connect_focus_button(app_data: Rc<AppData>) {
         }));
 }
 
+fn connect_add_button(app_data: Rc<AppData>) {
+    app_data
+        .app_gui
+        .add_but
+        .connect_clicked(clone!(@strong app_data => move |this| {
+            if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
+                let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+                let entry = app_data.app_gui.channel_filter_entry.text();
+                let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
+                let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
+
+                if !backend::is_valid_channel_filter(&entry, ghz_2_4_but, ghz_5_but) {
+                    return;
+                }
+
+                let entries = get_channel_entries(&app_data.app_gui.channel_filter_entry);
+
+                if entries.contains(&channel) {
+                    return;
+                }
+
+                let extend = match !entries.is_empty() {
+                    true => format!(",{channel}"),
+                    false => format!("{channel}")
+                };
+
+                if !backend::is_valid_channel_filter(&format!("{entry}{extend}"), ghz_2_4_but, ghz_5_but) {
+                    return;
+                }
+
+                app_data.app_gui.channel_filter_entry.set_text(&format!("{entry}{extend}"));
+                app_data.app_gui.hopping_but.set_sensitive(true);
+                this.set_sensitive(false);
+            }
+        }));
+}
+
 pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
     let iter = match app_data.app_gui.aps_view.selection().selected() {
         Some((_, iter)) => iter,
         None => {
             app_data.app_gui.focus_but.set_sensitive(false);
+            app_data.app_gui.add_but.set_sensitive(false);
             app_data.app_gui.deauth_but.set_sensitive(false);
             app_data.app_gui.capture_but.set_sensitive(false);
 
@@ -291,17 +347,47 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
     };
 
     let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
+    let entry = app_data.app_gui.channel_filter_entry.text();
+    let ghz_2_4_but = app_data.app_gui.ghz_2_4_but.is_active();
+    let ghz_5_but = app_data.app_gui.ghz_5_but.is_active();
+
     match channel
-        == app_data
+        != app_data
             .app_gui
             .channel_filter_entry
             .text()
             .parse::<i32>()
             .unwrap_or(-1)
+        && backend::is_valid_channel_filter(&format!("{channel}"), ghz_2_4_but, ghz_5_but)
     {
-        true => app_data.app_gui.focus_but.set_sensitive(false),
-        false => app_data.app_gui.focus_but.set_sensitive(true),
+        true => app_data.app_gui.focus_but.set_sensitive(true),
+        false => app_data.app_gui.focus_but.set_sensitive(false),
     }
+
+    match backend::is_valid_channel_filter(&entry, ghz_2_4_but, ghz_5_but) {
+        true => {
+            let entries = get_channel_entries(&app_data.app_gui.channel_filter_entry);
+            match entries.contains(&channel) {
+                true => app_data.app_gui.add_but.set_sensitive(false),
+                false => {
+                    let extand = match !entries.is_empty() {
+                        true => format!(",{channel}"),
+                        false => format!("{channel}"),
+                    };
+                    match backend::is_valid_channel_filter(
+                        &format!("{entry}{extand}"),
+                        ghz_2_4_but,
+                        ghz_5_but,
+                    ) {
+                        true => app_data.app_gui.add_but.set_sensitive(true),
+                        false => app_data.app_gui.add_but.set_sensitive(false),
+                    }
+                }
+            }
+        }
+        false => app_data.app_gui.add_but.set_sensitive(false),
+    }
+
     app_data.app_gui.deauth_but.set_sensitive(true);
 
     let prev_iter = iter;
@@ -349,6 +435,10 @@ fn connect_previous_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
+            let essid = list_store_get!(app_data.app_gui.aps_model, &prev_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
+
             update_buttons_sensitivity(&app_data);
         }));
 }
@@ -373,6 +463,10 @@ fn connect_next_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
 
+            let essid = list_store_get!(app_data.app_gui.aps_model, &next_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
+
             update_buttons_sensitivity(&app_data);
         }));
 }
@@ -391,6 +485,10 @@ fn connect_top_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&first_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            let essid = list_store_get!(app_data.app_gui.aps_model, &first_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
 
             update_buttons_sensitivity(&app_data);
         }));
@@ -416,6 +514,10 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
             app_data.app_gui.aps_view.selection().select_iter(&last_iter);
             app_data.app_gui.aps_view.scroll_to_cell(Some(&path), None, false, 0.0, 0.0);
             app_data.app_gui.cli_model.clear();
+
+            let essid = list_store_get!(app_data.app_gui.aps_model, &last_iter, 0, String);
+            app_data.app_gui.client_status_bar.pop(0);
+            app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
 
             update_buttons_sensitivity(&app_data);
         }));
@@ -592,18 +694,22 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 }
 
 fn start_handshake_refresh() {
-    std::thread::spawn(|| loop {
-        backend::update_handshakes().ok();
+    std::thread::spawn(|| {
+        loop {
+            backend::update_handshakes().ok();
 
-        std::thread::sleep(Duration::from_millis(1500));
+            std::thread::sleep(Duration::from_millis(1500));
+        }
     });
 }
 
 fn start_vendor_refresh() {
-    std::thread::spawn(|| loop {
-        backend::update_vendors();
+    std::thread::spawn(|| {
+        loop {
+            backend::update_vendors();
 
-        std::thread::sleep(Duration::from_millis(500));
+            std::thread::sleep(Duration::from_millis(500));
+        }
     });
 }
 
@@ -681,13 +787,16 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             }
 
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Save Capture"),
+                Some("Save capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Save", ResponseType::Accept)
+                ],
             );
 
-            file_chooser_dialog.set_current_name(&format!("{}.cap", essid));
+            file_chooser_dialog.set_current_name(&format!("{essid}.cap"));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
@@ -742,6 +851,8 @@ pub fn connect(app: &Application, app_data: Rc<AppData>) {
 
     connect_hopping_button(app_data.clone());
     connect_focus_button(app_data.clone());
+    connect_add_button(app_data.clone());
+
     connect_deauth_button(app_data.clone());
     connect_capture_button(app_data);
 }

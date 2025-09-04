@@ -199,7 +199,7 @@ impl DecryptGui {
                 return ErrorDialog::spawn(
                     &self.window,
                     "Invalid capture",
-                    &format!("\"{}\" doesn't contain any valid handshake", path),
+                    &format!("\"{path}\" doesn't contain any valid handshake"),
                 );
             }
 

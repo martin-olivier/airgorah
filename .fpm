@@ -1,8 +1,8 @@
--s dir ./target/release/airgorah ./icons/app_icon.png package README.md LICENSE
+-s dir ./target/debug/airgorah ./icons/app_icon.png package README.md LICENSE
 --name airgorah
 --license MIT
---version 0.7.3
---description "A WiFi auditing software that can perform deauth attacks and passwords cracking"
+--version 0.7.4
+--description "A WiFi security auditing software mainly based on aircrack-ng tools suite"
 --url "https://github.com/martin-olivier/airgorah"
 --maintainer "Martin Olivier <martin.olivier@live.fr>"
 
@@ -16,7 +16,7 @@
 --depends aircrack-ng
 --depends adwaita-icon-theme
 
-target/release/airgorah=/usr/bin/airgorah
+target/debug/airgorah=/usr/bin/airgorah
 icons/app_icon.png=/usr/share/pixmaps/airgorah.png
 
 package/config.toml=/etc/airgorah/config.toml

@@ -77,12 +77,12 @@ pub fn check_required_dependencies(deps: &[&str]) -> Result<(), AppError> {
 pub fn check_update(current_version: &str) -> Option<String> {
     let url = "https://api.github.com/repos/martin-olivier/airgorah/releases/latest";
 
-    if let Ok(response) = ureq::get(url).call() {
-        if let Ok(json) = response.into_json::<serde_json::Value>() {
+    if let Ok(mut response) = ureq::get(url).call() {
+        if let Ok(json) = response.body_mut().read_json::<serde_json::Value>() {
             if json["tag_name"] != current_version {
                 let new_version = json["tag_name"].as_str().unwrap_or("unknown").to_owned();
 
-                log::info!("a new version is available: \"{}\"", new_version);
+                log::info!("a new version is available: \"{new_version}\"");
 
                 return Some(new_version);
             }

@@ -13,7 +13,7 @@ use chrono::Local;
 fn run_scan(app_data: &AppData) {
     let iface = match backend::get_iface() {
         Some(iface) => iface,
-        None => return app_data.interface_gui.window.show(),
+        None => return app_data.interface_gui.show(),
     };
 
     let mut ghz_2_4 = false;
@@ -92,16 +92,19 @@ fn connect_export_button(app_data: Rc<AppData>) {
             }
 
             let file_chooser_dialog = FileChooserDialog::new(
-                Some("Save Capture"),
+                Some("Save capture"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Save", ResponseType::Accept)
+                ],
             );
 
             let local = Local::now();
             let date = local.format("%Y-%m-%d-%Hh%M");
 
-            file_chooser_dialog.set_current_name(&format!("capture_{}.cap", date));
+            file_chooser_dialog.set_current_name(&format!("capture_{date}.cap"));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
@@ -143,16 +146,19 @@ fn connect_report_button(app_data: Rc<AppData>) {
             }
 
             let file_chooser_dialog = Rc::new(FileChooserDialog::new(
-                Some("Save capture report"),
+                Some("Save report"),
                 Some(&app_data.app_gui.window),
                 FileChooserAction::Save,
-                &[("Save", ResponseType::Accept)],
+                &[
+                    ("Cancel", ResponseType::Cancel),
+                    ("Save", ResponseType::Accept)
+                ],
             ));
 
             let local = Local::now();
             let date = local.format("%Y-%m-%d-%Hh%M");
 
-            file_chooser_dialog.set_current_name(&format!("report_{}.json", date));
+            file_chooser_dialog.set_current_name(&format!("report_{date}.json"));
             file_chooser_dialog.run_async(clone!(@strong app_data => move |this, response| {
                 if response == ResponseType::Accept {
                     this.close();
@@ -286,8 +292,12 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
             super::app::update_buttons_sensitivity(&app_data);
 
             if let Some((_, it)) = this.selection().selected() {
+                let essid = list_store_get!(app_data.app_gui.aps_model, &it, 0, String);
                 let bssid = list_store_get!(app_data.app_gui.aps_model, &it, 1, String);
                 let aps = backend::get_aps();
+
+                app_data.app_gui.client_status_bar.pop(0);
+                app_data.app_gui.client_status_bar.push(0, &format!("Showing '{essid}' clients"));
 
                 let mut clients = match aps.get(&bssid) {
                     Some(ap) => ap.clients.keys().clone(),
@@ -307,6 +317,9 @@ fn connect_cursor_changed(app_data: Rc<AppData>) {
                         false => return,
                     }
                 }
+            } else {
+                app_data.app_gui.client_status_bar.pop(0);
+                app_data.app_gui.client_status_bar.push(0, "Showing unassociated clients");
             }
             app_data.app_gui.cli_model.clear();
         }));

@@ -6,11 +6,9 @@ use gtk4::*;
 pub struct DeauthGui {
     pub window: Window,
     pub aireplay_but: ToggleButton,
-    pub mdk4_but: ToggleButton,
     pub store: ListStore,
     pub view: TreeView,
     pub toggle: CellRendererToggle,
-    pub scroll: ScrolledWindow,
     pub all_cli_but: CheckButton,
     pub sel_cli_but: CheckButton,
     pub attack_but: Button,
@@ -108,11 +106,9 @@ impl DeauthGui {
         Self {
             window,
             aireplay_but,
-            mdk4_but,
             store,
             view,
             toggle,
-            scroll,
             all_cli_but,
             sel_cli_but,
             attack_but,
