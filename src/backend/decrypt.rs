@@ -1,3 +1,4 @@
+use crate::types::*;
 use std::process::{Command, Stdio};
 
 const CRUNCH_LOWERCASE: &str = "abcdefghijklmnopqrstuvwxyz";
@@ -44,32 +45,37 @@ pub fn run_decrypt_bruteforce_process(
     handshake: &str,
     bssid: &str,
     essid: &str,
-    low: bool,
-    up: bool,
-    num: bool,
-    sym: bool,
+    charset: &BruteforceCharset,
+    min: u64,
+    max: u64,
 ) -> Result<(), DecryptError> {
-    let charset = format!(
-        "{}{}{}{}",
-        match low {
-            true => CRUNCH_LOWERCASE,
-            false => "",
-        },
-        match up {
-            true => CRUNCH_UPPERCASE,
-            false => "",
-        },
-        match num {
-            true => CRUNCH_NUMBERS,
-            false => "",
-        },
-        match sym {
-            true => CRUNCH_SYMBOLS,
-            false => "",
-        },
-    );
+    let charset_str = match charset {
+        BruteforceCharset::Params(settings) => {
+            format!(
+                "{}{}{}{}",
+                match settings.lowercase {
+                    true => CRUNCH_LOWERCASE,
+                    false => "",
+                },
+                match settings.uppercase {
+                    true => CRUNCH_UPPERCASE,
+                    false => "",
+                },
+                match settings.numbers {
+                    true => CRUNCH_NUMBERS,
+                    false => "",
+                },
+                match settings.symbols {
+                    true => CRUNCH_SYMBOLS,
+                    false => "",
+                },
+            )
+        }
+        BruteforceCharset::Specific(custom) => custom.to_owned(),
+    };
     let title = format!("Handshake Decryption ({essid})");
-    let cmd = format!("crunch 8 64 '{charset}' | aircrack-ng -w - -b '{bssid}' '{handshake}'");
+    let cmd =
+        format!("crunch {min} {max} '{charset_str}' | aircrack-ng -w - -b '{bssid}' '{handshake}'");
 
     Command::new("xterm")
         .stdin(Stdio::null())

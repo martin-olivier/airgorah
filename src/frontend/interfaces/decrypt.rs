@@ -23,6 +23,81 @@ fn build_ap_view(model: &ListStore) -> ComboBox {
     combo
 }
 
+pub struct DecryptSettingsGui {
+    pub window: Window,
+    pub charset: Entry,
+    pub min_but: SpinButton,
+    pub max_but: SpinButton,
+}
+
+impl DecryptSettingsGui {
+    pub fn new(parent: &impl IsA<Window>) -> Self {
+        let window = Window::builder()
+            .title("Bruteforce advanced settings")
+            .hide_on_close(true)
+            .default_width(360)
+            .default_height(160)
+            .resizable(false)
+            .transient_for(parent)
+            .modal(true)
+            .build();
+
+        let charset = Entry::builder()
+            .placeholder_text("ex: 123456789AB#*")
+            .margin_start(4)
+            .margin_end(4)
+            .margin_bottom(4)
+            .build();
+
+        let charset_frame = Frame::new(Some("Custom charset"));
+        charset_frame.set_child(Some(&charset));
+
+        let min_label = Label::new(Some("minimum"));
+        let max_label = Label::new(Some("maximum"));
+
+        let min_adjustment = Adjustment::new(8.0, 8.0, 64.0, 1.0, 10.0, 0.0);
+        let max_adjustment = Adjustment::new(10.0, 8.0, 64.0, 1.0, 10.0, 0.0);
+
+        let min_but = SpinButton::new(Some(&min_adjustment), 1.0, 0);
+        let max_but = SpinButton::new(Some(&max_adjustment), 1.0, 0);
+
+        let password_lenght_frame = Frame::new(Some("Password lenght"));
+
+        let password_lenght_box = Box::new(Orientation::Horizontal, 4);
+        password_lenght_box.set_margin_start(4);
+        password_lenght_box.set_margin_end(4);
+        password_lenght_box.set_margin_bottom(4);
+        password_lenght_box.append(&min_label);
+        password_lenght_box.append(&min_but);
+        password_lenght_box.append(&max_label);
+        password_lenght_box.append(&max_but);
+
+        password_lenght_frame.set_child(Some(&password_lenght_box));
+
+        let vbox = Box::new(Orientation::Vertical, 10);
+        vbox.set_margin_top(10);
+        vbox.set_margin_end(10);
+        vbox.set_margin_start(10);
+        vbox.set_margin_bottom(10);
+
+        vbox.append(&charset_frame);
+        vbox.append(&password_lenght_frame);
+
+        window.set_child(Some(&vbox));
+
+        Self {
+            window,
+            charset,
+            min_but,
+            max_but,
+        }
+    }
+
+    pub fn show(&self) {
+        self.window.show();
+    }
+}
+
 pub struct DecryptGui {
     pub window: Window,
     pub handshake_but: Button,
@@ -36,7 +111,9 @@ pub struct DecryptGui {
     pub uppercase_but: CheckButton,
     pub numbers_but: CheckButton,
     pub symbols_but: CheckButton,
+    pub settings_but: Button,
     pub decrypt_but: Button,
+    pub settings_gui: DecryptSettingsGui,
 }
 
 impl DecryptGui {
@@ -44,7 +121,7 @@ impl DecryptGui {
         let window = Window::builder()
             .title("Decrypt Handshake")
             .hide_on_close(true)
-            .default_width(500)
+            .default_width(440)
             .default_height(200)
             .resizable(false)
             .transient_for(parent)
@@ -74,10 +151,11 @@ impl DecryptGui {
 
         //
 
-        let lowercase_but = CheckButton::with_label("Lowercase [a-z]");
-        let uppercase_but = CheckButton::with_label("Uppercase [A-Z]");
-        let numbers_but = CheckButton::with_label("Numbers [0-9]");
-        let symbols_but = CheckButton::with_label("Symbols [!-#]");
+        let lowercase_but = CheckButton::with_label("Lowercase");
+        let uppercase_but = CheckButton::with_label("Uppercase");
+        let numbers_but = CheckButton::with_label("Numbers");
+        let symbols_but = CheckButton::with_label("Symbols");
+        let settings_but = Button::from_icon_name("emblem-system-symbolic");
 
         //
 
@@ -91,6 +169,7 @@ impl DecryptGui {
         bruteforce_box.append(&uppercase_but);
         bruteforce_box.append(&numbers_but);
         bruteforce_box.append(&symbols_but);
+        bruteforce_box.append(&settings_but);
 
         bruteforce_frame.set_child(Some(&bruteforce_box));
 
@@ -159,6 +238,8 @@ impl DecryptGui {
 
         window.set_child(Some(&vbox));
 
+        let settings_gui = DecryptSettingsGui::new(&window);
+
         Self {
             window,
             handshake_but,
@@ -172,7 +253,9 @@ impl DecryptGui {
             uppercase_but,
             numbers_but,
             symbols_but,
+            settings_but,
             decrypt_but,
+            settings_gui,
         }
     }
 

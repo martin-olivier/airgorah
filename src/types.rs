@@ -13,6 +13,18 @@ pub enum AttackSoftware {
     Mdk4,
 }
 
+pub struct BruteforceCharsetParams {
+    pub lowercase: bool,
+    pub uppercase: bool,
+    pub numbers: bool,
+    pub symbols: bool,
+}
+
+pub enum BruteforceCharset {
+    Params(BruteforceCharsetParams),
+    Specific(String),
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AP {
     pub essid: String,
