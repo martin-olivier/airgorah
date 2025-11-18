@@ -60,8 +60,8 @@ fn connect_interface_select(app_data: Rc<AppData>) {
             let iface = list_store_get!(app_data.interface_gui.interface_model, &iter, 0, String);
 
             match backend::enable_monitor_mode(&iface) {
-                Ok(res) => {
-                    if let Err(e) = backend::set_mac_address(&res) {
+                Ok(iface) => {
+                    if let Err(e) = backend::set_mac_address(&iface) {
                         backend::disable_monitor_mode(&iface).ok();
 
                         app_data.interface_gui.refresh_but.emit_clicked();
@@ -73,9 +73,9 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                         );
                     }
 
-                    backend::set_iface(res.clone());
+                    backend::set_iface(iface.clone());
 
-                    app_data.app_gui.iface_status_bar.push(0, &format!("Interface: {res}"));
+                    app_data.app_gui.iface_status_bar.push(0, &format!("Interface: {iface}"));
 
                     app_data.app_gui.restart_but.set_sensitive(true);
                     app_data.app_gui.channel_filter_entry.set_sensitive(true);

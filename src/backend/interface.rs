@@ -180,19 +180,15 @@ pub fn enable_monitor_mode(iface: &str) -> Result<String, IfaceError> {
     }
 
     match is_monitor_mode(&(iface.to_string() + "mon")) {
-        Ok(res) => match res {
-            true => Ok(iface.to_string() + "mon"),
-            false => Err(IfaceError::MonitorFailed(
-                iface.to_string(),
-                String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
-            )),
-        },
+        Ok(true) => Ok(iface.to_string() + "mon"),
+        Ok(false) => Err(IfaceError::MonitorFailed(
+            iface.to_string(),
+            String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
+        )),
         Err(_) => {
-            let new_interface_list = get_interfaces()?;
-
-            for iface_it in new_interface_list {
-                if !old_interface_list.contains(&iface_it) && is_monitor_mode(&iface_it)? {
-                    return Ok(iface_it);
+            for iface in get_interfaces()? {
+                if !old_interface_list.contains(&iface) && is_monitor_mode(&iface)? {
+                    return Ok(iface);
                 }
             }
 
