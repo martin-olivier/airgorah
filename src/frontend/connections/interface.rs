@@ -10,22 +10,26 @@ use std::rc::Rc;
 fn connect_controller(app_data: Rc<AppData>) {
     let controller = gtk4::EventControllerKey::new();
 
-    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
-        if key == gdk::Key::Escape {
-            app_data.interface_gui.window.hide();
-        }
+    controller.connect_key_pressed(clone!(
+        #[strong]
+        app_data,
+        move |_, key, _, _| {
+            if key == gdk::Key::Escape {
+                app_data.interface_gui.window.hide();
+            }
 
-        glib::Propagation::Proceed
-    }));
+            glib::Propagation::Proceed
+        }
+    ));
 
     app_data.interface_gui.window.add_controller(controller);
 }
 
 fn connect_interface_refresh(app_data: Rc<AppData>) {
-    app_data
-        .interface_gui
-        .refresh_but
-        .connect_clicked(clone!(@strong app_data => move |_| {
+    app_data.interface_gui.refresh_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |_| {
             app_data.interface_gui.interface_model.clear();
 
             let ifaces = match backend::get_interfaces() {
@@ -40,19 +44,29 @@ fn connect_interface_refresh(app_data: Rc<AppData>) {
             };
 
             for iface in ifaces.iter() {
-                app_data.interface_gui.interface_model.insert_with_values(None, &[(0, &iface)]);
+                app_data
+                    .interface_gui
+                    .interface_model
+                    .insert_with_values(None, &[(0, &iface)]);
             }
 
-            app_data.interface_gui.interface_view.set_active(if !ifaces.is_empty() { Some(0) } else { None });
-            app_data.interface_gui.select_but.set_sensitive(!ifaces.is_empty());
-        }));
+            app_data
+                .interface_gui
+                .interface_view
+                .set_active(if !ifaces.is_empty() { Some(0) } else { None });
+            app_data
+                .interface_gui
+                .select_but
+                .set_sensitive(!ifaces.is_empty());
+        }
+    ));
 }
 
 fn connect_interface_select(app_data: Rc<AppData>) {
-    app_data
-        .interface_gui
-        .select_but
-        .connect_clicked(clone!(@strong app_data => move |_| {
+    app_data.interface_gui.select_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |_| {
             let iter = match app_data.interface_gui.interface_view.active_iter() {
                 Some(iter) => iter,
                 None => return,
@@ -75,7 +89,10 @@ fn connect_interface_select(app_data: Rc<AppData>) {
 
                     backend::set_iface(iface.clone());
 
-                    app_data.app_gui.iface_status_bar.push(0, &format!("Interface: {iface}"));
+                    app_data
+                        .app_gui
+                        .iface_status_bar
+                        .push(0, &format!("Interface: {iface}"));
 
                     app_data.app_gui.restart_but.set_sensitive(true);
                     app_data.app_gui.channel_filter_entry.set_sensitive(true);
@@ -88,9 +105,10 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                             app_data.app_gui.ghz_5_but.set_sensitive(true);
                             app_data.app_gui.ghz_5_but.set_active(true);
                         }
-                        false => app_data.app_gui.ghz_5_but.set_tooltip_text(Some(
-                            "Your network card doesn't support 5 GHz"
-                        ))
+                        false => app_data
+                            .app_gui
+                            .ghz_5_but
+                            .set_tooltip_text(Some("Your network card doesn't support 5 GHz")),
                     }
 
                     app_data.interface_gui.window.hide();
@@ -105,7 +123,8 @@ fn connect_interface_select(app_data: Rc<AppData>) {
                     );
                 }
             };
-        }));
+        }
+    ));
 }
 
 pub fn connect(app_data: Rc<AppData>) {

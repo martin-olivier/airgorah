@@ -25,12 +25,12 @@ pub fn save_settings(mut settings: Settings) {
         settings.kill_network_manager = false;
     }
 
-    if Path::new(CONFIG_PATH).exists() {
-        if let Ok(toml_settings) = toml::to_string(&settings) {
-            std::fs::write(CONFIG_PATH, toml_settings).ok();
+    if Path::new(CONFIG_PATH).exists()
+        && let Ok(toml_settings) = toml::to_string(&settings)
+    {
+        std::fs::write(CONFIG_PATH, toml_settings).ok();
 
-            log::debug!("settings saved into '{CONFIG_PATH}'");
-        }
+        log::debug!("settings saved into '{CONFIG_PATH}'");
     }
     *SETTINGS.lock().unwrap() = settings;
 }
