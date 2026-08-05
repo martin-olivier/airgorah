@@ -132,7 +132,7 @@ fn connect_export_button(app_data: Rc<AppData>) {
                             );
                         }
 
-                        for (_, ap) in backend::get_aps().iter_mut() {
+                        for ap in backend::get_aps().values_mut() {
                             if ap.handshake {
                                 ap.saved_handshake = Some(path.to_owned());
                             }
