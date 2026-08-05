@@ -703,7 +703,7 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
                     let clients = &aps[&bssid].clients;
 
-                    for (_, cli) in clients.iter() {
+                    for cli in clients.values() {
                         let it = match list_store_find(
                             app_data.app_gui.cli_model.as_ref(),
                             0,
@@ -950,7 +950,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                             );
                         }
 
-                        for (_, ap) in backend::get_aps().iter_mut() {
+                        for ap in backend::get_aps().values_mut() {
                             if ap.handshake {
                                 ap.saved_handshake = Some(path.to_owned());
                             }
