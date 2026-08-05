@@ -11,50 +11,57 @@ use std::rc::Rc;
 fn connect_controller(app_data: Rc<AppData>) {
     let controller = gtk4::EventControllerKey::new();
 
-    controller.connect_key_pressed(clone!(@strong app_data => move |_, key, _, _| {
-        if key == gdk::Key::Escape {
-            app_data.settings_gui.window.hide();
-        }
+    controller.connect_key_pressed(clone!(
+        #[strong]
+        app_data,
+        move |_, key, _, _| {
+            if key == gdk::Key::Escape {
+                app_data.settings_gui.window.hide();
+            }
 
-        glib::Propagation::Proceed
-    }));
+            glib::Propagation::Proceed
+        }
+    ));
 
     app_data.settings_gui.window.add_controller(controller);
 }
 
 fn connect_random_mac_button(app_data: Rc<AppData>) {
-    app_data
-        .settings_gui
-        .random_mac
-        .connect_toggled(clone!(@strong app_data => move |_| {
+    app_data.settings_gui.random_mac.connect_toggled(clone!(
+        #[strong]
+        app_data,
+        move |_| {
             app_data.settings_gui.mac_entry.set_sensitive(false);
             app_data.settings_gui.save_but.set_sensitive(true);
-        }));
+        }
+    ));
 }
 
 fn connect_default_mac_button(app_data: Rc<AppData>) {
-    app_data
-        .settings_gui
-        .default_mac
-        .connect_toggled(clone!(@strong app_data => move |_| {
+    app_data.settings_gui.default_mac.connect_toggled(clone!(
+        #[strong]
+        app_data,
+        move |_| {
             app_data.settings_gui.mac_entry.set_sensitive(false);
             app_data.settings_gui.save_but.set_sensitive(true);
-        }));
+        }
+    ));
 }
 
 fn connect_specific_mac_button(app_data: Rc<AppData>) {
-    app_data
-        .settings_gui
-        .specific_mac
-        .connect_toggled(clone!(@strong app_data => move |_| {
+    app_data.settings_gui.specific_mac.connect_toggled(clone!(
+        #[strong]
+        app_data,
+        move |_| {
             app_data.settings_gui.mac_entry.set_sensitive(true);
             app_data.settings_gui.mac_entry.notify("text");
-        }));
+        }
+    ));
 }
 
 fn connect_mac_entry(app_data: Rc<AppData>) {
     app_data.settings_gui.mac_entry.connect_text_notify(
-        clone!(@strong app_data => move |this| {
+        clone!(#[strong] app_data, move |this| {
             let mac_regex = Regex::new(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})|([0-9a-fA-F]{4}\\.[0-9a-fA-F]{4}\\.[0-9a-fA-F]{4})$").unwrap();
             let entry = this.text().to_string();
 
@@ -67,10 +74,10 @@ fn connect_mac_entry(app_data: Rc<AppData>) {
 }
 
 fn connect_save_but(app_data: Rc<AppData>) {
-    app_data
-        .settings_gui
-        .save_but
-        .connect_clicked(clone!(@strong app_data => move |_| {
+    app_data.settings_gui.save_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |_| {
             let mut mac_address = Settings::default().mac_address;
 
             if app_data.settings_gui.random_mac.is_active() {
@@ -93,7 +100,8 @@ fn connect_save_but(app_data: Rc<AppData>) {
             backend::save_settings(settings);
 
             app_data.settings_gui.window.hide();
-        }));
+        }
+    ));
 }
 
 pub fn connect(app_data: Rc<AppData>) {

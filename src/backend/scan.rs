@@ -292,10 +292,10 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
             hidden = true;
             essid = format!("[Hidden] (length: {})", result.id_length.trim_start());
 
-            if let Some(old_ap_data) = old_ap_data {
-                if !old_ap_data.essid.starts_with("[Hidden] (length:") {
-                    essid = old_ap_data.essid.clone();
-                }
+            if let Some(old_ap_data) = old_ap_data
+                && !old_ap_data.essid.starts_with("[Hidden] (length:")
+            {
+                essid = old_ap_data.essid.clone();
             }
         }
 
