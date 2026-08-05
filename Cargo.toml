@@ -1,35 +1,24 @@
-[package]
-name = "airgorah"
+[workspace]
+resolver = "3"
+members = ["crates/common", "crates/agent", "crates/gui"]
+
+[workspace.package]
 version = "0.7.4"
 edition = "2024"
 license = "MIT"
-description = "A WiFi security auditing software mainly based on aircrack-ng tools suite"
 authors = ["Martin Olivier <martin.olivier@live.fr>"]
 homepage = "https://github.com/martin-olivier/airgorah"
 repository = "https://github.com/martin-olivier/airgorah"
 documentation = "https://github.com/martin-olivier/airgorah/wiki"
-keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
-readme = "README.md"
-exclude = ["/.github", "/.fpm", "/Dockerfile"]
 
-[dependencies]
-gtk4 = { version = "0.11", features = ["v4_6"] }
+[workspace.dependencies]
+airgorah-common = { path = "crates/common" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "1"
-csv = "1.4"
-which = "8"
-sudo = "0.6"
-ctrlc = "3.5"
 regex = "1.13"
-chrono = "0.4"
-lazy_static = "1"
-nix = { version = "0.31", features = ["signal"] }
-ureq = { version = "3", features = ["json"] }
 log = "0.4"
 env_logger = "0.11"
 thiserror = "2"
-
-[build-dependencies]
-serde = { version = "1", features = ["derive"] }
-csv = "1.4"
+nix = { version = "0.31", features = ["signal", "socket", "user", "fs"] }
+which = "8"
+lazy_static = "1"

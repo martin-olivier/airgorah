@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="icons/app_icon.png" width=100 height=100/><br>
+  <img src="crates/gui/icons/app_icon.png" width=100 height=100/><br>
 Airgorah</h1>
 
 <p align="center">
@@ -32,7 +32,10 @@ It is written in Rust and uses [GTK4](https://github.com/gtk-rs/gtk4-rs) for the
 
 ## Requirements
 
-This software only works on `linux` and requires `root` privileges to run.
+This software only works on `linux`. The graphical interface runs as a normal
+user (so it works under both `X11` and `Wayland`). When a privileged operation is
+needed, it launches a small privileged agent (`airgorah-agent`) via `polkit`,
+which will prompt for authentication once.
 
 You will also need a wireless network card that supports `monitor mode` and `packet injection`.
 

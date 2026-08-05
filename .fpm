@@ -1,4 +1,4 @@
--s dir ./target/debug/airgorah ./icons/app_icon.png package README.md LICENSE
+-s dir ./target/debug/airgorah ./target/debug/airgorah-agent ./crates/gui/icons/app_icon.png package README.md LICENSE
 --name airgorah
 --license MIT
 --version 0.7.4
@@ -17,10 +17,10 @@
 --depends adwaita-icon-theme
 
 target/debug/airgorah=/usr/bin/airgorah
-icons/app_icon.png=/usr/share/pixmaps/airgorah.png
+target/debug/airgorah-agent=/usr/bin/airgorah-agent
+crates/gui/icons/app_icon.png=/usr/share/pixmaps/airgorah.png
 
-package/config.toml=/etc/airgorah/config.toml
-package/.desktop=/usr/share/applications/airgorah.desktop
+package/.desktop=/usr/share/applications/com.molivier.airgorah.desktop
 package/.policy=/usr/share/polkit-1/actions/org.freedesktop.policykit.airgorah.policy
 
 README.md=/usr/share/doc/airgorah/README.md
