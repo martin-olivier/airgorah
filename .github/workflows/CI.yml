@@ -3,8 +3,9 @@ name: CI
 on:
   push:
   pull_request:
-  release:
-    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   linter:
@@ -18,7 +19,7 @@ jobs:
         run: docker build . -t airgorah_builder
 
       - name: Clippy
-        run: > 
+        run: >
           docker run --rm
           -v ${{ github.workspace }}:/workspace
           airgorah_builder
@@ -45,7 +46,6 @@ jobs:
     name: build ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     needs: linter
-    permissions: write-all
 
     steps:
       - uses: actions/checkout@v4
@@ -82,25 +82,46 @@ jobs:
           path: ./airgorah_${{ matrix.arch }}.pkg.tar.zst
           if-no-files-found: error
 
+  release:
+    name: release
+    runs-on: ubuntu-24.04
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          merge-multiple: true
+
       - name: Get release version
         id: 'tag'
-        if: github.event_name == 'release'
-        run: echo "tag=${{ github.ref_name }}" | sed 's/v//' >> $GITHUB_OUTPUT
+        run: echo "tag=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - name: Rename packages
-        if: github.event_name == 'release'
-        run: |
-          cp ./airgorah_${{ matrix.arch }}.deb ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.deb
-          cp ./airgorah_${{ matrix.arch }}.rpm ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.rpm
-          cp ./airgorah_${{ matrix.arch }}.pkg.tar.zst ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.pkg.tar.zst
-
-      - name: Upload packages
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.deb
-            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.rpm
-            ./airgorah_${{ steps.tag.outputs.tag }}_${{ matrix.arch }}.pkg.tar.zst
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.tag.outputs.tag }}
+        run: |
+          cd ./artifacts
+          for arch in x86_64 aarch64; do
+            for ext in deb rpm pkg.tar.zst; do
+              mv "airgorah_${arch}.${ext}" "airgorah_${VERSION}_${arch}.${ext}"
+            done
+          done
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            ./artifacts/airgorah_${{ steps.tag.outputs.tag }}_x86_64.deb
+            ./artifacts/airgorah_${{ steps.tag.outputs.tag }}_x86_64.rpm
+            ./artifacts/airgorah_${{ steps.tag.outputs.tag }}_x86_64.pkg.tar.zst
+            ./artifacts/airgorah_${{ steps.tag.outputs.tag }}_aarch64.deb
+            ./artifacts/airgorah_${{ steps.tag.outputs.tag }}_aarch64.rpm
+            ./artifacts/airgorah_${{ steps.tag.outputs.tag }}_aarch64.pkg.tar.zst
