@@ -8,7 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
 keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
-readme = "README.md"
+readme.workspace = true
 
 [[bin]]
 name = "airgorah"

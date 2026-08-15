@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Privileged agent process for airgorah: owns interface, scan, deauth and capture operations"
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
 
 [[bin]]
 name = "airgorah-agent"
