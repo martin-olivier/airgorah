@@ -1,0 +1,30 @@
+[package]
+name = "airgorah"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "A WiFi security auditing software mainly based on aircrack-ng tools suite"
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
+keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
+readme = "README.md"
+
+[[bin]]
+name = "airgorah"
+path = "src/main.rs"
+
+[dependencies]
+airgorah-common.workspace = true
+gtk4 = { version = "0.11", features = ["v4_6"] }
+serde.workspace = true
+serde_json.workspace = true
+toml = "1"
+regex.workspace = true
+chrono = "0.4"
+lazy_static.workspace = true
+nix.workspace = true
+ureq = { version = "3", features = ["json"] }
+log.workspace = true
+env_logger.workspace = true
+thiserror.workspace = true

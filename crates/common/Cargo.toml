@@ -1,0 +1,12 @@
+[package]
+name = "airgorah-common"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared types and IPC protocol between the airgorah GUI and its privileged agent"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+which.workspace = true
