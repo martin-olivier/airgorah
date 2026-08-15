@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/common", "crates/agent", "crates/gui"]
 
 [workspace.package]
-version = "0.7.4"
+version = "0.8.0"
 edition = "2024"
 license = "MIT"
 authors = ["Martin Olivier <martin.olivier@live.fr>"]
