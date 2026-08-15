@@ -28,6 +28,7 @@ pub struct Tool {
 pub const MDK4: &str = "mdk4";
 pub const CRUNCH: &str = "crunch";
 pub const SYSTEMCTL: &str = "systemctl";
+pub const PKEXEC: &str = "pkexec";
 
 /// Every external tool airgorah shells out to.
 pub const TOOLS: &[Tool] = &[
@@ -101,6 +102,11 @@ pub const TOOLS: &[Tool] = &[
     Tool {
         name: SYSTEMCTL,
         requirer: Requirer::Both,
+        optional: true,
+    },
+    Tool {
+        name: PKEXEC,
+        requirer: Requirer::Gui,
         optional: true,
     },
 ];

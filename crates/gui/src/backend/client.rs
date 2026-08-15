@@ -185,7 +185,14 @@ fn spawn_agent() -> Result<Child, AgentError> {
         command
     } else {
         // Normal case: escalate only the agent, via polkit.
-        let mut command = Command::new("pkexec");
+        if !deps::is_installed(deps::PKEXEC) {
+            return Err(AgentError(
+                "could not find 'pkexec' to start the privileged agent, install polkit, or run airgorah as root"
+                    .to_string(),
+            ));
+        }
+
+        let mut command = Command::new(deps::PKEXEC);
         command.arg(&agent);
         command
     };
