@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Shared types and IPC protocol between the airgorah GUI and its privileged agent"
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
 
 [dependencies]
 serde.workspace = true
