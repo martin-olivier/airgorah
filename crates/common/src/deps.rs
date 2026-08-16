@@ -35,7 +35,7 @@ pub const TOOLS: &[Tool] = &[
     // Required.
     Tool {
         name: "sh",
-        requirer: Requirer::Both,
+        requirer: Requirer::Gui,
         optional: false,
     },
     Tool {
@@ -45,7 +45,7 @@ pub const TOOLS: &[Tool] = &[
     },
     Tool {
         name: "awk",
-        requirer: Requirer::Both,
+        requirer: Requirer::Gui,
         optional: false,
     },
     Tool {
@@ -60,11 +60,6 @@ pub const TOOLS: &[Tool] = &[
     },
     Tool {
         name: "ip",
-        requirer: Requirer::Agent,
-        optional: false,
-    },
-    Tool {
-        name: "airmon-ng",
         requirer: Requirer::Agent,
         optional: false,
     },
