@@ -143,12 +143,11 @@ fn build_aps_model() -> ListStore {
         glib::Type::STRING, // BSSID
         glib::Type::STRING, // Band
         glib::Type::I32,    // Channel
-        glib::Type::I32,    // Speed
         glib::Type::I32,    // Power
         glib::Type::STRING, // Encryption
         glib::Type::I32,    // Clients
         glib::Type::STRING, // First time seen
-        glib::Type::STRING, // First time seen
+        glib::Type::STRING, // Last time seen
         glib::Type::BOOL,   // Handshake
         glib::Type::STRING, // <color>
     ])
@@ -161,7 +160,6 @@ fn build_aps_view() -> TreeView {
         ("BSSID", 138),
         ("Band", 64),
         ("Channel", 86),
-        ("Speed", 72),
         ("Power", 72),
         ("Encryption", 106),
         ("Clients", 80),
@@ -186,21 +184,21 @@ fn build_aps_view() -> TreeView {
             icon_renderer.set_property("icon-name", "network-wireless");
 
             column.pack_start(&icon_renderer, false);
-            column.add_attribute(&icon_renderer, "cell-background", 11);
+            column.add_attribute(&icon_renderer, "cell-background", 10);
             column.set_expand(true);
         }
 
-        if pos == 10 {
+        if pos == 9 {
             let toggle = CellRendererToggle::new();
             toggle.set_sensitive(false);
             column.pack_start(&toggle, false);
-            column.add_attribute(&toggle, "active", 10);
-            column.add_attribute(&toggle, "cell-background", 11);
+            column.add_attribute(&toggle, "active", 9);
+            column.add_attribute(&toggle, "cell-background", 10);
         } else {
             let text_renderer = CellRendererText::new();
             column.pack_start(&text_renderer, false);
             column.add_attribute(&text_renderer, "text", pos as i32);
-            column.add_attribute(&text_renderer, "background", 11);
+            column.add_attribute(&text_renderer, "background", 10);
         }
 
         view.append_column(&column);

@@ -56,7 +56,6 @@ pub struct AP {
     pub bssid: String,
     pub band: String,
     pub channel: String,
-    pub speed: String,
     pub power: String,
     pub privacy: String,
     pub hidden: bool,
