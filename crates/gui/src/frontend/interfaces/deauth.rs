@@ -5,7 +5,8 @@ use gtk4::*;
 
 pub struct DeauthGui {
     pub window: Window,
-    pub aireplay_but: ToggleButton,
+    pub rate_but: SpinButton,
+    pub disassoc_but: CheckButton,
     pub store: ListStore,
     pub view: TreeView,
     pub toggle: CellRendererToggle,
@@ -26,25 +27,32 @@ impl DeauthGui {
             .modal(true)
             .build();
 
-        let aireplay_but = ToggleButton::with_label("aireplay-ng");
-        let mdk4_but = ToggleButton::with_label("mdk4");
+        // Injection rate: send rounds per second.
+        let rate_label = Label::new(Some("Rate (pkt/s)"));
+        rate_label.set_halign(Align::Start);
+        rate_label.set_hexpand(true);
 
-        aireplay_but.set_hexpand(true);
-        mdk4_but.set_hexpand(true);
+        let rate_but = SpinButton::with_range(1.0, 1000.0, 1.0);
+        rate_but.set_value(10.0);
 
-        aireplay_but.set_active(true);
-        mdk4_but.set_group(Some(&aireplay_but));
+        let rate_box = Box::new(Orientation::Horizontal, 10);
+        rate_box.append(&rate_label);
+        rate_box.append(&rate_but);
 
-        let soft_box = Box::new(Orientation::Horizontal, 10);
-        soft_box.append(&aireplay_but);
-        soft_box.append(&mdk4_but);
+        // Optionally send a disassociation frame alongside each deauth.
+        let disassoc_but = CheckButton::with_label("Send disassociation frames");
 
-        soft_box.set_margin_start(10);
-        soft_box.set_margin_end(10);
-        soft_box.set_margin_bottom(10);
+        let settings_box = Box::new(Orientation::Vertical, 10);
+        settings_box.append(&rate_box);
+        settings_box.append(&disassoc_but);
 
-        let backend_frame = Frame::new(Some("Backend"));
-        backend_frame.set_child(Some(&soft_box));
+        settings_box.set_margin_start(10);
+        settings_box.set_margin_end(10);
+        settings_box.set_margin_top(10);
+        settings_box.set_margin_bottom(10);
+
+        let settings_frame = Frame::new(None);
+        settings_frame.set_child(Some(&settings_box));
 
         let all_cli_but = CheckButton::with_label("Deauth all clients");
         let sel_cli_but = CheckButton::with_label("Deauth selected clients");
@@ -92,7 +100,7 @@ impl DeauthGui {
         let attack_but = Button::with_label("Deauth");
 
         let main_box = Box::new(Orientation::Vertical, 10);
-        main_box.append(&backend_frame);
+        main_box.append(&settings_frame);
         main_box.append(&deauth_frame);
         main_box.append(&attack_but);
 
@@ -105,7 +113,8 @@ impl DeauthGui {
 
         Self {
             window,
-            aireplay_but,
+            rate_but,
+            disassoc_but,
             store,
             view,
             toggle,

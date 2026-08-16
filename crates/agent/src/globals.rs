@@ -1,15 +1,14 @@
 //! Privileged state owned by the agent.
 //!
 //! This is the half of the old monolithic `globals.rs` that manipulates or holds
-//! handles to privileged resources: the running native scan, the running
-//! `aireplay`/`mdk4` attacks, the accumulated scan data, and the interface/service
-//! state that must be restored on teardown.
+//! handles to privileged resources: the running native scan, the running native
+//! deauth attacks, the accumulated scan data, and the interface/service state that
+//! must be restored on teardown.
 
-use airgorah_common::types::{AP, Client};
+use airgorah_common::types::{AP, AttackTarget, Client};
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::process::Child;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
@@ -22,16 +21,6 @@ pub static LIVE_SCAN_PATH: &str = "/var/lib/airgorah/live_scan";
 pub static OLD_SCAN_PATH: &str = "/var/lib/airgorah/old_scan";
 pub static MERGE_SCAN_PATH: &str = "/var/lib/airgorah/merge_scan";
 
-/// Live process handles for an ongoing deauth attack. Kept agent-internal (it
-/// holds `Child`s) and projected onto [`airgorah_common::types::AttackState`] for
-/// the wire.
-pub enum AttackedClients {
-    All(Child),
-    Selection(Vec<(String, Child)>),
-}
-
-pub type AttackPool = HashMap<String, (AP, AttackedClients)>;
-
 /// Handle to the running native capture thread. `stop` is raised to ask the
 /// thread to exit; `handle` is joined to wait for it to finish flushing the
 /// capture file. Replaces the old `airodump-ng` child process.
@@ -39,6 +28,18 @@ pub struct ScanHandle {
     pub stop: Arc<AtomicBool>,
     pub handle: JoinHandle<()>,
 }
+
+/// A running native deauth attack against one AP. `target` is kept for the wire
+/// projection ([`airgorah_common::types::AttackState`]), `stop` asks the injection
+/// thread to exit and `handle` joins it.
+pub struct DeauthAttack {
+    pub ap: AP,
+    pub target: AttackTarget,
+    pub stop: Arc<AtomicBool>,
+    pub handle: JoinHandle<()>,
+}
+
+pub type AttackPool = HashMap<String, DeauthAttack>;
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);

@@ -3,6 +3,7 @@ pub mod capture;
 pub mod deauth;
 pub mod interface;
 pub mod pcap;
+pub mod raw_socket;
 pub mod scan;
 pub mod sniffer;
 pub mod vendors;

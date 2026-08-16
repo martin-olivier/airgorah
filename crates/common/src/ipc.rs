@@ -63,7 +63,10 @@ pub enum Request {
     StartDeauth {
         bssid: String,
         clients: Option<Vec<String>>,
-        software: AttackSoftware,
+        /// Send rounds per second (each round hits every target once).
+        rate: u32,
+        /// Also send a disassociation frame alongside each deauth.
+        disassoc: bool,
     },
     StopDeauth {
         bssid: String,

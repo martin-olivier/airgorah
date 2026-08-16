@@ -2,7 +2,6 @@ use crate::backend;
 use crate::frontend::interfaces::*;
 use crate::frontend::widgets::*;
 use crate::list_store_get;
-use crate::types::AttackSoftware;
 
 use glib::Value;
 use glib::clone;
@@ -118,26 +117,15 @@ fn connect_attack_but(app_data: Rc<AppData>) {
 
             let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
 
-            let attack_software = match app_data.deauth_gui.aireplay_but.is_active() {
-                true => AttackSoftware::Aireplay,
-                false => AttackSoftware::Mdk4,
-            };
-
-            if attack_software == AttackSoftware::Mdk4
-                && !backend::deps::is_installed(backend::deps::MDK4)
-            {
-                return ErrorDialog::spawn(
-                    &app_data.deauth_gui.window,
-                    "Missing dependency",
-                    "\"mdk4\" is not installed on your system",
-                );
-            }
+            let rate = app_data.deauth_gui.rate_but.value_as_int() as u32;
+            let disassoc = app_data.deauth_gui.disassoc_but.is_active();
 
             if let Err(e) = backend::launch_deauth_attack(
                 &iface,
                 backend::get_aps()[&bssid].clone(),
                 params,
-                attack_software,
+                rate,
+                disassoc,
             ) {
                 return ErrorDialog::spawn(
                     &app_data.deauth_gui.window,

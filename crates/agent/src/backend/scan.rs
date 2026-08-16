@@ -124,7 +124,7 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
 
     let attacked: Vec<AP> = get_attack_pool()
         .values()
-        .map(|(ap, _)| ap.clone())
+        .map(|attack| attack.ap.clone())
         .collect();
     for ap in attacked {
         aps.insert(ap.bssid.clone(), ap);

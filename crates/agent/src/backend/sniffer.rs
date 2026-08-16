@@ -12,6 +12,7 @@
 
 use super::find_vendor;
 use super::pcap::PcapWriter;
+use super::raw_socket;
 use super::scan::{get_aps, get_cap_ext, get_live_scan_path, get_unlinked_clients};
 
 use airgorah_common::types::{AP, Client};
@@ -21,9 +22,6 @@ use libwifi::Frame;
 use libwifi::frame::components::{DataHeader, ManagementHeader, RsnAkmSuite, StationInfo};
 
 use std::collections::HashMap;
-use std::ffi::CString;
-use std::io;
-use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -64,13 +62,18 @@ pub fn build_channel_list(ghz_2_4: bool, ghz_5: bool, filter: Option<&str>) -> V
 
 /// Capture-thread body. Runs until `stop` is raised.
 pub fn run(iface: String, channels: Vec<u32>, stop: Arc<AtomicBool>) {
-    let socket = match open_capture_socket(&iface) {
+    let socket = match raw_socket::open(&iface) {
         Ok(socket) => socket,
         Err(e) => {
             log::error!("scan: could not open capture socket on {iface}: {e}");
             return;
         }
     };
+    // Short receive timeout so the loop can hop channels and observe `stop`.
+    if let Err(e) = raw_socket::set_recv_timeout(&socket, 100) {
+        log::error!("scan: could not set capture timeout on {iface}: {e}");
+        return;
+    }
 
     let mut pcap = match PcapWriter::create(get_live_scan_path() + get_cap_ext()) {
         Ok(pcap) => pcap,
@@ -98,7 +101,7 @@ pub fn run(iface: String, channels: Vec<u32>, stop: Arc<AtomicBool>) {
             last_hop = Instant::now();
         }
 
-        match recv_frame(&socket, &mut buf) {
+        match raw_socket::recv(&socket, &mut buf) {
             Ok(0) => {}
             Ok(n) => {
                 let frame = &buf[..n];
@@ -123,91 +126,6 @@ pub fn run(iface: String, channels: Vec<u32>, stop: Arc<AtomicBool>) {
     }
 
     log::info!("scan: capture thread on {iface} stopped");
-}
-
-// --- raw AF_PACKET socket ---------------------------------------------------
-
-/// Open a raw `AF_PACKET` socket capturing every frame on `iface`, with a short
-/// receive timeout so the capture loop can hop channels and observe the stop flag.
-fn open_capture_socket(iface: &str) -> io::Result<OwnedFd> {
-    let eth_p_all = (libc::ETH_P_ALL as u16).to_be();
-
-    // SAFETY: standard socket(2) call; the returned fd is immediately wrapped in an
-    // OwnedFd so it is closed on drop.
-    let fd = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_RAW, eth_p_all as i32) };
-    if fd < 0 {
-        return Err(io::Error::last_os_error());
-    }
-    let socket = unsafe { OwnedFd::from_raw_fd(fd) };
-
-    let ifindex = interface_index(iface)?;
-
-    let mut addr: libc::sockaddr_ll = unsafe { std::mem::zeroed() };
-    addr.sll_family = libc::AF_PACKET as u16;
-    addr.sll_protocol = eth_p_all;
-    addr.sll_ifindex = ifindex as i32;
-
-    // SAFETY: bind(2) with a correctly sized sockaddr_ll.
-    let ret = unsafe {
-        libc::bind(
-            socket.as_raw_fd(),
-            &addr as *const libc::sockaddr_ll as *const libc::sockaddr,
-            std::mem::size_of::<libc::sockaddr_ll>() as libc::socklen_t,
-        )
-    };
-    if ret < 0 {
-        return Err(io::Error::last_os_error());
-    }
-
-    let timeout = libc::timeval {
-        tv_sec: 0,
-        tv_usec: 100_000,
-    };
-    // SAFETY: setsockopt(2) with a correctly sized timeval.
-    let ret = unsafe {
-        libc::setsockopt(
-            socket.as_raw_fd(),
-            libc::SOL_SOCKET,
-            libc::SO_RCVTIMEO,
-            &timeout as *const libc::timeval as *const libc::c_void,
-            std::mem::size_of::<libc::timeval>() as libc::socklen_t,
-        )
-    };
-    if ret < 0 {
-        return Err(io::Error::last_os_error());
-    }
-
-    Ok(socket)
-}
-
-/// Resolve an interface name to its kernel index.
-fn interface_index(iface: &str) -> io::Result<u32> {
-    let name = CString::new(iface).map_err(|_| {
-        io::Error::new(io::ErrorKind::InvalidInput, "interface name contains a nul")
-    })?;
-    // SAFETY: if_nametoindex(3) reads a valid C string; returns 0 on error.
-    let index = unsafe { libc::if_nametoindex(name.as_ptr()) };
-    if index == 0 {
-        return Err(io::Error::last_os_error());
-    }
-    Ok(index)
-}
-
-/// Receive one frame, returning the number of bytes read (0 on an empty read).
-fn recv_frame(socket: &OwnedFd, buf: &mut [u8]) -> io::Result<usize> {
-    // SAFETY: recv(2) into a buffer of the given length.
-    let n = unsafe {
-        libc::recv(
-            socket.as_raw_fd(),
-            buf.as_mut_ptr() as *mut libc::c_void,
-            buf.len(),
-            0,
-        )
-    };
-    if n < 0 {
-        return Err(io::Error::last_os_error());
-    }
-    Ok(n as usize)
 }
 
 /// Tune the interface to a channel via `iw`. Failures (e.g. a regulatory-blocked
