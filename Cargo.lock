@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "airgorah"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "airgorah-common",
  "chrono",
@@ -38,7 +38,7 @@ dependencies = [
 
 [[package]]
 name = "airgorah-agent"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "airgorah-common",
  "csv",
@@ -53,7 +53,7 @@ dependencies = [
 
 [[package]]
 name = "airgorah-common"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "regex",
  "serde",

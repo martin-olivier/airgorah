@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/common", "crates/agent", "crates/gui"]
 
 [workspace.package]
-version = "0.8.0"
+version = "0.8.1"
 edition = "2024"
 license = "MIT"
 authors = ["Martin Olivier <martin.olivier@live.fr>"]
@@ -13,7 +13,7 @@ documentation = "https://github.com/martin-olivier/airgorah/wiki"
 readme = "README.md"
 
 [workspace.dependencies]
-airgorah-common = { path = "crates/common", version = "0.8.0" }
+airgorah-common = { path = "crates/common", version = "0.8.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 regex = "1.13"
