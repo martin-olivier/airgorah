@@ -50,7 +50,7 @@ pub const TOOLS: &[Tool] = &[
     },
     Tool {
         name: "aircrack-ng",
-        requirer: Requirer::Both,
+        requirer: Requirer::Gui,
         optional: false,
     },
     Tool {

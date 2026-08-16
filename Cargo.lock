@@ -59,7 +59,8 @@ dependencies = [
 name = "airgorah-common"
 version = "0.8.1"
 dependencies = [
- "regex",
+ "libwifi",
+ "radiotap",
  "serde",
  "serde_json",
  "which",

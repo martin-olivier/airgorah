@@ -3,12 +3,12 @@
 //! The frames we pull off the monitor interface are radiotap-prefixed 802.11
 //! frames, so the file is written with link-type
 //! `LINKTYPE_IEEE802_11_RADIOTAP` (127) — the same format `airodump-ng`
-//! produced. This keeps everything downstream (handshake detection via
-//! `aircrack-ng`, `mergecap`, and the GUI capture export) working unchanged.
+//! produced. This keeps everything downstream (native handshake detection, the
+//! `mergecap` accumulation, and the GUI capture export) working unchanged.
 //!
 //! Only the classic libpcap format is implemented (global header + per-record
-//! header + raw bytes); that is all `aircrack-ng`/`mergecap` need and it avoids
-//! pulling in a libpcap dependency.
+//! header + raw bytes); that is all the readers need and it avoids pulling in a
+//! libpcap dependency.
 
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
