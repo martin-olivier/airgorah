@@ -1,15 +1,12 @@
 use crate::globals::*;
 use airgorah_common::deps;
 use airgorah_common::types::MacMode;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 #[derive(thiserror::Error, Debug)]
 pub enum IfaceError {
     #[error("Input/Output error: {0}")]
     IoError(#[from] std::io::Error),
-
-    #[error("Failed to retreive interfaces list")]
-    IfaceList,
 
     #[error("Utf8 conversion error")]
     Utf8Error(#[from] std::string::FromUtf8Error),
@@ -23,26 +20,11 @@ pub enum IfaceError {
     #[error("MAC address is invalid: change its value in the settings page.")]
     InvalidMac,
 
-    #[error("Could not enable monitor mode on '{0}':\n{1}")]
-    MonitorFailed(String, String),
+    #[error("Could not enable monitor mode on '{0}'")]
+    MonitorFailed(String),
 
-    #[error("Could not disable monitor mode on '{0}':\n{1}")]
-    ManagedFailed(String, String),
-}
-
-/// Get the available interfaces
-pub fn get_interfaces() -> Result<Vec<String>, IfaceError> {
-    let cmd = Command::new("sh")
-        .args(["-c", "iw dev | awk \'$1==\"Interface\"{print $2}\'"])
-        .output()?;
-
-    if !cmd.status.success() {
-        return Err(IfaceError::IfaceList);
-    }
-
-    let out = String::from_utf8(cmd.stdout)?;
-
-    Ok(out.split_terminator('\n').map(String::from).collect())
+    #[error("Could not disable monitor mode on '{0}'")]
+    ManagedFailed(String),
 }
 
 /// Check if an interface is in monitor mode
@@ -101,71 +83,45 @@ pub fn set_mac_address(iface: &str, mac: &MacMode) -> Result<(), IfaceError> {
     Ok(())
 }
 
-/// enable monitor mode on an interface
-pub fn enable_monitor_mode(iface: &str, kill_network_manager: bool) -> Result<String, IfaceError> {
-    if is_monitor_mode(iface)? {
-        *IFACE_WAS_MONITOR.lock().unwrap() = true;
-    }
+/// Switch an interface's 802.11 type with `iw`, taking the link down for the
+/// change and bringing it back up afterwards.
+fn set_interface_type(iface: &str, mode: &str) -> Result<bool, IfaceError> {
+    Command::new("ip")
+        .args(["link", "set", "dev", iface, "down"])
+        .output()?;
 
+    let set_type_cmd = Command::new("iw")
+        .args(["dev", iface, "set", "type", mode])
+        .output()?;
+
+    Command::new("ip")
+        .args(["link", "set", "dev", iface, "up"])
+        .output()?;
+
+    Ok(set_type_cmd.status.success())
+}
+
+/// Enable monitor mode on an interface.
+pub fn enable_monitor_mode(iface: &str, kill_network_manager: bool) -> Result<String, IfaceError> {
     kill_network_manager_services(kill_network_manager);
 
     if is_monitor_mode(iface)? {
+        *IFACE_WAS_MONITOR.lock().unwrap() = true;
         return Ok(iface.to_string());
     }
 
-    let old_interface_list = get_interfaces()?;
-
-    let yes_pipe = Command::new("yes").stdout(Stdio::piped()).spawn()?;
-    let enable_monitor_cmd = Command::new("airmon-ng")
-        .args(["start", iface])
-        .stdin(yes_pipe.stdout.unwrap())
-        .output()?;
-
-    if !enable_monitor_cmd.status.success() {
-        return Err(IfaceError::MonitorFailed(
-            iface.to_string(),
-            String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
-        ));
+    if !set_interface_type(iface, "monitor")? {
+        return Err(IfaceError::MonitorFailed(iface.to_string()));
     }
 
     log::info!("{iface}: monitor mode enabled");
 
-    if let Ok(true) = is_monitor_mode(iface) {
-        return Ok(iface.to_string());
-    }
-
-    match is_monitor_mode(&(iface.to_string() + "mon")) {
-        Ok(true) => Ok(iface.to_string() + "mon"),
-        Ok(false) => Err(IfaceError::MonitorFailed(
-            iface.to_string(),
-            String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
-        )),
-        Err(_) => {
-            for iface in get_interfaces()? {
-                if !old_interface_list.contains(&iface) && is_monitor_mode(&iface)? {
-                    return Ok(iface);
-                }
-            }
-
-            Err(IfaceError::MonitorFailed(
-                iface.to_string(),
-                String::from_utf8(enable_monitor_cmd.stdout).unwrap_or_default(),
-            ))
-        }
-    }
+    Ok(iface.to_string())
 }
 
-/// disable monitor mode on an interface
+/// Disable monitor mode on an interface, switching it back to managed mode.
 pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
-    let check_monitor_cmd = Command::new("iw").args(["dev", iface, "info"]).output()?;
-
-    if !check_monitor_cmd.status.success() {
-        return Err(IfaceError::IfaceNotFound(iface.to_string()));
-    }
-
-    let check_monitor_output = String::from_utf8(check_monitor_cmd.stdout)?;
-
-    if !check_monitor_output.contains("type monitor") {
+    if !is_monitor_mode(iface)? {
         return Ok(());
     }
 
@@ -174,18 +130,15 @@ pub fn disable_monitor_mode(iface: &str) -> Result<(), IfaceError> {
         *iface_was_monitor = false;
         return Ok(());
     }
+    drop(iface_was_monitor);
 
-    let disable_monitor_cmd = Command::new("airmon-ng").args(["stop", iface]).output()?;
+    if !set_interface_type(iface, "managed")? {
+        return Err(IfaceError::ManagedFailed(iface.to_string()));
+    }
 
     log::info!("{iface}: monitor mode disabled");
 
-    match disable_monitor_cmd.status.success() {
-        true => Ok(()),
-        false => Err(IfaceError::ManagedFailed(
-            iface.to_string(),
-            String::from_utf8(disable_monitor_cmd.stdout).unwrap_or_default(),
-        )),
-    }
+    Ok(())
 }
 
 /// Get the current interface
