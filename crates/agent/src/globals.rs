@@ -1,7 +1,7 @@
 //! Privileged state owned by the agent.
 //!
 //! This is the half of the old monolithic `globals.rs` that manipulates or holds
-//! handles to privileged resources: the running `airodump` scan, the running
+//! handles to privileged resources: the running native scan, the running
 //! `aireplay`/`mdk4` attacks, the accumulated scan data, and the interface/service
 //! state that must be restored on teardown.
 
@@ -10,7 +10,10 @@ use airgorah_common::types::{AP, Client};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::process::Child;
+use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicBool;
+use std::thread::JoinHandle;
 
 /// Root-owned 0700 directory for the agent's scan/capture files.
 pub static CAPTURE_DIR: &str = "/var/lib/airgorah";
@@ -29,10 +32,18 @@ pub enum AttackedClients {
 
 pub type AttackPool = HashMap<String, (AP, AttackedClients)>;
 
+/// Handle to the running native capture thread. `stop` is raised to ask the
+/// thread to exit; `handle` is joined to wait for it to finish flushing the
+/// capture file. Replaces the old `airodump-ng` child process.
+pub struct ScanHandle {
+    pub stop: Arc<AtomicBool>,
+    pub handle: JoinHandle<()>,
+}
+
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);
     pub static ref IFACE_WAS_MONITOR: Mutex<bool> = Mutex::new(false);
-    pub static ref SCAN_PROC: Mutex<Option<Child>> = Mutex::new(None);
+    pub static ref SCAN_HANDLE: Mutex<Option<ScanHandle>> = Mutex::new(None);
     pub static ref APS: Mutex<HashMap<String, AP>> = Mutex::new(HashMap::new());
     pub static ref UNLINKED_CLIENTS: Mutex<HashMap<String, Client>> = Mutex::new(HashMap::new());
     pub static ref ATTACK_POOL: Mutex<AttackPool> = Mutex::new(HashMap::new());

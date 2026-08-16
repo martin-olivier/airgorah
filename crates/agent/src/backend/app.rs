@@ -16,7 +16,6 @@ pub fn app_cleanup() {
 
     restore_network_manager().ok();
 
-    std::fs::remove_file(get_live_scan_path() + get_csv_ext()).ok();
     std::fs::remove_file(get_live_scan_path() + get_cap_ext()).ok();
     std::fs::remove_file(get_old_scan_path() + get_cap_ext()).ok();
 }

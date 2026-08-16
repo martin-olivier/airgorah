@@ -64,11 +64,6 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     Tool {
-        name: "airodump-ng",
-        requirer: Requirer::Agent,
-        optional: false,
-    },
-    Tool {
         name: "aireplay-ng",
         requirer: Requirer::Agent,
         optional: false,
