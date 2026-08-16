@@ -288,7 +288,6 @@ fn update_ap(
         .unwrap_or(current_channel as i32);
     let band = band_of(channel);
     let privacy = classify_privacy(capability_info, info);
-    let speed = max_rate(info);
     let (essid, hidden) = essid_of(info);
     let power = signal.map(|s| s.to_string()).unwrap_or_default();
     let now = timestamp();
@@ -308,9 +307,6 @@ fn update_ap(
             ap.channel = channel.to_string();
             ap.band = band;
             ap.privacy = privacy;
-            if !speed.is_empty() {
-                ap.speed = speed;
-            }
             if !power.is_empty() {
                 ap.power = power;
             }
@@ -324,7 +320,6 @@ fn update_ap(
                     bssid,
                     band,
                     channel: channel.to_string(),
-                    speed,
                     power,
                     privacy,
                     hidden,
@@ -484,28 +479,6 @@ fn classify_privacy(capability_info: u16, info: &StationInfo) -> String {
         return "WEP".to_string();
     }
     "OPN".to_string()
-}
-
-/// Highest advertised supported rate in Mbit/s, as a string (empty if unknown).
-fn max_rate(info: &StationInfo) -> String {
-    let mut max = 0.0f32;
-    for rate in &info.supported_rates {
-        if rate.rate > max {
-            max = rate.rate;
-        }
-    }
-    if let Some(extended) = &info.extended_supported_rates {
-        for rate in extended {
-            if rate.rate > max {
-                max = rate.rate;
-            }
-        }
-    }
-    if max <= 0.0 {
-        String::new()
-    } else {
-        (max as u32).to_string()
-    }
 }
 
 /// The ESSID and whether the network is hidden, in the format the GUI expects.
