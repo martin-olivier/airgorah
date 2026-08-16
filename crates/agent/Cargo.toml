@@ -22,6 +22,10 @@ nix.workspace = true
 lazy_static.workspace = true
 csv = "1.4"
 ctrlc = { version = "3.5", features = ["termination"] }
+libwifi = "0.5"
+radiotap = "1"
+chrono = "0.4"
+libc = "0.2"
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }
