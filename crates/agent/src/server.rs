@@ -189,7 +189,8 @@ fn dispatch(request: Request) -> (Response, bool) {
         Request::StartDeauth {
             bssid,
             clients,
-            software,
+            rate,
+            disassoc,
         } => {
             if let Some(ref clients) = clients
                 && !clients.iter().all(|c| is_valid_mac(c))
@@ -207,7 +208,7 @@ fn dispatch(request: Request) -> (Response, bool) {
             if !is_valid_mac(&ap.bssid) {
                 return (err("invalid access point BSSID"), false);
             }
-            match backend::launch_deauth_attack(&iface, ap, clients, software) {
+            match backend::launch_deauth_attack(&iface, ap, clients, rate, disassoc) {
                 Ok(()) => (Response::Ok, false),
                 Err(e) => (err(e), false),
             }

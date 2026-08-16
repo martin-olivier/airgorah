@@ -9,13 +9,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Deauthentication tool the agent should drive.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum AttackSoftware {
-    Aireplay,
-    Mdk4,
-}
-
 /// How the MAC address of an interface should be set when entering monitor mode.
 ///
 /// Resolved GUI-side from the user's [`Settings::mac_address`] and passed to the

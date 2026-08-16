@@ -25,7 +25,6 @@ pub struct Tool {
 }
 
 // Optional tool names, referenced at their on-demand check sites.
-pub const MDK4: &str = "mdk4";
 pub const CRUNCH: &str = "crunch";
 pub const SYSTEMCTL: &str = "systemctl";
 pub const PKEXEC: &str = "pkexec";
@@ -64,11 +63,6 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     Tool {
-        name: "aireplay-ng",
-        requirer: Requirer::Agent,
-        optional: false,
-    },
-    Tool {
         name: "mergecap",
         requirer: Requirer::Agent,
         optional: false,
@@ -79,11 +73,6 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     // Optional, checked on demand.
-    Tool {
-        name: MDK4,
-        requirer: Requirer::Agent,
-        optional: true,
-    },
     Tool {
         name: CRUNCH,
         requirer: Requirer::Gui,

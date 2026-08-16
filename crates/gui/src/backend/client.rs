@@ -3,7 +3,7 @@
 use crate::globals::*;
 use airgorah_common::deps::{self, Requirer};
 use airgorah_common::ipc::*;
-use airgorah_common::types::{AP, AttackSoftware, AttackState, Client};
+use airgorah_common::types::{AP, AttackState, Client};
 
 use lazy_static::lazy_static;
 use nix::unistd::{geteuid, getuid};
@@ -403,12 +403,14 @@ pub fn launch_deauth_attack(
     _iface: &str,
     ap: AP,
     specific_clients: Option<Vec<String>>,
-    software: AttackSoftware,
+    rate: u32,
+    disassoc: bool,
 ) -> Result<(), AgentError> {
     expect_ok(request(Request::StartDeauth {
         bssid: ap.bssid,
         clients: specific_clients,
-        software,
+        rate,
+        disassoc,
     })?)
 }
 
