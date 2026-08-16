@@ -3,6 +3,7 @@ use airgorah_common::types::{AP, AttackState, Client, Settings};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicBool;
 use std::thread::JoinHandle;
 
 pub static APP_ID: &str = "com.molivier.airgorah";
@@ -33,3 +34,6 @@ lazy_static! {
     pub static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
     pub static ref NEW_VERSION: Mutex<Option<String>> = Mutex::new(None);
 }
+
+/// Whether the channel controls are currently locked because at least one deauth attack is running.
+pub static CHANNEL_LOCK_ACTIVE: AtomicBool = AtomicBool::new(false);

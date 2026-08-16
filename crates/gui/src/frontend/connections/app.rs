@@ -12,6 +12,7 @@ use gtk4::prelude::*;
 use gtk4::*;
 use std::io::BufReader;
 use std::rc::Rc;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
@@ -46,6 +47,76 @@ fn get_channel_entries(entry: &Entry) -> Vec<i32> {
         .collect();
 
     channels
+}
+
+/// The channels of every access point currently under attack, as a sorted,
+/// de-duplicated, comma-separated channel-filter string.
+fn attacked_channels_filter() -> String {
+    let mut channels: Vec<i32> = backend::get_attack_pool()
+        .values()
+        .filter_map(|state| state.ap.channel.trim().parse::<i32>().ok())
+        .collect();
+
+    channels.sort_unstable();
+    channels.dedup();
+
+    channels
+        .iter()
+        .map(|channel| channel.to_string())
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+/// While at least one deauth attack is running the radio must stay parked on the
+/// attacked channels, so the controls that could move it off them are locked: the
+/// channel filter, the hop / focus / add buttons, the band toggles and the scan
+/// restart. The "Display hidden APs" toggle is locked too, so an attacked hidden
+/// AP cannot be hidden from the list mid-attack. Does nothing when no attack is
+/// running, so the normal per-selection logic keeps owning these widgets.
+fn lock_channel_controls(app_data: &Rc<AppData>) {
+    if backend::get_attack_pool().is_empty() {
+        return;
+    }
+
+    app_data.app_gui.channel_filter_entry.set_sensitive(false);
+    app_data.app_gui.hopping_but.set_sensitive(false);
+    app_data.app_gui.focus_but.set_sensitive(false);
+    app_data.app_gui.add_but.set_sensitive(false);
+    app_data.app_gui.ghz_2_4_but.set_sensitive(false);
+    app_data.app_gui.ghz_5_but.set_sensitive(false);
+    app_data.app_gui.restart_but.set_sensitive(false);
+    app_data.settings_gui.display_hidden_ap.set_sensitive(false);
+}
+
+/// Keep the channel filter in sync with the set of access points under attack.
+///
+/// While an attack is running the filter is driven from the attack pool (the
+/// union of the attacked channels) so the scan only dwells on channels a deauth
+/// is actually targeting. When the last attack stops, the filter is cleared and
+/// the locked controls are handed back to the user.
+fn drive_channel_filter_from_attacks(app_data: &Rc<AppData>) {
+    let attacking = !backend::get_attack_pool().is_empty();
+    let was_locked = globals::CHANNEL_LOCK_ACTIVE.load(Ordering::Relaxed);
+
+    if attacking {
+        let desired = attacked_channels_filter();
+
+        if app_data.app_gui.channel_filter_entry.text() != desired {
+            app_data.app_gui.channel_filter_entry.set_text(&desired);
+        }
+
+        globals::CHANNEL_LOCK_ACTIVE.store(true, Ordering::Relaxed);
+    } else if was_locked {
+        app_data.app_gui.channel_filter_entry.set_sensitive(true);
+        app_data.app_gui.ghz_2_4_but.set_sensitive(true);
+        app_data.app_gui.ghz_5_but.set_sensitive(true);
+        app_data.app_gui.restart_but.set_sensitive(true);
+        app_data.settings_gui.display_hidden_ap.set_sensitive(true);
+
+        app_data.app_gui.channel_filter_entry.set_text("");
+
+        globals::CHANNEL_LOCK_ACTIVE.store(false, Ordering::Relaxed);
+    }
 }
 
 fn connect_window_controller(app_data: Rc<AppData>) {
@@ -398,6 +469,7 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
                 }
             }
 
+            lock_channel_controls(app_data);
             return;
         }
     };
@@ -469,6 +541,8 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
             app_data.app_gui.bottom_but.set_sensitive(false);
         }
     }
+
+    lock_channel_controls(app_data);
 }
 
 fn connect_previous_button(app_data: Rc<AppData>) {
@@ -792,6 +866,7 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     app_data.app_gui.report_but.set_sensitive(true);
                 }
 
+                drive_channel_filter_from_attacks(&app_data);
                 update_buttons_sensitivity(&app_data);
 
                 ControlFlow::Continue
@@ -849,18 +924,11 @@ fn connect_deauth_button(app_data: Rc<AppData>) {
             };
 
             let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
-            let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32);
             let under_attack = backend::get_attack_pool().contains_key(&bssid);
 
             match under_attack {
                 true => backend::stop_deauth_attack(&bssid),
-                false => {
-                    app_data
-                        .app_gui
-                        .channel_filter_entry
-                        .set_text(&channel.to_string());
-                    app_data.deauth_gui.show(backend::get_aps()[&bssid].clone());
-                }
+                false => app_data.deauth_gui.show(backend::get_aps()[&bssid].clone()),
             }
         }
     ));
