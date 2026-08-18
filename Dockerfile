@@ -20,9 +20,9 @@ RUN rustup component add rustfmt
 
 WORKDIR /workspace
 
-ENV DEBIAN_DEPS="--depends libgtk-4-1 --depends dbus-x11 --depends wireshark-common --depends iproute2 --depends crunch"
-ENV REDHAT_DEPS="--depends gtk4-devel --depends dbus-x11 --depends wireshark-cli --depends iproute"
-ENV ARCHLINUX_DEPS="--depends gtk4 --depends dbus --depends wireshark-cli --depends iproute2"
+ENV DEBIAN_DEPS="--depends libgtk-4-1 --depends dbus-x11 --depends iproute2 --depends crunch"
+ENV REDHAT_DEPS="--depends gtk4-devel --depends dbus-x11 --depends iproute"
+ENV ARCHLINUX_DEPS="--depends gtk4 --depends dbus --depends iproute2"
 
 # Build and package the project
 CMD cargo build && \

@@ -19,7 +19,6 @@ pub static CAPTURE_DIR: &str = "/var/lib/airgorah";
 
 pub static LIVE_SCAN_PATH: &str = "/var/lib/airgorah/live_scan";
 pub static OLD_SCAN_PATH: &str = "/var/lib/airgorah/old_scan";
-pub static MERGE_SCAN_PATH: &str = "/var/lib/airgorah/merge_scan";
 
 /// Handle to the running native capture thread. `stop` is raised to ask the
 /// thread to exit; `handle` is joined to wait for it to finish flushing the
