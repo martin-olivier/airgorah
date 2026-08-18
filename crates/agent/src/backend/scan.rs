@@ -85,25 +85,11 @@ pub fn stop_scan_process() -> Result<(), ScanError> {
         return Ok(());
     }
 
-    std::process::Command::new("mergecap")
-        .args([
-            "-a",
-            "-F",
-            "pcap",
-            "-w",
-            &(get_merge_scan_path() + get_cap_ext()),
-            &(get_old_scan_path() + get_cap_ext()),
-            &(get_live_scan_path() + get_cap_ext()),
-        ])
-        .status()?;
-
+    super::pcap::append_records(
+        &(get_old_scan_path() + get_cap_ext()),
+        &(get_live_scan_path() + get_cap_ext()),
+    )?;
     std::fs::remove_file(get_live_scan_path() + get_cap_ext()).ok();
-    std::fs::remove_file(get_old_scan_path() + get_cap_ext()).ok();
-    std::fs::rename(
-        get_merge_scan_path() + get_cap_ext(),
-        get_old_scan_path() + get_cap_ext(),
-    )
-    .ok();
 
     Ok(())
 }
@@ -155,8 +141,4 @@ pub fn get_live_scan_path() -> String {
 
 pub fn get_old_scan_path() -> String {
     format!("{}-{}", OLD_SCAN_PATH, std::process::id())
-}
-
-pub fn get_merge_scan_path() -> String {
-    format!("{}-{}", MERGE_SCAN_PATH, std::process::id())
 }

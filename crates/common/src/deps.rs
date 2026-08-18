@@ -63,11 +63,6 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     Tool {
-        name: "mergecap",
-        requirer: Requirer::Agent,
-        optional: false,
-    },
-    Tool {
         name: "macchanger",
         requirer: Requirer::Agent,
         optional: false,
