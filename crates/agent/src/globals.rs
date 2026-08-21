@@ -20,10 +20,16 @@ pub static CAPTURE_DIR: &str = "/var/lib/airgorah";
 pub static LIVE_SCAN_PATH: &str = "/var/lib/airgorah/live_scan";
 pub static OLD_SCAN_PATH: &str = "/var/lib/airgorah/old_scan";
 
-/// Handle to the running native capture thread. `stop` is raised to ask the
-/// thread to exit; `handle` is joined to wait for it to finish flushing the
-/// capture file. Replaces the old `airodump-ng` child process.
+/// Handle to the running native capture thread.
+///
+/// `channels` is the live channel plan the thread re-reads each loop, so swapping
+/// it retunes a running scan without restarting the thread; `iface` identifies the
+/// interface the scan runs on, so a request for the same one can adapt it in place.
+/// `stop` is raised to ask the thread to exit; `handle` is joined to wait for it to
+/// finish flushing the capture file.
 pub struct ScanHandle {
+    pub iface: String,
+    pub channels: Arc<Mutex<Vec<u32>>>,
     pub stop: Arc<AtomicBool>,
     pub handle: JoinHandle<()>,
 }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::MutexGuard;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -23,7 +24,12 @@ pub fn is_scan_process() -> bool {
     SCAN_HANDLE.lock().unwrap().is_some()
 }
 
-/// Start (or restart) the native capture thread.
+/// Start the native capture thread, or retune one already running on `iface`.
+///
+/// The capture thread re-reads its channel plan every loop, so a settings change on
+/// the interface it is already scanning (enable a band, clear the channel filter, …)
+/// just swaps the plan in place — no thread teardown, no lost capture state. A change
+/// of interface, or a first start, spins a fresh thread.
 pub fn set_scan_process(
     iface: &str,
     ghz_2_4: bool,
@@ -34,21 +40,39 @@ pub fn set_scan_process(
         return Err(ScanError::NoBandSelected);
     }
 
-    stop_scan_process()?;
-
     let channels = sniffer::build_channel_list(ghz_2_4, ghz_5, channel_filter.as_deref());
 
+    // Adapt a scan already running on this interface by swapping its channel plan.
+    let running = match SCAN_HANDLE.lock().unwrap().as_ref() {
+        Some(handle) if handle.iface == iface => Some(handle.channels.clone()),
+        _ => None,
+    };
+    if let Some(running) = running {
+        *running.lock().unwrap() = channels;
+        log::info!(
+            "scan updated: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}"
+        );
+        return Ok(());
+    }
+
+    // No compatible scan running — tear down any scan on another interface and start.
+    stop_scan_process()?;
+
     let stop = Arc::new(AtomicBool::new(false));
+    let channels = Arc::new(Mutex::new(channels));
     let thread_stop = stop.clone();
+    let thread_channels = channels.clone();
     let thread_iface = iface.to_string();
     let handle = std::thread::spawn(move || {
-        sniffer::run(thread_iface, channels, thread_stop);
+        sniffer::run(thread_iface, thread_channels, thread_stop);
     });
 
-    SCAN_HANDLE
-        .lock()
-        .unwrap()
-        .replace(ScanHandle { stop, handle });
+    SCAN_HANDLE.lock().unwrap().replace(ScanHandle {
+        iface: iface.to_string(),
+        channels,
+        stop,
+        handle,
+    });
 
     log::info!(
         "scan started: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}"
