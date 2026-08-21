@@ -23,6 +23,7 @@ use libwifi::frame::components::{DataHeader, ManagementHeader, RsnAkmSuite, Stat
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -61,7 +62,10 @@ pub fn build_channel_list(ghz_2_4: bool, ghz_5: bool, filter: Option<&str>) -> V
 }
 
 /// Capture-thread body. Runs until `stop` is raised.
-pub fn run(iface: String, channels: Vec<u32>, stop: Arc<AtomicBool>) {
+///
+/// `channels` is shared and re-read every loop, so the GUI can change the bands or
+/// channel filter (and the scanner retunes) without the thread being restarted.
+pub fn run(iface: String, channels: Arc<Mutex<Vec<u32>>>, stop: Arc<AtomicBool>) {
     let socket = match raw_socket::open(&iface) {
         Ok(socket) => socket,
         Err(e) => {
@@ -83,21 +87,29 @@ pub fn run(iface: String, channels: Vec<u32>, stop: Arc<AtomicBool>) {
         }
     };
 
-    let hopping = channels.len() > 1;
     let mut chan_idx = 0;
-    let mut current_channel = channels.first().copied().unwrap_or(0);
-    if let Some(&channel) = channels.first() {
+    let mut current_channel = 0;
+    let mut last_hop = Instant::now();
+
+    // Tune to the first channel up front.
+    if let Some(&channel) = channels.lock().unwrap().first() {
+        current_channel = channel;
         set_channel(&iface, channel);
     }
-    let mut last_hop = Instant::now();
 
     let mut buf = [0u8; 8192];
 
     while !stop.load(Ordering::Relaxed) {
-        if hopping && last_hop.elapsed() >= HOP_INTERVAL {
-            chan_idx = (chan_idx + 1) % channels.len();
-            current_channel = channels[chan_idx];
-            set_channel(&iface, current_channel);
+        // Re-read the (possibly just-updated) plan and retune if needed. The lock is
+        // held only to decide; the slow `set_channel` runs without it.
+        let hop_due = last_hop.elapsed() >= HOP_INTERVAL;
+        let retune = {
+            let channels = channels.lock().unwrap();
+            plan_channel(&channels, &mut chan_idx, current_channel, hop_due)
+        };
+        if let Some(channel) = retune {
+            current_channel = channel;
+            set_channel(&iface, channel);
             last_hop = Instant::now();
         }
 
@@ -136,6 +148,39 @@ fn set_channel(iface: &str, channel: u32) -> bool {
         .output()
         .map(|out| out.status.success())
         .unwrap_or(false)
+}
+
+/// Decide the next channel to tune to from the live plan and where we sit in it.
+///
+/// Returns `Some(channel)` when the card should retune (advancing `chan_idx` for a
+/// multi-channel plan), or `None` to stay put. Keeping the hop/park decision pure
+/// lets it be unit-tested without a radio, and lets [`run`] re-read a plan the GUI
+/// swapped under it — enabling a band or clearing the channel filter reshapes the
+/// scan in place instead of restarting the thread:
+///   * empty plan — nothing to tune to;
+///   * single channel — park on it, retuning only if we are off it;
+///   * many channels — advance to the next once the dwell time is up.
+///
+/// A stale `chan_idx` left over from a longer plan is folded back in bounds by the
+/// modulo, so shrinking the plan never indexes out of range.
+fn plan_channel(
+    channels: &[u32],
+    chan_idx: &mut usize,
+    current: u32,
+    hop_due: bool,
+) -> Option<u32> {
+    match channels.len() {
+        0 => None,
+        1 => (channels[0] != current).then_some(channels[0]),
+        len => {
+            if hop_due {
+                *chan_idx = (*chan_idx + 1) % len;
+                Some(channels[*chan_idx])
+            } else {
+                None
+            }
+        }
+    }
 }
 
 // --- frame processing -------------------------------------------------------
@@ -423,4 +468,83 @@ fn is_unicast(mac: &str) -> bool {
 /// Current local time in airodump's `YYYY-MM-DD HH:MM:SS` format.
 fn timestamp() -> String {
     chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_channel_list_from_bands() {
+        assert_eq!(build_channel_list(true, false, None), CHANNELS_2_4.to_vec());
+        assert_eq!(build_channel_list(false, true, None), CHANNELS_5.to_vec());
+        assert!(build_channel_list(false, false, None).is_empty());
+
+        let both = build_channel_list(true, true, None);
+        assert_eq!(both.len(), CHANNELS_2_4.len() + CHANNELS_5.len());
+        assert_eq!(both.first(), Some(&1));
+    }
+
+    #[test]
+    fn build_channel_list_filter_overrides_bands() {
+        // An explicit filter wins over the band toggles, and junk entries are dropped.
+        assert_eq!(
+            build_channel_list(true, true, Some("1,6,11")),
+            vec![1, 6, 11]
+        );
+        assert_eq!(
+            build_channel_list(true, false, Some("36,x,40")),
+            vec![36, 40]
+        );
+        assert!(build_channel_list(true, false, Some("")).is_empty());
+    }
+
+    #[test]
+    fn plan_channel_empty_stays_put() {
+        let mut idx = 0;
+        assert_eq!(plan_channel(&[], &mut idx, 0, true), None);
+    }
+
+    #[test]
+    fn plan_channel_parked_holds_when_on_channel() {
+        let mut idx = 0;
+        assert_eq!(plan_channel(&[6], &mut idx, 6, true), None);
+        assert_eq!(idx, 0);
+    }
+
+    #[test]
+    fn plan_channel_parked_retunes_when_off_channel() {
+        // Filter narrowed to a single channel while the card sits elsewhere.
+        let mut idx = 0;
+        assert_eq!(plan_channel(&[1], &mut idx, 6, false), Some(1));
+    }
+
+    #[test]
+    fn plan_channel_hopping_waits_for_dwell() {
+        let mut idx = 0;
+        assert_eq!(plan_channel(&[1, 6, 11], &mut idx, 1, false), None);
+        assert_eq!(idx, 0);
+    }
+
+    #[test]
+    fn plan_channel_hopping_advances_when_due() {
+        let mut idx = 0;
+        assert_eq!(plan_channel(&[1, 6, 11], &mut idx, 1, true), Some(6));
+        assert_eq!(idx, 1);
+    }
+
+    #[test]
+    fn plan_channel_hopping_wraps_around() {
+        let mut idx = 2;
+        assert_eq!(plan_channel(&[1, 6, 11], &mut idx, 11, true), Some(1));
+        assert_eq!(idx, 0);
+    }
+
+    #[test]
+    fn plan_channel_stale_index_wraps_into_bounds() {
+        // The plan shrank under a stale index; the modulo keeps the access valid.
+        let mut idx = 5;
+        assert_eq!(plan_channel(&[1, 6, 11], &mut idx, 6, true), Some(1));
+        assert_eq!(idx, 0);
+    }
 }
