@@ -49,6 +49,19 @@ fn get_channel_entries(entry: &Entry) -> Vec<i32> {
     channels
 }
 
+/// Refresh the channel status bar with the channel the interface is
+/// currently listening on, as reported by the capture thread. Shows `none` when
+/// no scan is running (or the card has not tuned to a channel yet).
+pub fn update_channel_status(app_data: &Rc<AppData>) {
+    let text = match backend::get_current_channel() {
+        Some(channel) => format!("Channel: {channel}"),
+        None => String::from("Channel: none"),
+    };
+
+    app_data.app_gui.channel_status_bar.pop(0);
+    app_data.app_gui.channel_status_bar.push(0, &text);
+}
+
 /// The channels of every access point currently under attack, as a sorted,
 /// de-duplicated, comma-separated channel-filter string.
 fn attacked_channels_filter() -> String {
@@ -866,6 +879,7 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                 }
 
                 drive_channel_filter_from_attacks(&app_data);
+                update_channel_status(&app_data);
                 update_buttons_sensitivity(&app_data);
 
                 ControlFlow::Continue

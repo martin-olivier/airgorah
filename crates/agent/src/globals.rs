@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU32;
 use std::thread::JoinHandle;
 
 /// Root-owned 0700 directory for the agent's scan/capture files.
@@ -25,11 +26,13 @@ pub static OLD_SCAN_PATH: &str = "/var/lib/airgorah/old_scan";
 /// `channels` is the live channel plan the thread re-reads each loop, so swapping
 /// it retunes a running scan without restarting the thread; `iface` identifies the
 /// interface the scan runs on, so a request for the same one can adapt it in place.
-/// `stop` is raised to ask the thread to exit; `handle` is joined to wait for it to
-/// finish flushing the capture file.
+/// `channel` is the channel the thread is currently tuned to (0 until the first
+/// hop), published so the GUI can show it. `stop` is raised to ask the thread to
+/// exit; `handle` is joined to wait for it to finish flushing the capture file.
 pub struct ScanHandle {
     pub iface: String,
     pub channels: Arc<Mutex<Vec<u32>>>,
+    pub channel: Arc<AtomicU32>,
     pub stop: Arc<AtomicBool>,
     pub handle: JoinHandle<()>,
 }

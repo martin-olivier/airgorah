@@ -176,11 +176,13 @@ fn dispatch(request: Request) -> (Response, bool) {
             let aps: Vec<AP> = backend::get_airodump_data().into_values().collect();
             let unlinked: Vec<Client> = backend::get_unlinked_clients().values().cloned().collect();
             let attacked = backend::get_attack_states();
+            let channel = backend::current_channel();
             (
                 Response::ScanData {
                     aps,
                     unlinked,
                     attacked,
+                    channel,
                 },
                 false,
             )

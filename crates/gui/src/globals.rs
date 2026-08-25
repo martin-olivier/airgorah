@@ -27,6 +27,10 @@ lazy_static! {
     pub static ref UNLINKED_CLIENTS: Mutex<HashMap<String, Client>> = Mutex::new(HashMap::new());
     pub static ref ATTACK_POOL: Mutex<HashMap<String, AttackState>> = Mutex::new(HashMap::new());
 
+    /// Channel the interface is currently listening on, mirrored from each
+    /// `GetScanData` snapshot, `None` when no scan is running.
+    pub static ref CURRENT_CHANNEL: Mutex<Option<u32>> = Mutex::new(None);
+
     /// GUI-side overlay: which APs have had their handshake saved to which file.
     /// Merged onto incoming snapshots for display (the agent knows nothing of it).
     pub static ref SAVED_HANDSHAKES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
