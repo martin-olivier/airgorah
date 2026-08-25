@@ -327,17 +327,23 @@ pub fn reset_scan_data() {
 pub fn get_airodump_data() -> HashMap<String, AP> {
     let response = match request(Request::GetScanData) {
         Ok(response) => response,
-        Err(_) => return get_aps().clone(),
+        Err(_) => {
+            *CURRENT_CHANNEL.lock().unwrap() = None;
+            return get_aps().clone();
+        }
     };
 
-    let (aps_vec, unlinked, attacked) = match response {
+    let (aps_vec, unlinked, attacked, channel) = match response {
         Response::ScanData {
             aps,
             unlinked,
             attacked,
-        } => (aps, unlinked, attacked),
+            channel,
+        } => (aps, unlinked, attacked, channel),
         _ => return get_aps().clone(),
     };
+
+    *CURRENT_CHANNEL.lock().unwrap() = channel;
 
     // GUI-side enrichment: merge the saved-handshake overlay onto the snapshot.
     // Vendors are already resolved by the agent, so there is nothing else to fill.
@@ -370,6 +376,10 @@ pub fn get_airodump_data() -> HashMap<String, AP> {
 
 pub fn get_aps() -> MutexGuard<'static, HashMap<String, AP>> {
     APS.lock().unwrap()
+}
+
+pub fn get_current_channel() -> Option<u32> {
+    *CURRENT_CHANNEL.lock().unwrap()
 }
 
 pub fn get_unlinked_clients() -> MutexGuard<'static, HashMap<String, Client>> {

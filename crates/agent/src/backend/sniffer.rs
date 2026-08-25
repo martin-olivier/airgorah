@@ -24,7 +24,7 @@ use libwifi::frame::components::{DataHeader, ManagementHeader, RsnAkmSuite, Stat
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 /// 2.4 GHz channels scanned when the band is enabled without a channel filter.
@@ -65,7 +65,15 @@ pub fn build_channel_list(ghz_2_4: bool, ghz_5: bool, filter: Option<&str>) -> V
 ///
 /// `channels` is shared and re-read every loop, so the GUI can change the bands or
 /// channel filter (and the scanner retunes) without the thread being restarted.
-pub fn run(iface: String, channels: Arc<Mutex<Vec<u32>>>, stop: Arc<AtomicBool>) {
+///
+/// `channel_out` is updated with the channel the card is tuned to on every hop, so
+/// the GUI can display the channel the interface is currently listening on.
+pub fn run(
+    iface: String,
+    channels: Arc<Mutex<Vec<u32>>>,
+    channel_out: Arc<AtomicU32>,
+    stop: Arc<AtomicBool>,
+) {
     let socket = match raw_socket::open(&iface) {
         Ok(socket) => socket,
         Err(e) => {
@@ -94,6 +102,7 @@ pub fn run(iface: String, channels: Arc<Mutex<Vec<u32>>>, stop: Arc<AtomicBool>)
     // Tune to the first channel up front.
     if let Some(&channel) = channels.lock().unwrap().first() {
         current_channel = channel;
+        channel_out.store(channel, Ordering::Relaxed);
         set_channel(&iface, channel);
     }
 
@@ -109,6 +118,7 @@ pub fn run(iface: String, channels: Arc<Mutex<Vec<u32>>>, stop: Arc<AtomicBool>)
         };
         if let Some(channel) = retune {
             current_channel = channel;
+            channel_out.store(channel, Ordering::Relaxed);
             set_channel(&iface, channel);
             last_hop = Instant::now();
         }

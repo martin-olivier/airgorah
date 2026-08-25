@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 use super::get_attack_pool;
 use super::sniffer;
@@ -22,6 +22,16 @@ pub enum ScanError {
 /// Check if a scan is currently running
 pub fn is_scan_process() -> bool {
     SCAN_HANDLE.lock().unwrap().is_some()
+}
+
+/// The channel the running capture thread is currently tuned to
+pub fn current_channel() -> Option<u32> {
+    SCAN_HANDLE
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|handle| handle.channel.load(Ordering::Relaxed))
+        .filter(|channel| *channel != 0)
 }
 
 /// Start the native capture thread, or retune one already running on `iface`.
@@ -60,16 +70,19 @@ pub fn set_scan_process(
 
     let stop = Arc::new(AtomicBool::new(false));
     let channels = Arc::new(Mutex::new(channels));
+    let channel = Arc::new(AtomicU32::new(0));
     let thread_stop = stop.clone();
     let thread_channels = channels.clone();
+    let thread_channel = channel.clone();
     let thread_iface = iface.to_string();
     let handle = std::thread::spawn(move || {
-        sniffer::run(thread_iface, thread_channels, thread_stop);
+        sniffer::run(thread_iface, thread_channels, thread_channel, thread_stop);
     });
 
     SCAN_HANDLE.lock().unwrap().replace(ScanHandle {
         iface: iface.to_string(),
         channels,
+        channel,
         stop,
         handle,
     });

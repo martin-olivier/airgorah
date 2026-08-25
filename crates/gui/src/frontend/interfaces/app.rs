@@ -339,6 +339,7 @@ pub struct AppGui {
     pub deauth_but: IconButton,
     pub capture_but: IconButton,
     pub client_status_bar: Statusbar,
+    pub channel_status_bar: Statusbar,
     pub iface_status_bar: Statusbar,
 }
 
@@ -486,20 +487,25 @@ impl AppGui {
         let client_status_bar = Statusbar::new();
         client_status_bar.push(0, "Showing unassociated clients");
 
+        let channel_status_bar = Statusbar::new();
+        channel_status_bar
+            .set_tooltip_text(Some("Channel the interface is currently listening on"));
+        channel_status_bar.push(0, "Channel: none");
+
         let iface_status_bar = Statusbar::new();
         iface_status_bar.set_tooltip_text(Some("Wireless interface used for scans and attacks"));
-        iface_status_bar.push(0, "No interface selected");
+        iface_status_bar.push(0, "Interface: none");
 
-        let panned_status_bar = Paned::new(Orientation::Horizontal);
-        panned_status_bar.set_wide_handle(true);
-        panned_status_bar.set_start_child(Some(&client_status_bar));
-        panned_status_bar.set_end_child(Some(&iface_status_bar));
+        let status_bar = Box::new(Orientation::Horizontal, 0);
+        status_bar.append(&client_status_bar);
+        status_bar.append(&channel_status_bar);
+        status_bar.append(&iface_status_bar);
 
-        client_status_bar.set_size_request(110, -1);
+        client_status_bar.set_hexpand(true);
 
         let vbox = Box::new(Orientation::Vertical, 0);
         vbox.append(&panned_cli_aps);
-        vbox.append(&panned_status_bar);
+        vbox.append(&status_bar);
 
         window.set_child(Some(&vbox));
 
@@ -536,6 +542,7 @@ impl AppGui {
             deauth_but,
             capture_but,
             client_status_bar,
+            channel_status_bar,
             iface_status_bar,
         }
     }

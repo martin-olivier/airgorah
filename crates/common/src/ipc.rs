@@ -105,6 +105,7 @@ pub enum Response {
         aps: Vec<AP>,
         unlinked: Vec<Client>,
         attacked: Vec<AttackState>,
+        channel: Option<u32>,
     },
     /// One chunk of the capture; `last` marks the final one.
     CaptureChunk {
