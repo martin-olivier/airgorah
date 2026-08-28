@@ -15,6 +15,7 @@ use super::pcap::PcapWriter;
 use super::raw_socket;
 use super::scan::{get_aps, get_cap_ext, get_live_scan_path, get_unlinked_clients};
 
+use airgorah_common::channel::{CHANNELS_2_4, CHANNELS_5};
 use airgorah_common::types::{AP, Client};
 
 use libwifi::Addresses;
@@ -26,17 +27,6 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::{Duration, Instant};
-
-/// 2.4 GHz channels scanned when the band is enabled without a channel filter.
-const CHANNELS_2_4: &[u32] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-
-/// 5 GHz channels scanned when the band is enabled without a channel filter.
-/// DFS channels are included; the card may refuse some depending on the
-/// regulatory domain, in which case that hop is simply skipped.
-const CHANNELS_5: &[u32] = &[
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
-    149, 153, 157, 161, 165,
-];
 
 /// How long to dwell on each channel while hopping.
 const HOP_INTERVAL: Duration = Duration::from_millis(250);
