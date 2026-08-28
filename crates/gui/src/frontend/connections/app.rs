@@ -994,9 +994,9 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 #[strong]
                 app_data,
                 move |this, response| {
-                    if response == ResponseType::Accept {
-                        this.close();
+                    this.close();
 
+                    if response == ResponseType::Accept {
                         let gio_file = match this.file() {
                             Some(file) => file,
                             None => return,
