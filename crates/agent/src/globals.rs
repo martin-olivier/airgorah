@@ -37,17 +37,19 @@ pub struct ScanHandle {
     pub handle: JoinHandle<()>,
 }
 
-/// A running native deauth attack against one AP. `target` is kept for the wire
-/// projection ([`airgorah_common::types::AttackState`]), `stop` asks the injection
-/// thread to exit and `handle` joins it.
-pub struct DeauthAttack {
+/// A running native attack against one AP — a deauth or a PMKID solicitation.
+/// `target` records which kind (kept for the wire projection
+/// [`airgorah_common::types::AttackState`] and to drive the GUI), `stop` asks the
+/// worker thread to exit and `handle` joins it. Keyed by BSSID in [`AttackPool`],
+/// so an AP is under at most one attack at a time.
+pub struct Attack {
     pub ap: AP,
     pub target: AttackTarget,
     pub stop: Arc<AtomicBool>,
     pub handle: JoinHandle<()>,
 }
 
-pub type AttackPool = HashMap<String, DeauthAttack>;
+pub type AttackPool = HashMap<String, Attack>;
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);
