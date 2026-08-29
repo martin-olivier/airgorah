@@ -1,11 +1,12 @@
 use super::*;
-use airgorah_common::handshake::get_handshakes;
+use airgorah_common::handshake::get_crackables;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
-/// Update the handshake capture status of all APs by scanning the live/old
-/// capture files. Runs agent-side because those files are root-owned.
-pub fn update_handshakes() -> std::io::Result<()> {
+/// Update the crackable-material status (4-way handshake and PMKID) of all APs by
+/// scanning the live/old capture files. Runs agent-side because those files are
+/// root-owned.
+pub fn update_crackables() -> std::io::Result<()> {
     let paths: Vec<String> = [
         get_live_scan_path() + get_cap_ext(),
         get_old_scan_path() + get_cap_ext(),
@@ -18,17 +19,18 @@ pub fn update_handshakes() -> std::io::Result<()> {
         return Ok(());
     }
 
-    let handshakes = get_handshakes(&paths)?;
+    let crackables = get_crackables(&paths)?;
 
     let mut aps = get_aps();
 
-    for (bssid, _) in handshakes {
-        if let Some(ap) = aps.get_mut(&bssid) {
-            ap.handshake = true;
+    for crackable in crackables {
+        if let Some(ap) = aps.get_mut(&crackable.bssid) {
+            ap.handshake = crackable.handshake;
+            ap.pmkid = crackable.pmkid;
         }
     }
 
-    log::trace!("handshakes updated");
+    log::trace!("crackable material updated");
 
     Ok(())
 }

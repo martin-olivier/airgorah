@@ -105,29 +105,31 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                         let gio_path = gio_file.path().unwrap();
                         let file_path = gio_path.to_str().unwrap();
 
-                        let handshakes = backend::get_handshakes([file_path]).unwrap_or_default();
+                        let crackables = backend::get_crackables([file_path]).unwrap_or_default();
 
-                        if handshakes.is_empty() {
+                        if crackables.is_empty() {
                             return ErrorDialog::spawn(
                                 &app_data.decrypt_gui.window,
                                 "Invalid capture",
-                                &format!("\"{file_path}\" doesn't contain any valid handshake"),
+                                &format!(
+                                    "\"{file_path}\" doesn't contain any valid handshake or PMKID"
+                                ),
                             );
                         }
 
                         app_data.decrypt_gui.target_model.clear();
 
-                        for (bssid, essid) in handshakes.iter() {
-                            app_data
-                                .decrypt_gui
-                                .target_model
-                                .insert_with_values(None, &[(0, &bssid), (1, &essid)]);
+                        for crackable in crackables.iter() {
+                            app_data.decrypt_gui.target_model.insert_with_values(
+                                None,
+                                &[(0, &crackable.bssid), (1, &crackable.essid)],
+                            );
                         }
 
                         app_data
                             .decrypt_gui
                             .target_view
-                            .set_active(if !handshakes.is_empty() {
+                            .set_active(if !crackables.is_empty() {
                                 Some(0)
                             } else {
                                 None

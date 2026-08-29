@@ -66,10 +66,10 @@ fn main() {
     })
     .ok();
 
-    // Handshake detection now lives agent-side (it owns the capture files).
+    // Crackable-material detection (handshake + PMKID)
     std::thread::spawn(|| {
         loop {
-            backend::update_handshakes().ok();
+            backend::update_crackables().ok();
             std::thread::sleep(std::time::Duration::from_millis(1500));
         }
     });
