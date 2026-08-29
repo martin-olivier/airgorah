@@ -217,12 +217,35 @@ fn dispatch(request: Request) -> (Response, bool) {
         }
 
         Request::StopDeauth { bssid } => {
-            backend::stop_deauth_attack(&bssid);
+            backend::stop_attack(&bssid);
             (Response::Ok, false)
         }
 
         Request::StopAllDeauth => {
-            backend::stop_all_deauth_attacks();
+            backend::stop_all_attacks();
+            (Response::Ok, false)
+        }
+
+        Request::StartPmkid { bssid } => {
+            let iface = match backend::get_iface() {
+                Some(iface) => iface,
+                None => return (err("no interface selected"), false),
+            };
+            let ap = match backend::get_aps().get(&bssid).cloned() {
+                Some(ap) => ap,
+                None => return (err(format!("unknown access point {bssid}")), false),
+            };
+            if !is_valid_mac(&ap.bssid) {
+                return (err("invalid access point BSSID"), false);
+            }
+            match backend::launch_pmkid_attack(&iface, ap) {
+                Ok(()) => (Response::Ok, false),
+                Err(e) => (err(e), false),
+            }
+        }
+
+        Request::StopPmkid { bssid } => {
+            backend::stop_attack(&bssid);
             (Response::Ok, false)
         }
 

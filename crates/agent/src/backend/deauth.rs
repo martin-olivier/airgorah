@@ -99,7 +99,7 @@ pub fn launch_deauth_attack(
 
     get_attack_pool().insert(
         ap.bssid.clone(),
-        DeauthAttack {
+        Attack {
             ap,
             target,
             stop,
@@ -110,8 +110,8 @@ pub fn launch_deauth_attack(
     Ok(())
 }
 
-/// Stop a deauth attack on a specific AP.
-pub fn stop_deauth_attack(ap_bssid: &str) {
+/// Stop the attack (deauth or PMKID) running on a specific AP, if any.
+pub fn stop_attack(ap_bssid: &str) {
     // Remove first so the lock is released before we join the thread.
     let attack = get_attack_pool().remove(ap_bssid);
 
@@ -121,11 +121,12 @@ pub fn stop_deauth_attack(ap_bssid: &str) {
     }
 }
 
-pub fn stop_all_deauth_attacks() {
+/// Stop every running attack (deauth and PMKID).
+pub fn stop_all_attacks() {
     let attacked_aps: Vec<_> = get_attack_pool().keys().cloned().collect();
 
     for bssid in attacked_aps {
-        stop_deauth_attack(&bssid);
+        stop_attack(&bssid);
     }
 }
 
