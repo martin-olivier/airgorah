@@ -431,6 +431,17 @@ pub fn stop_deauth_attack(bssid: &str) {
     .ok();
 }
 
+pub fn launch_pmkid_attack(ap: AP) -> Result<(), AgentError> {
+    expect_ok(request(Request::StartPmkid { bssid: ap.bssid })?)
+}
+
+pub fn stop_pmkid_attack(bssid: &str) {
+    request(Request::StopPmkid {
+        bssid: bssid.to_string(),
+    })
+    .ok();
+}
+
 // --------------------------------------------------------------------------
 // Capture
 // --------------------------------------------------------------------------

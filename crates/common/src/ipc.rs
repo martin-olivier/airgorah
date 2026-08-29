@@ -73,6 +73,15 @@ pub enum Request {
     },
     StopAllDeauth,
 
+    /// Start a clientless PMKID solicitation against an AP: the agent associates
+    /// with it so it emits an EAPOL message 1 carrying its PMKID.
+    StartPmkid {
+        bssid: String,
+    },
+    StopPmkid {
+        bssid: String,
+    },
+
     // --- capture ---
     /// Read one chunk of the saved capture at `offset`; the GUI streams the file
     /// in bounded pieces so a long capture never has to fit in one frame.

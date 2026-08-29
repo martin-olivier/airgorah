@@ -31,6 +31,14 @@ fn build_settings_button() -> Button {
         .build()
 }
 
+fn build_pmkid_button() -> Button {
+    Button::builder()
+        .icon_name("network-wireless-hotspot-symbolic")
+        .tooltip_text("Solicit a PMKID from the selected access point (clientless)")
+        .sensitive(false)
+        .build()
+}
+
 fn build_scan_button() -> Button {
     Button::builder()
         .icon_name("media-playback-start-symbolic")
@@ -357,6 +365,7 @@ pub struct AppGui {
     pub focus_but: Button,
     pub add_but: Button,
     pub deauth_but: Button,
+    pub pmkid_but: Button,
     pub capture_but: Button,
     pub client_status_bar: Statusbar,
     pub channel_status_bar: Statusbar,
@@ -385,6 +394,7 @@ impl AppGui {
         let bottom_but = build_bottom_but();
 
         let deauth_but = build_deauth_button();
+        let pmkid_but = build_pmkid_button();
         let capture_but = build_capture_button();
 
         let about_button = build_about_button();
@@ -448,6 +458,7 @@ impl AppGui {
         header_bar.pack_start(&Separator::new(Orientation::Vertical));
 
         header_bar.pack_start(&deauth_but);
+        header_bar.pack_start(&pmkid_but);
         header_bar.pack_start(&capture_but);
 
         header_bar.pack_start(&Separator::new(Orientation::Vertical));
@@ -549,6 +560,7 @@ impl AppGui {
             focus_but,
             add_but,
             deauth_but,
+            pmkid_but,
             capture_but,
             client_status_bar,
             channel_status_bar,

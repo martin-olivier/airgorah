@@ -8,7 +8,7 @@ use super::*;
 /// the wireless card is never left in monitor mode with an orphaned scan running.
 pub fn app_cleanup() {
     stop_scan_process().ok();
-    stop_all_deauth_attacks();
+    stop_all_attacks();
 
     if let Some(ref iface) = get_iface() {
         disable_monitor_mode(iface).ok();
