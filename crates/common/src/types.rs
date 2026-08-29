@@ -53,9 +53,10 @@ pub struct AP {
     pub privacy: String,
     pub hidden: bool,
     pub handshake: bool,
-    /// Path of a capture file the *GUI* saved this handshake to. This is GUI-side
-    /// overlay state: the agent always leaves it `None` and the GUI fills it in
-    /// from its own bookkeeping before display.
+    pub pmkid: bool,
+    /// Path of a capture file the *GUI* saved this AP's crackable material to. This
+    /// is GUI-side overlay state: the agent always leaves it `None` and the GUI
+    /// fills it in from its own bookkeeping before display.
     pub saved_handshake: Option<String>,
     pub first_time_seen: String,
     pub last_time_seen: String,

@@ -737,7 +737,8 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             }
                         }
 
-                        match backend::get_aps()[&bssid].handshake {
+                        let ap = &backend::get_aps()[&bssid];
+                        match ap.handshake || ap.pmkid {
                             true => app_data.app_gui.capture_but.set_sensitive(true),
                             false => app_data.app_gui.capture_but.set_sensitive(false),
                         }
@@ -789,7 +790,8 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             (7, &ap.first_time_seen),
                             (8, &ap.last_time_seen),
                             (9, &ap.handshake),
-                            (10, &background_color.to_str()),
+                            (10, &ap.pmkid),
+                            (11, &background_color.to_str()),
                         ],
                     );
                 }
@@ -974,7 +976,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                 None => return,
             };
 
-            if !ap.handshake {
+            if !ap.handshake && !ap.pmkid {
                 return;
             }
 
@@ -1020,7 +1022,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
                             );
                         }
 
-                        backend::mark_handshakes_saved(&path);
+                        backend::mark_crackables_saved(&path);
 
                         app_data.decrypt_gui.show(Some((path, bssid)));
                     }

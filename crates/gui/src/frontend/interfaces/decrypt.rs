@@ -276,20 +276,20 @@ impl DecryptGui {
         if let Some((path, bssid)) = capture_and_bssid {
             self.handshake_entry.set_text(&path);
 
-            let handshakes = backend::get_handshakes([&path]).unwrap_or_default();
+            let crackables = backend::get_crackables([&path]).unwrap_or_default();
 
-            if handshakes.is_empty() {
+            if crackables.is_empty() {
                 return ErrorDialog::spawn(
                     &self.window,
                     "Invalid capture",
-                    &format!("\"{path}\" doesn't contain any valid handshake"),
+                    &format!("\"{path}\" doesn't contain any valid handshake or PMKID"),
                 );
             }
 
-            for (hs_bssid, hs_essid) in handshakes.iter() {
-                if hs_bssid == &bssid {
+            for crackable in crackables.iter() {
+                if crackable.bssid == bssid {
                     self.target_model
-                        .insert_with_values(None, &[(0, &hs_bssid), (1, &hs_essid)]);
+                        .insert_with_values(None, &[(0, &crackable.bssid), (1, &crackable.essid)]);
                 }
             }
 

@@ -1,17 +1,20 @@
-//! Native WPA handshake detection.
+//! Native WPA crackable-material detection (4-way handshake and PMKID).
 //!
-//! Reads capture file(s) and reports which access points have a crackable WPA
-//! 4-way handshake — the in-house replacement for shelling out to `aircrack-ng`.
-//! Shared because both sides need it against different files: the agent scans the
-//! root-owned live/old captures to flag APs while scanning, and the GUI inspects a
-//! user-selected capture before offering it for decryption. Reading a capture and
-//! parsing it needs no privilege, so the logic is identical on both sides.
+//! Reads capture file(s) and reports which access points have crackable WPA
+//! material — a captured 4-way handshake and/or a PMKID. Shared because both sides
+//! need it against different files: the agent scans the root-owned live/old captures
+//! to flag APs while scanning, and the GUI inspects a user-selected capture before
+//! offering it for decryption. Reading a capture and parsing it needs no
+//! privilege, so the logic is identical on both sides.
 //!
 //! Only the classic libpcap format is read, with link type
 //! `LINKTYPE_IEEE802_11_RADIOTAP` (127, what airgorah itself writes) or plain
 //! `LINKTYPE_IEEE802_11` (105). Frames are decoded with `radiotap` + `libwifi`;
 //! a data frame carrying an EAPOL key is classified into one of the four handshake
-//! messages, and an AP is reported once a crackable combination has been seen.
+//! messages, and an AP is reported once a crackable combination has been seen. The
+//! same message 1 also carries the AP's PMKID (in the RSN PMKID KDE of the key
+//! data) when the AP volunteers it — a clientless capture that is crackable on its
+//! own, so it is flagged independently of the 4-way handshake.
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -24,9 +27,21 @@ use libwifi::frame::components::{DataHeader, ManagementHeader, StationInfo};
 const LINKTYPE_IEEE802_11: u32 = 105;
 const LINKTYPE_IEEE802_11_RADIOTAP: u32 = 127;
 
-/// Return `(bssid, essid)` for every AP that has a captured WPA 4-way handshake in
-/// the given capture file(s). Unreadable or unparsable files are skipped.
-pub fn get_handshakes<I, S>(paths: I) -> std::io::Result<Vec<(String, String)>>
+/// Crackable WPA material found for one access point in a capture.
+///
+/// `handshake` and `pmkid` are independent: either alone makes the AP crackable,
+/// and both can be present in the same capture.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Crackable {
+    pub bssid: String,
+    pub essid: String,
+    pub handshake: bool,
+    pub pmkid: bool,
+}
+
+/// Return a [`Crackable`] for every AP that yielded a WPA 4-way handshake and/or a
+/// PMKID in the given capture file(s). Unreadable or unparsable files are skipped.
+pub fn get_crackables<I, S>(paths: I) -> std::io::Result<Vec<Crackable>>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<Path>,
@@ -34,24 +49,31 @@ where
     let mut essids: HashMap<String, String> = HashMap::new();
     // Per (bssid, station): a bitmask of which handshake messages M1..M4 were seen.
     let mut messages: HashMap<(String, String), u8> = HashMap::new();
+    // BSSIDs whose message 1 carried a valid PMKID.
+    let mut pmkids: HashSet<String> = HashSet::new();
 
     for path in paths {
         if let Ok(data) = std::fs::read(path.as_ref()) {
-            scan_capture(&data, &mut essids, &mut messages);
+            scan_capture(&data, &mut essids, &mut messages, &mut pmkids);
         }
     }
 
     // A crackable 4-way handshake needs M2 — the only carrier of the SNonce, plus a
     // MIC — together with an ANonce source (M1 or M3).
-    let mut bssids: HashSet<String> = HashSet::new();
+    let mut handshakes: HashSet<String> = HashSet::new();
     for ((bssid, _station), seen) in &messages {
         let m1 = seen & 0b0001 != 0;
         let m2 = seen & 0b0010 != 0;
         let m3 = seen & 0b0100 != 0;
         if m2 && (m1 || m3) {
-            bssids.insert(bssid.clone());
+            handshakes.insert(bssid.clone());
         }
     }
+
+    // Report every AP that produced either kind of material.
+    let mut bssids: HashSet<String> = HashSet::new();
+    bssids.extend(handshakes.iter().cloned());
+    bssids.extend(pmkids.iter().cloned());
 
     Ok(bssids
         .into_iter()
@@ -60,16 +82,40 @@ where
                 .get(&bssid)
                 .cloned()
                 .unwrap_or_else(|| "hidden".to_string());
-            (bssid, essid)
+            let handshake = handshakes.contains(&bssid);
+            let pmkid = pmkids.contains(&bssid);
+            Crackable {
+                bssid,
+                essid,
+                handshake,
+                pmkid,
+            }
         })
         .collect())
 }
 
-/// Walk a single capture's frames, accumulating ESSIDs and handshake messages.
+/// Return `(bssid, essid)` for every AP that has a captured WPA 4-way handshake in
+/// the given capture file(s), ignoring PMKID-only APs. A thin view over
+/// [`get_crackables`] for callers that only care about full handshakes.
+pub fn get_handshakes<I, S>(paths: I) -> std::io::Result<Vec<(String, String)>>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<Path>,
+{
+    Ok(get_crackables(paths)?
+        .into_iter()
+        .filter(|crackable| crackable.handshake)
+        .map(|crackable| (crackable.bssid, crackable.essid))
+        .collect())
+}
+
+/// Walk a single capture's frames, accumulating ESSIDs, handshake messages, and
+/// the BSSIDs that leaked a PMKID.
 fn scan_capture(
     data: &[u8],
     essids: &mut HashMap<String, String>,
     messages: &mut HashMap<(String, String), u8>,
+    pmkids: &mut HashSet<String>,
 ) {
     let Some(mut reader) = PcapReader::new(data) else {
         return;
@@ -106,8 +152,8 @@ fn scan_capture(
         match frame {
             Frame::Beacon(beacon) => record_essid(&beacon.header, &beacon.station_info, essids),
             Frame::ProbeResponse(resp) => record_essid(&resp.header, &resp.station_info, essids),
-            Frame::Data(data) => record_eapol(&data.header, &data.eapol_key, messages),
-            Frame::QosData(data) => record_eapol(&data.header, &data.eapol_key, messages),
+            Frame::Data(data) => record_eapol(&data.header, &data.eapol_key, messages, pmkids),
+            Frame::QosData(data) => record_eapol(&data.header, &data.eapol_key, messages, pmkids),
             _ => {}
         }
     }
@@ -130,11 +176,13 @@ fn record_essid(
     }
 }
 
-/// Classify an EAPOL data frame and record which handshake message it is.
+/// Classify an EAPOL data frame, record which handshake message it is, and note
+/// the AP's PMKID when message 1 carries one.
 fn record_eapol(
     header: &DataHeader,
     eapol: &Option<EapolKey>,
     messages: &mut HashMap<(String, String), u8>,
+    pmkids: &mut HashSet<String>,
 ) {
     let Some(key) = eapol else {
         return;
@@ -153,7 +201,17 @@ fn record_eapol(
         return;
     };
 
-    let pair = (bssid.to_long_string(), station.to_long_string());
+    let bssid = bssid.to_long_string();
+
+    // Message 1 optionally advertises the AP's PMKID in the RSN PMKID KDE of its
+    // key data. libwifi validates the KDE (OUI 00:0f:ac, type 4, non-zero PMKID)
+    // and only returns it for message 1, so its presence alone flags the AP as
+    // crackable — no client and no full handshake required.
+    if key.pmkid().is_some() {
+        pmkids.insert(bssid.clone());
+    }
+
+    let pair = (bssid, station.to_long_string());
     *messages.entry(pair).or_insert(0) |= 1 << (message - 1);
 }
 
@@ -278,6 +336,118 @@ mod tests {
         data.extend_from_slice(&(payload.len() as u32).to_le_bytes()); // incl_len
         data.extend_from_slice(&(payload.len() as u32).to_le_bytes()); // orig_len
         data.extend_from_slice(payload);
+    }
+
+    /// Build an 802.11 Data frame (from-DS) carrying an EAPOL-Key message 1, with
+    /// an optional RSN PMKID KDE in its key data. `bssid`/`station` are the AP and
+    /// client MACs; the AP is the transmitter (address 2) on this downlink frame.
+    fn eapol_m1_frame(bssid: [u8; 6], station: [u8; 6], pmkid: Option<[u8; 16]>) -> Vec<u8> {
+        let mut frame = Vec::new();
+
+        // 802.11 MAC header (24 bytes): a from-DS data frame, so address 1 is the
+        // destination station and address 2 is the transmitting AP (the BSSID).
+        frame.extend_from_slice(&[0x08, 0x02]); // frame control: Data, subtype 0, from_ds
+        frame.extend_from_slice(&[0x00, 0x00]); // duration
+        frame.extend_from_slice(&station); // address 1 (RA): destination station
+        frame.extend_from_slice(&bssid); // address 2 (TA): transmitting AP
+        frame.extend_from_slice(&bssid); // address 3: BSSID
+        frame.extend_from_slice(&[0x00, 0x00]); // sequence control
+
+        // LLC/SNAP header announcing EAPOL (ethertype 0x888e).
+        frame.extend_from_slice(&[0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e]);
+
+        // Key data: an RSN PMKID KDE when a PMKID is provided, otherwise empty.
+        let key_data = match pmkid {
+            Some(pmkid) => {
+                let mut kde = vec![0xdd, 0x14, 0x00, 0x0f, 0xac, 0x04]; // id, len, OUI, type 4
+                kde.extend_from_slice(&pmkid);
+                kde
+            }
+            None => Vec::new(),
+        };
+
+        // EAPOL-Key body (message 1: pairwise Key Type + Key ACK, no MIC).
+        let mut eapol = Vec::new();
+        eapol.push(0x02); // protocol version
+        eapol.push(0x03); // packet type: EAPOL-Key
+        eapol.extend_from_slice(&(95 + key_data.len() as u16).to_be_bytes()); // packet length
+        eapol.push(0x02); // descriptor type: RSN
+        eapol.extend_from_slice(&0x008au16.to_be_bytes()); // key information: message 1
+        eapol.extend_from_slice(&0x0010u16.to_be_bytes()); // key length
+        eapol.extend_from_slice(&1u64.to_be_bytes()); // replay counter
+        eapol.extend_from_slice(&[0x11; 32]); // key nonce (ANonce)
+        eapol.extend_from_slice(&[0x00; 16]); // key iv
+        eapol.extend_from_slice(&0u64.to_be_bytes()); // key rsc
+        eapol.extend_from_slice(&0u64.to_be_bytes()); // key id
+        eapol.extend_from_slice(&[0x00; 16]); // key mic (absent in message 1)
+        eapol.extend_from_slice(&(key_data.len() as u16).to_be_bytes()); // key data length
+        eapol.extend_from_slice(&key_data);
+
+        frame.extend_from_slice(&eapol);
+        frame
+    }
+
+    #[test]
+    fn detects_pmkid_in_message_one() {
+        let bssid = [0x18, 0x86, 0x37, 0x1f, 0x30, 0x40];
+        let station = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
+
+        let mut essids = HashMap::new();
+        let mut messages = HashMap::new();
+        let mut pmkids = HashSet::new();
+
+        let frame = eapol_m1_frame(bssid, station, Some([0x42; 16]));
+        let mut data = global_header(LINKTYPE_IEEE802_11);
+        push_record(&mut data, &frame);
+
+        scan_capture(&data, &mut essids, &mut messages, &mut pmkids);
+
+        // The AP's PMKID is recorded, and no full handshake is claimed from M1 alone.
+        assert_eq!(pmkids.len(), 1);
+        assert_eq!(messages.values().copied().collect::<Vec<_>>(), vec![0b0001]);
+    }
+
+    #[test]
+    fn message_one_without_pmkid_is_not_flagged() {
+        let bssid = [0x18, 0x86, 0x37, 0x1f, 0x30, 0x40];
+        let station = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
+
+        let mut essids = HashMap::new();
+        let mut messages = HashMap::new();
+        let mut pmkids = HashSet::new();
+
+        // A message 1 whose key data has no PMKID KDE (empty key data).
+        let frame = eapol_m1_frame(bssid, station, None);
+        let mut data = global_header(LINKTYPE_IEEE802_11);
+        push_record(&mut data, &frame);
+
+        scan_capture(&data, &mut essids, &mut messages, &mut pmkids);
+
+        assert!(pmkids.is_empty());
+    }
+
+    #[test]
+    fn get_crackables_reports_a_pmkid_only_ap() {
+        let bssid = [0x18, 0x86, 0x37, 0x1f, 0x30, 0x40];
+        let station = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
+
+        let mut data = global_header(LINKTYPE_IEEE802_11);
+        push_record(&mut data, &eapol_m1_frame(bssid, station, Some([0x42; 16])));
+
+        let mut path = std::env::temp_dir();
+        path.push(format!("airgorah-pmkid-test-{}.cap", std::process::id()));
+        std::fs::write(&path, &data).unwrap();
+
+        let crackables = get_crackables([&path]).unwrap();
+        std::fs::remove_file(&path).ok();
+
+        // A lone PMKID makes the AP crackable even though there is no 4-way handshake.
+        assert_eq!(crackables.len(), 1);
+        assert!(crackables[0].pmkid);
+        assert!(!crackables[0].handshake);
+        // get_handshakes, which reports only 4-way handshakes, ignores it.
+        let handshakes = get_handshakes([&path]).unwrap_or_default();
+        assert!(handshakes.is_empty());
     }
 
     fn global_header(link_type: u32) -> Vec<u8> {

@@ -129,7 +129,7 @@ fn build_deauth_button() -> Button {
 fn build_capture_button() -> Button {
     Button::builder()
         .icon_name("dialog-password-symbolic")
-        .tooltip_text("Decrypt a handshake captured on the selected access point")
+        .tooltip_text("Decrypt a handshake or PMKID captured on the selected access point")
         .sensitive(false)
         .build()
 }
@@ -163,6 +163,7 @@ fn build_aps_model() -> ListStore {
         glib::Type::STRING, // First time seen
         glib::Type::STRING, // Last time seen
         glib::Type::BOOL,   // Handshake
+        glib::Type::BOOL,   // PMKID
         glib::Type::STRING, // <color>
     ])
 }
@@ -180,7 +181,11 @@ fn build_aps_view() -> TreeView {
         ("First time seen", 150),
         ("Last time seen", 150),
         ("Handshake", 106),
+        ("PMKID", 80),
     ];
+
+    // Index of the hidden per-row background-color column (last model column).
+    const COLOR_COL: i32 = 11;
 
     for (pos, (column_name, column_size)) in columns.into_iter().enumerate() {
         let column = TreeViewColumn::builder()
@@ -198,21 +203,22 @@ fn build_aps_view() -> TreeView {
             icon_renderer.set_property("icon-name", "network-wireless");
 
             column.pack_start(&icon_renderer, false);
-            column.add_attribute(&icon_renderer, "cell-background", 10);
+            column.add_attribute(&icon_renderer, "cell-background", COLOR_COL);
             column.set_expand(true);
         }
 
-        if pos == 9 {
+        // The Handshake (9) and PMKID (10) columns render as read-only toggles.
+        if pos == 9 || pos == 10 {
             let toggle = CellRendererToggle::new();
             toggle.set_sensitive(false);
             column.pack_start(&toggle, false);
-            column.add_attribute(&toggle, "active", 9);
-            column.add_attribute(&toggle, "cell-background", 10);
+            column.add_attribute(&toggle, "active", pos as i32);
+            column.add_attribute(&toggle, "cell-background", COLOR_COL);
         } else {
             let text_renderer = CellRendererText::new();
             column.pack_start(&text_renderer, false);
             column.add_attribute(&text_renderer, "text", pos as i32);
-            column.add_attribute(&text_renderer, "background", 10);
+            column.add_attribute(&text_renderer, "background", COLOR_COL);
         }
 
         view.append_column(&column);

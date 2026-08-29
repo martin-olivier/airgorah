@@ -390,15 +390,15 @@ pub fn get_attack_pool() -> MutexGuard<'static, HashMap<String, AttackState>> {
     ATTACK_POOL.lock().unwrap()
 }
 
-/// Record that every currently-captured handshake has been saved to `path`.
-/// Replaces the old direct mutation of the AP map so the mark survives the next
-/// snapshot refresh (it is stored in the GUI-side overlay).
-pub fn mark_handshakes_saved(path: &str) {
+/// Record that every AP with currently-captured crackable material (a handshake
+/// or a PMKID) has been saved to `path`. Stored in the GUI-side overlay so the
+/// mark survives the next snapshot refresh.
+pub fn mark_crackables_saved(path: &str) {
     let mut overlay = SAVED_HANDSHAKES.lock().unwrap();
     let mut aps = get_aps();
 
     for (bssid, ap) in aps.iter_mut() {
-        if ap.handshake {
+        if ap.handshake || ap.pmkid {
             overlay.insert(bssid.clone(), path.to_string());
             ap.saved_handshake = Some(path.to_string());
         }

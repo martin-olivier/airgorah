@@ -287,6 +287,7 @@ fn update_ap(
                     privacy,
                     hidden,
                     handshake: false,
+                    pmkid: false,
                     saved_handshake: None,
                     first_time_seen: now.clone(),
                     last_time_seen: now,
