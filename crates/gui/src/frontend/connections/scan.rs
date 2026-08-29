@@ -131,7 +131,7 @@ fn connect_export_button(app_data: Rc<AppData>) {
                             );
                         }
 
-                        backend::mark_handshakes_saved(&path);
+                        backend::mark_crackables_saved(&path);
                     }
 
                     if was_scanning {

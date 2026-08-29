@@ -15,4 +15,4 @@ pub use settings::*;
 
 pub use airgorah_common::channel::is_valid_channel_filter;
 pub use airgorah_common::deps;
-pub use airgorah_common::handshake::get_handshakes;
+pub use airgorah_common::handshake::get_crackables;
