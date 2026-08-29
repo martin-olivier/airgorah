@@ -466,6 +466,7 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
             app_data.app_gui.focus_but.set_sensitive(false);
             app_data.app_gui.add_but.set_sensitive(false);
             app_data.app_gui.deauth_but.set_sensitive(false);
+            app_data.app_gui.pmkid_but.set_sensitive(false);
             app_data.app_gui.capture_but.set_sensitive(false);
 
             app_data.app_gui.previous_but.set_sensitive(false);
@@ -530,6 +531,7 @@ pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
     }
 
     app_data.app_gui.deauth_but.set_sensitive(true);
+    app_data.app_gui.pmkid_but.set_sensitive(true);
 
     let mut prev_iter = iter;
     match app_data.app_gui.aps_model.iter_previous(&mut prev_iter) {
@@ -720,22 +722,36 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                 match app_data.app_gui.aps_view.selection().selected() {
                     Some((_, iter)) => {
                         let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
-                        let attack_pool = backend::get_attack_pool();
 
-                        match attack_pool.contains_key(&bssid) {
-                            true => {
-                                app_data
-                                    .app_gui
-                                    .deauth_but
-                                    .set_icon_name("process-stop-symbolic");
-                            }
-                            false => {
-                                app_data
-                                    .app_gui
-                                    .deauth_but
-                                    .set_icon_name("network-wireless-offline-symbolic");
-                            }
+                        // The deauth and PMKID buttons each reflect their own kind
+                        // of attack: an AP is under at most one at a time.
+                        let (is_deauth, is_pmkid) = {
+                            let attack_pool = backend::get_attack_pool();
+                            let target = attack_pool.get(&bssid).map(|state| state.target.clone());
+                            (
+                                matches!(
+                                    target,
+                                    Some(AttackTarget::All) | Some(AttackTarget::Selection(_))
+                                ),
+                                matches!(target, Some(AttackTarget::Pmkid)),
+                            )
+                        };
+
+                        match is_deauth {
+                            true => app_data
+                                .app_gui
+                                .deauth_but
+                                .set_icon_name("process-stop-symbolic"),
+                            false => app_data
+                                .app_gui
+                                .deauth_but
+                                .set_icon_name("network-wireless-offline-symbolic"),
                         }
+
+                        app_data.app_gui.pmkid_but.set_icon_name(match is_pmkid {
+                            true => "process-stop-symbolic",
+                            false => "network-wireless-hotspot-symbolic",
+                        });
 
                         let ap = &backend::get_aps()[&bssid];
                         match ap.handshake || ap.pmkid {
@@ -748,6 +764,10 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                             .app_gui
                             .deauth_but
                             .set_icon_name("network-wireless-offline-symbolic");
+                        app_data
+                            .app_gui
+                            .pmkid_but
+                            .set_icon_name("network-wireless-hotspot-symbolic");
                     }
                 };
 
@@ -823,6 +843,9 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                                     }
                                     color
                                 }
+                                // A PMKID solicitation targets the AP, not any
+                                // client, so no client row is highlighted.
+                                AttackTarget::Pmkid => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                             },
                             None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                         };
@@ -948,11 +971,56 @@ fn connect_deauth_button(app_data: Rc<AppData>) {
             };
 
             let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
-            let under_attack = backend::get_attack_pool().contains_key(&bssid);
 
-            match under_attack {
-                true => backend::stop_deauth_attack(&bssid),
-                false => app_data.deauth_gui.show(backend::get_aps()[&bssid].clone()),
+            let target = backend::get_attack_pool()
+                .get(&bssid)
+                .map(|state| state.target.clone());
+
+            match target {
+                Some(AttackTarget::All) | Some(AttackTarget::Selection(_)) => {
+                    backend::stop_deauth_attack(&bssid)
+                }
+                // The AP is busy soliciting a PMKID; leave that attack alone.
+                Some(AttackTarget::Pmkid) => {}
+                None => app_data.deauth_gui.show(backend::get_aps()[&bssid].clone()),
+            }
+        }
+    ));
+}
+
+fn connect_pmkid_button(app_data: Rc<AppData>) {
+    app_data.app_gui.pmkid_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |_| {
+            let iter = match app_data.app_gui.aps_view.selection().selected() {
+                Some((_, iter)) => iter,
+                None => return,
+            };
+
+            let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+
+            let target = backend::get_attack_pool()
+                .get(&bssid)
+                .map(|state| state.target.clone());
+
+            match target {
+                Some(AttackTarget::Pmkid) => backend::stop_pmkid_attack(&bssid),
+                // The AP is busy with a deauth attack; leave it alone.
+                Some(_) => {}
+                None => {
+                    let ap = match backend::get_aps().get(&bssid) {
+                        Some(ap) => ap.clone(),
+                        None => return,
+                    };
+                    if let Err(e) = backend::launch_pmkid_attack(ap) {
+                        ErrorDialog::spawn(
+                            &app_data.app_gui.window,
+                            "Failed to start PMKID attack",
+                            &e.to_string(),
+                        );
+                    }
+                }
             }
         }
     ));
@@ -1061,5 +1129,6 @@ pub fn connect(app: &Application, app_data: Rc<AppData>) {
     connect_add_button(app_data.clone());
 
     connect_deauth_button(app_data.clone());
+    connect_pmkid_button(app_data.clone());
     connect_capture_button(app_data);
 }

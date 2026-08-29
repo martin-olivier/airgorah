@@ -24,16 +24,19 @@ pub enum MacMode {
     Specific(String),
 }
 
-/// Serializable view of which clients of an AP are currently under attack.
+/// Serializable view of what kind of attack an AP is currently under.
 ///
-/// The agent keeps the actual `Child` handles internally; this is the shape the
-/// GUI receives so it can paint the affected rows.
+/// The agent keeps the actual thread handles internally; this is the shape the
+/// GUI receives so it can paint the affected rows and drive its controls.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum AttackTarget {
     /// A broadcast deauth against every client (`FF:FF:FF:FF:FF:FF`).
     All,
     /// A deauth targeting the listed client MAC addresses.
     Selection(Vec<String>),
+    /// A clientless PMKID solicitation: the agent associates with the AP itself
+    /// to make it emit an EAPOL message 1 carrying its PMKID.
+    Pmkid,
 }
 
 /// A single ongoing deauth attack, as reported to the GUI.
