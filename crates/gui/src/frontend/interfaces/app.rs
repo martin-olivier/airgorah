@@ -1,6 +1,4 @@
 use crate::backend;
-use crate::frontend::widgets::*;
-use crate::globals;
 
 use gtk4::prelude::*;
 use gtk4::*;
@@ -116,6 +114,22 @@ fn build_bottom_but() -> Button {
     Button::builder()
         .icon_name("go-bottom-symbolic")
         .tooltip_text("Last access point")
+        .sensitive(false)
+        .build()
+}
+
+fn build_deauth_button() -> Button {
+    Button::builder()
+        .icon_name("network-wireless-offline-symbolic")
+        .tooltip_text("Perform (or stop) a deauth attack on the selected access point")
+        .sensitive(false)
+        .build()
+}
+
+fn build_capture_button() -> Button {
+    Button::builder()
+        .icon_name("dialog-password-symbolic")
+        .tooltip_text("Decrypt a handshake captured on the selected access point")
         .sensitive(false)
         .build()
 }
@@ -336,8 +350,8 @@ pub struct AppGui {
     pub hopping_but: Button,
     pub focus_but: Button,
     pub add_but: Button,
-    pub deauth_but: IconButton,
-    pub capture_but: IconButton,
+    pub deauth_but: Button,
+    pub capture_but: Button,
     pub client_status_bar: Statusbar,
     pub channel_status_bar: Statusbar,
     pub iface_status_bar: Statusbar,
@@ -363,6 +377,9 @@ impl AppGui {
         let next_but = build_next_but();
         let top_but = build_top_but();
         let bottom_but = build_bottom_but();
+
+        let deauth_but = build_deauth_button();
+        let capture_but = build_capture_button();
 
         let about_button = build_about_button();
         let decrypt_button = build_decrypt_button();
@@ -408,20 +425,6 @@ impl AppGui {
         let style_context = channel_filter_entry.style_context();
         style_context.add_provider(&css_provider, gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        // Actions
-
-        let deauth_but = IconButton::new(globals::DEAUTH_ICON);
-        deauth_but.set_tooltip_text(Some(
-            "Perform (or stop) a deauth attack on the selected access point",
-        ));
-        deauth_but.set_sensitive(false);
-
-        let capture_but = IconButton::new(globals::CAPTURE_ICON);
-        capture_but.set_tooltip_text(Some(
-            "Decrypt a handshake captured on the selected access point",
-        ));
-        capture_but.set_sensitive(false);
-
         // Header Bar
 
         header_bar.pack_start(&scan_but);
@@ -438,8 +441,8 @@ impl AppGui {
 
         header_bar.pack_start(&Separator::new(Orientation::Vertical));
 
-        header_bar.pack_start(&deauth_but.handle);
-        header_bar.pack_start(&capture_but.handle);
+        header_bar.pack_start(&deauth_but);
+        header_bar.pack_start(&capture_but);
 
         header_bar.pack_start(&Separator::new(Orientation::Vertical));
 

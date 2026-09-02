@@ -11,12 +11,6 @@ pub use airgorah_common::VERSION;
 
 pub static APP_ICON: &[u8] =
     include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/app_icon.png"));
-pub static DEAUTH_ICON: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/deauth.png"));
-pub static STOP_ICON: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/stop.png"));
-pub static CAPTURE_ICON: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/capture.png"));
 
 lazy_static! {
     pub static ref IFACE: Mutex<Option<String>> = Mutex::new(None);
