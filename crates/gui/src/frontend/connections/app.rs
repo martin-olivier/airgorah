@@ -724,10 +724,16 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 
                         match attack_pool.contains_key(&bssid) {
                             true => {
-                                app_data.app_gui.deauth_but.set_icon(globals::STOP_ICON);
+                                app_data
+                                    .app_gui
+                                    .deauth_but
+                                    .set_icon_name("process-stop-symbolic");
                             }
                             false => {
-                                app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
+                                app_data
+                                    .app_gui
+                                    .deauth_but
+                                    .set_icon_name("network-wireless-offline-symbolic");
                             }
                         }
 
@@ -737,7 +743,10 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         }
                     }
                     None => {
-                        app_data.app_gui.deauth_but.set_icon(globals::DEAUTH_ICON);
+                        app_data
+                            .app_gui
+                            .deauth_but
+                            .set_icon_name("network-wireless-offline-symbolic");
                     }
                 };
 
