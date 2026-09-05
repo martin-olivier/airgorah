@@ -792,9 +792,14 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         None => app_data.app_gui.aps_model.append(),
                     };
 
-                    let background_color = match backend::get_attack_pool().contains_key(bssid) {
-                        true => gdk::RGBA::RED,
-                        false => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
+                    let background_color = match backend::get_attack_pool().get(bssid) {
+                        Some(attack_state) => match &attack_state.target {
+                            // A PMKID (association) solicitation marks the AP blue;
+                            // a deauth attack marks it red.
+                            AttackTarget::Pmkid => gdk::RGBA::BLUE,
+                            AttackTarget::All | AttackTarget::Selection(_) => gdk::RGBA::RED,
+                        },
+                        None => gdk::RGBA::new(0.0, 0.0, 0.0, 0.0),
                     };
 
                     app_data.app_gui.aps_model.set(
