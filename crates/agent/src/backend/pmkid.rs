@@ -20,6 +20,7 @@
 use super::raw_socket;
 use super::{get_aps, get_attack_pool};
 use crate::globals::Attack;
+use airgorah_common::handshake::has_crackable_pmkid;
 use airgorah_common::types::*;
 
 use libwifi::Frame;
@@ -218,7 +219,9 @@ fn frame_carries_pmkid(raw: &[u8], bssid_str: &str) -> bool {
     let Some(key) = eapol else {
         return false;
     };
-    if key.pmkid().is_none() {
+    // Only count a PMKID a passphrase attack could actually recover (WPA/WPA2-PSK),
+    // not a WPA3-SAE one, mirroring the passive detector.
+    if !has_crackable_pmkid(key) {
         return false;
     }
 
