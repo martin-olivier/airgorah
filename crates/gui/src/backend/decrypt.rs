@@ -19,7 +19,7 @@ pub fn run_decrypt_wordlist_process(
     essid: &str,
     wordlist: &str,
 ) -> Result<(), DecryptError> {
-    let title = format!("Handshake Decryption ({essid})");
+    let title = format!("WPA Decryption ({essid})");
 
     Command::new("xterm")
         .stdin(Stdio::null())
@@ -73,7 +73,7 @@ pub fn run_decrypt_bruteforce_process(
         }
         BruteforceCharset::Specific(custom) => custom.to_owned(),
     };
-    let title = format!("Handshake Decryption ({essid})");
+    let title = format!("WPA Decryption ({essid})");
     let cmd =
         format!("crunch {min} {max} '{charset_str}' | aircrack-ng -w - -b '{bssid}' '{handshake}'");
 

@@ -20,7 +20,7 @@ fn build_update_button() -> Button {
 fn build_decrypt_button() -> Button {
     Button::builder()
         .icon_name("utilities-terminal-symbolic")
-        .tooltip_text("Handshake decryption")
+        .tooltip_text("WPA decryption")
         .build()
 }
 

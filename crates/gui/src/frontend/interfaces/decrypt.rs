@@ -119,7 +119,7 @@ pub struct DecryptGui {
 impl DecryptGui {
     pub fn new(parent: &impl IsA<Window>) -> Self {
         let window = Window::builder()
-            .title("Decrypt Handshake")
+            .title("WPA Decryption")
             .hide_on_close(true)
             .default_width(440)
             .default_height(200)
