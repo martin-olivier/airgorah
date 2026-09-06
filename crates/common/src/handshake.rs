@@ -176,6 +176,23 @@ fn record_essid(
     }
 }
 
+/// Whether an EAPOL key frame carries a PMKID that a passphrase dictionary can
+/// actually recover.
+///
+/// libwifi's [`EapolKey::pmkid`] only checks the RSN PMKID KDE shape (OUI
+/// `00:0f:ac`, type 4, non-zero) on message 1. That is necessary but not
+/// sufficient: a PMKID is only recoverable when the pairwise master key is
+/// `PBKDF2(passphrase, essid)` — i.e. WPA/WPA2-PSK, which negotiates EAPOL key
+/// descriptor version 1, 2 or 3. WPA3-SAE (and Suite-B) use descriptor version 0,
+/// where the PMK comes from the SAE exchange rather than the passphrase; such a
+/// PMKID cannot be cracked (aircrack-ng ignores it), even in a WPA2/WPA3 transition
+/// network whose beacon also advertises PSK. Gating on the descriptor version of
+/// the actual message 1 is what distinguishes the two.
+pub fn has_crackable_pmkid(key: &EapolKey) -> bool {
+    let descriptor_version = key.key_information & 0x0007;
+    matches!(descriptor_version, 1..=3) && key.pmkid().is_some()
+}
+
 /// Classify an EAPOL data frame, record which handshake message it is, and note
 /// the AP's PMKID when message 1 carries one.
 fn record_eapol(
@@ -203,11 +220,10 @@ fn record_eapol(
 
     let bssid = bssid.to_long_string();
 
-    // Message 1 optionally advertises the AP's PMKID in the RSN PMKID KDE of its
-    // key data. libwifi validates the KDE (OUI 00:0f:ac, type 4, non-zero PMKID)
-    // and only returns it for message 1, so its presence alone flags the AP as
-    // crackable — no client and no full handshake required.
-    if key.pmkid().is_some() {
+    // A message 1 may advertise the AP's PMKID, flagging the AP as crackable with
+    // no client and no full handshake — but only when that PMKID is actually
+    // recoverable by a passphrase attack (see [`has_crackable_pmkid`]).
+    if has_crackable_pmkid(key) {
         pmkids.insert(bssid.clone());
     }
 
@@ -342,6 +358,18 @@ mod tests {
     /// an optional RSN PMKID KDE in its key data. `bssid`/`station` are the AP and
     /// client MACs; the AP is the transmitter (address 2) on this downlink frame.
     fn eapol_m1_frame(bssid: [u8; 6], station: [u8; 6], pmkid: Option<[u8; 16]>) -> Vec<u8> {
+        // Default to key descriptor version 2 (WPA2-PSK): a crackable PMKID.
+        eapol_m1_frame_ki(bssid, station, pmkid, 0x008a)
+    }
+
+    /// As [`eapol_m1_frame`], with an explicit EAPOL Key Information field so a test
+    /// can select the key descriptor version (bits 0-2).
+    fn eapol_m1_frame_ki(
+        bssid: [u8; 6],
+        station: [u8; 6],
+        pmkid: Option<[u8; 16]>,
+        key_information: u16,
+    ) -> Vec<u8> {
         let mut frame = Vec::new();
 
         // 802.11 MAC header (24 bytes): a from-DS data frame, so address 1 is the
@@ -372,7 +400,7 @@ mod tests {
         eapol.push(0x03); // packet type: EAPOL-Key
         eapol.extend_from_slice(&(95 + key_data.len() as u16).to_be_bytes()); // packet length
         eapol.push(0x02); // descriptor type: RSN
-        eapol.extend_from_slice(&0x008au16.to_be_bytes()); // key information: message 1
+        eapol.extend_from_slice(&key_information.to_be_bytes()); // key information: message 1
         eapol.extend_from_slice(&0x0010u16.to_be_bytes()); // key length
         eapol.extend_from_slice(&1u64.to_be_bytes()); // replay counter
         eapol.extend_from_slice(&[0x11; 32]); // key nonce (ANonce)
@@ -405,6 +433,28 @@ mod tests {
         // The AP's PMKID is recorded, and no full handshake is claimed from M1 alone.
         assert_eq!(pmkids.len(), 1);
         assert_eq!(messages.values().copied().collect::<Vec<_>>(), vec![0b0001]);
+    }
+
+    #[test]
+    fn ignores_a_wpa3_sae_pmkid() {
+        // A well-formed, non-zero PMKID KDE, but the message 1 uses key descriptor
+        // version 0 (WPA3-SAE): its PMK is not PBKDF2(passphrase), so the PMKID is
+        // not crackable and must not be flagged, even though libwifi returns it.
+        let bssid = [0x6a, 0xeb, 0xef, 0x11, 0x3b, 0x92];
+        let station = [0x7a, 0x98, 0xc7, 0x54, 0x93, 0xee];
+
+        let mut essids = HashMap::new();
+        let mut messages = HashMap::new();
+        let mut pmkids = HashSet::new();
+
+        // 0x0088: pairwise + ACK (message 1) with key descriptor version 0.
+        let frame = eapol_m1_frame_ki(bssid, station, Some([0x42; 16]), 0x0088);
+        let mut data = global_header(LINKTYPE_IEEE802_11);
+        push_record(&mut data, &frame);
+
+        scan_capture(&data, &mut essids, &mut messages, &mut pmkids);
+
+        assert!(pmkids.is_empty());
     }
 
     #[test]
