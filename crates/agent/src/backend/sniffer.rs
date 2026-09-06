@@ -305,9 +305,10 @@ fn record_probe(header: &ManagementHeader, info: &StationInfo, signal: Option<i3
     }
 
     let probe = match info.essid() {
-        Some(essid) if !essid.starts_with("<hidden") && !essid.is_empty() => Some(essid),
+        Some(essid) if !essid.starts_with("<hidden") => Some(sanitize_ssid(&essid)),
         _ => None,
-    };
+    }
+    .filter(|essid| !essid.is_empty());
 
     record_client(&station, None, signal, probe);
 }
@@ -446,13 +447,25 @@ fn classify_privacy(capability_info: u16, info: &StationInfo) -> String {
 
 /// The ESSID and whether the network is hidden, in the format the GUI expects.
 fn essid_of(info: &StationInfo) -> (String, bool) {
-    match info.essid() {
-        Some(essid) if !essid.starts_with("<hidden") && !essid.is_empty() => (essid, false),
-        _ => {
-            let length = info.ssid_length.unwrap_or(0);
-            (format!("[Hidden] (length: {length})"), true)
-        }
+    let essid = match info.essid() {
+        Some(essid) if !essid.starts_with("<hidden") => sanitize_ssid(&essid),
+        _ => String::new(),
+    };
+
+    if essid.is_empty() {
+        let length = info.ssid_length.unwrap_or(0);
+        return (format!("[Hidden] (length: {length})"), true);
     }
+
+    (essid, false)
+}
+
+/// Scrub a radio-sourced SSID.
+///
+/// libwifi decodes the SSID element with `String::from_utf8_lossy`, which keeps any
+/// NUL or other control bytes a beacon or probe request carries.
+fn sanitize_ssid(ssid: &str) -> String {
+    ssid.chars().filter(|c| !c.is_control()).collect()
 }
 
 /// A real, individually-addressed MAC (not broadcast, multicast, or all-zero).
@@ -546,5 +559,56 @@ mod tests {
         let mut idx = 5;
         assert_eq!(plan_channel(&[1, 6, 11], &mut idx, 6, true), Some(1));
         assert_eq!(idx, 0);
+    }
+
+    /// Build a `StationInfo` carrying just an SSID, as `essid_of` reads it.
+    fn ssid_info(ssid: &str) -> StationInfo {
+        StationInfo {
+            ssid: Some(ssid.to_string()),
+            ssid_length: Some(ssid.len()),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn sanitize_ssid_strips_control_bytes() {
+        assert_eq!(sanitize_ssid("Free\0WiFi"), "FreeWiFi");
+        assert_eq!(sanitize_ssid("a\tb\r\nc\x7f"), "abc");
+        assert_eq!(sanitize_ssid("Café 📶"), "Café 📶");
+        assert_eq!(sanitize_ssid("\0\0\0"), "");
+    }
+
+    #[test]
+    fn essid_of_all_nul_ssid_is_hidden() {
+        assert_eq!(
+            essid_of(&ssid_info("\0\0\0\0")),
+            ("[Hidden] (length: 4)".to_string(), true)
+        );
+    }
+
+    #[test]
+    fn essid_of_embedded_nul_is_stripped_not_hidden() {
+        assert_eq!(
+            essid_of(&ssid_info("Free\0WiFi")),
+            ("FreeWiFi".to_string(), false)
+        );
+    }
+
+    #[test]
+    fn essid_of_plain_ssid_untouched() {
+        assert_eq!(
+            essid_of(&ssid_info("MyNetwork")),
+            ("MyNetwork".to_string(), false)
+        );
+    }
+
+    #[test]
+    fn essid_of_explicit_hidden_reports_length() {
+        let info = StationInfo {
+            ssid: Some(String::new()),
+            ssid_length: Some(7),
+            ..Default::default()
+        };
+        assert_eq!(essid_of(&info), ("[Hidden] (length: 7)".to_string(), true));
     }
 }
