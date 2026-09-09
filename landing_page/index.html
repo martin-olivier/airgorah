@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airgorah - WiFi Security Auditing Software</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo">
+                <img src="https://via.placeholder.com/40x40?text=Air" alt="Airgorah Logo">
+                <span>Airgorah</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#documentation">Documentation</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>WiFi Security Auditing Made Simple</h1>
+            <p>Airgorah - A powerful, open-source WiFi security auditing tool built with Rust and GTK4</p>
+            <div class="hero-buttons">
+                <a href="#installation" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/martin-olivier/airgorah" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="illustration"></div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <h3>WiFi Traffic Capture</h3>
+                    <p>Capture and analyze nearby WiFi traffic with ease. Monitor all wireless communication in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Client Discovery</h3>
+                    <p>Discover all clients connected to access points. Identify devices on your network with detailed information.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚔️</div>
+                    <h3>Deauthentication Attacks</h3>
+                    <p>Perform controlled deauthentication attacks for security testing on networks you own.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3>Handshake Capture</h3>
+                    <p>Capture WiFi handshakes for advanced password analysis and security assessment.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Password Cracking</h3>
+                    <p>Advanced password cracking capabilities based on aircrack-ng, one of the most trusted tools in security.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Security Testing</h3>
+                    <p>Comprehensive security testing suite to identify vulnerabilities in your WiFi networks.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Install Airgorah</h3>
+                    <p>Download and install Airgorah on your Linux system with a single command.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Configure Network Card</h3>
+                    <p>Ensure your wireless card supports monitor mode and packet injection.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Launch the GUI</h3>
+                    <p>Start the intuitive GTK4 interface and begin your security audit.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Analyze & Test</h3>
+                    <p>Capture traffic, discover clients, and perform security tests with ease.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack Section -->
+    <section class="tech-stack">
+        <div class="container">
+            <h2>Built With Modern Technology</h2>
+            <div class="tech-items">
+                <div class="tech-item">
+                    <h4>Rust</h4>
+                    <p>Fast, safe, and reliable systems programming language</p>
+                </div>
+                <div class="tech-item">
+                    <h4>GTK4</h4>
+                    <p>Modern, responsive graphical user interface toolkit</p>
+                </div>
+                <div class="tech-item">
+                    <h4>aircrack-ng</h4>
+                    <p>Industry-leading WiFi security auditing framework</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Open Source</h4>
+                    <p>MIT licensed - transparent, community-driven development</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2>Quick Installation</h2>
+            <div class="installation-methods">
+                <div class="install-method">
+                    <h3>Via Cargo (Recommended)</h3>
+                    <pre><code>cargo install airgorah</code></pre>
+                </div>
+                <div class="install-method">
+                    <h3>Via AUR (Arch Linux)</h3>
+                    <pre><code>yay -S airgorah</code></pre>
+                </div>
+                <div class="install-method">
+                    <h3>Via Docker</h3>
+                    <pre><code>docker build -t airgorah .</code></pre>
+                </div>
+            </div>
+            <div class="system-requirements">
+                <h3>System Requirements</h3>
+                <ul>
+                    <li>✓ Linux operating system (Wayland or X11)</li>
+                    <li>✓ Wireless network card with monitor mode support</li>
+                    <li>✓ Packet injection capability</li>
+                    <li>✓ sudo/polkit for privileged operations</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="documentation">
+        <div class="container">
+            <h2>Documentation & Resources</h2>
+            <div class="doc-links">
+                <a href="https://github.com/martin-olivier/airgorah/wiki/Installation" class="doc-link">
+                    <span class="doc-icon">📖</span>
+                    <div>
+                        <h4>Installation Guide</h4>
+                        <p>Step-by-step installation instructions</p>
+                    </div>
+                </a>
+                <a href="https://github.com/martin-olivier/airgorah/wiki/Usage" class="doc-link">
+                    <span class="doc-icon">🎯</span>
+                    <div>
+                        <h4>Usage Guide</h4>
+                        <p>Learn how to use Airgorah effectively</p>
+                    </div>
+                </a>
+                <a href="https://github.com/martin-olivier/airgorah/wiki/Credits" class="doc-link">
+                    <span class="doc-icon">👥</span>
+                    <div>
+                        <h4>Credits & References</h4>
+                        <p>Acknowledge contributors and dependencies</p>
+                    </div>
+                </a>
+                <a href="https://github.com/martin-olivier/airgorah" class="doc-link">
+                    <span class="doc-icon">💻</span>
+                    <div>
+                        <h4>GitHub Repository</h4>
+                        <p>Source code and project management</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Legal Warning Section -->
+    <section class="legal-warning">
+        <div class="container">
+            <h2>⚠️ Legal Notice</h2>
+            <p>Airgorah is designed to be used in testing and discovering flaws in networks you are owner of. Performing attacks on WiFi networks you are not owner of is <strong>illegal in almost all countries</strong>. The authors are not responsible for any damage caused by the misuse of this software.</p>
+        </div>
+    </section>
+
+    <!-- Community Section -->
+    <section id="contact" class="community">
+        <div class="container">
+            <h2>Join the Community</h2>
+            <p>Have questions or want to contribute? Connect with the Airgorah community!</p>
+            <div class="community-links">
+                <a href="https://github.com/martin-olivier/airgorah/discussions" class="community-link">
+                    💬 Discussions
+                </a>
+                <a href="https://github.com/martin-olivier/airgorah/issues" class="community-link">
+                    🐛 Report Issues
+                </a>
+                <a href="https://github.com/martin-olivier/airgorah/pulls" class="community-link">
+                    🚀 Contribute
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Airgorah Project. Licensed under <a href="https://github.com/martin-olivier/airgorah/blob/main/LICENSE" target="_blank">MIT License</a></p>
+            <div class="social-links">
+                <a href="https://github.com/martin-olivier/airgorah" target="_blank">GitHub</a>
+                <a href="https://crates.io/crates/airgorah" target="_blank">Crates.io</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
