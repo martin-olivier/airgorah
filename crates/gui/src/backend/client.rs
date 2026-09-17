@@ -251,17 +251,13 @@ fn connect_with_timeout(sock: &str, child: &mut Child) -> Result<UnixStream, Age
 // Interface
 // --------------------------------------------------------------------------
 
-pub fn enable_monitor_mode(iface: &str) -> Result<String, AgentError> {
+pub fn enable_monitor_mode(iface: &str) -> Result<(), AgentError> {
     let kill_network_manager = super::get_settings().kill_network_manager;
 
-    match request(Request::EnableMonitor {
+    expect_ok(request(Request::EnableMonitor {
         iface: iface.to_string(),
         kill_network_manager,
-    })? {
-        Response::MonitorEnabled { iface } => Ok(iface),
-        Response::Error { message } => Err(AgentError(message)),
-        _ => Err(AgentError("unexpected response from agent".to_string())),
-    }
+    })?)
 }
 
 pub fn set_mac_address(iface: &str) -> Result<(), AgentError> {

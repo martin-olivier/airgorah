@@ -102,12 +102,12 @@ fn set_interface_type(iface: &str, mode: &str) -> Result<bool, IfaceError> {
 }
 
 /// Enable monitor mode on an interface.
-pub fn enable_monitor_mode(iface: &str, kill_network_manager: bool) -> Result<String, IfaceError> {
+pub fn enable_monitor_mode(iface: &str, kill_network_manager: bool) -> Result<(), IfaceError> {
     kill_network_manager_services(kill_network_manager);
 
     if is_monitor_mode(iface)? {
         *IFACE_WAS_MONITOR.lock().unwrap() = true;
-        return Ok(iface.to_string());
+        return Ok(());
     }
 
     if !set_interface_type(iface, "monitor")? {
@@ -116,7 +116,7 @@ pub fn enable_monitor_mode(iface: &str, kill_network_manager: bool) -> Result<St
 
     log::info!("{iface}: monitor mode enabled");
 
-    Ok(iface.to_string())
+    Ok(())
 }
 
 /// Disable monitor mode on an interface, switching it back to managed mode.
