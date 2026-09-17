@@ -3,11 +3,11 @@ name = "airgorah"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "A WiFi security auditing software mainly based on aircrack-ng tools suite"
+description = "A WiFi security auditing software"
 homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
-keywords = ["networking", "pentest", "aircrack-ng", "gui", "linux"]
+keywords = ["networking", "pentest", "gui", "linux"]
 readme.workspace = true
 
 [[bin]]

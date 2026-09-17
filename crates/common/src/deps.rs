@@ -25,6 +25,7 @@ pub struct Tool {
 }
 
 // Optional tool names, referenced at their on-demand check sites.
+pub const AIRCRACK_NG: &str = "aircrack-ng";
 pub const CRUNCH: &str = "crunch";
 pub const SYSTEMCTL: &str = "systemctl";
 pub const PKEXEC: &str = "pkexec";
@@ -48,11 +49,6 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     Tool {
-        name: "aircrack-ng",
-        requirer: Requirer::Gui,
-        optional: false,
-    },
-    Tool {
         name: "xterm",
         requirer: Requirer::Gui,
         optional: false,
@@ -68,6 +64,11 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     // Optional, checked on demand.
+    Tool {
+        name: AIRCRACK_NG,
+        requirer: Requirer::Gui,
+        optional: true,
+    },
     Tool {
         name: CRUNCH,
         requirer: Requirer::Gui,

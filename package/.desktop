@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Airgorah
-Comment=A WiFi security auditing software mainly based on aircrack-ng tools suite
+Comment=A WiFi security auditing software
 Exec=airgorah
 Icon=/usr/share/pixmaps/airgorah.png
 Categories=Network;Monitor;GTK;
