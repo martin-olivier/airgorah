@@ -96,10 +96,6 @@ pub enum Response {
     Setup {
         missing_dependencies: Vec<String>,
     },
-    /// The (possibly renamed) monitor-mode interface name.
-    MonitorEnabled {
-        iface: String,
-    },
     Bool(bool),
     ScanData {
         aps: Vec<AP>,

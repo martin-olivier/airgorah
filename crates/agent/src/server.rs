@@ -105,9 +105,9 @@ fn dispatch(request: Request) -> (Response, bool) {
                 return (err("invalid interface name"), false);
             }
             match backend::enable_monitor_mode(&iface, kill_network_manager) {
-                Ok(mon_iface) => {
-                    backend::set_iface(mon_iface.clone());
-                    (Response::MonitorEnabled { iface: mon_iface }, false)
+                Ok(()) => {
+                    backend::set_iface(iface.clone());
+                    (Response::Ok, false)
                 }
                 Err(e) => (err(e), false),
             }

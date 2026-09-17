@@ -83,7 +83,7 @@ fn connect_interface_select(app_data: Rc<AppData>) {
             }
 
             match backend::enable_monitor_mode(&iface) {
-                Ok(iface) => {
+                Ok(()) => {
                     if let Err(e) = backend::set_mac_address(&iface) {
                         backend::disable_monitor_mode(&iface).ok();
 
