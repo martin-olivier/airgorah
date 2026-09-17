@@ -2,7 +2,7 @@
 --name airgorah
 --license MIT
 --version 0.8.1
---description "A WiFi security auditing software mainly based on aircrack-ng tools suite"
+--description "A WiFi security auditing software"
 --url "https://github.com/martin-olivier/airgorah"
 --maintainer "Martin Olivier <martin.olivier@live.fr>"
 
@@ -13,7 +13,6 @@
 --depends xterm
 --depends iw
 --depends macchanger
---depends aircrack-ng
 --depends adwaita-icon-theme
 
 target/debug/airgorah=/usr/bin/airgorah

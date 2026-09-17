@@ -3,7 +3,7 @@
 Airgorah</h1>
 
 <p align="center">
-  <span>A WiFi security auditing software mainly based on <a href="https://github.com/aircrack-ng/aircrack-ng">aircrack-ng</a> tools suite</span>
+  <span>A WiFi security auditing software</span>
 </p>
 
 <p align="center">

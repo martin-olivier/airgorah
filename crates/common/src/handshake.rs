@@ -1,7 +1,6 @@
 //! Native WPA handshake detection.
 //!
-//! Reads capture file(s) and reports which access points have a crackable WPA
-//! 4-way handshake — the in-house replacement for shelling out to `aircrack-ng`.
+//! Reads capture file(s) and reports which access points have a crackable WPA 4-way handshake.
 //! Shared because both sides need it against different files: the agent scans the
 //! root-owned live/old captures to flag APs while scanning, and the GUI inspects a
 //! user-selected capture before offering it for decryption. Reading a capture and

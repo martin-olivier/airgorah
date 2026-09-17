@@ -356,6 +356,11 @@ fn connect_decrypt_button(app_data: Rc<AppData>) {
 
             let stack = app_data.decrypt_gui.stack.visible_child_name().unwrap();
 
+            if !backend::deps::is_installed(backend::deps::AIRCRACK_NG) {
+                let err_msg = "\"aircrack-ng\" is not installed on your system, could not run the decryption";
+                return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", err_msg);
+            }
+
             if stack == "bruteforce" && !backend::deps::is_installed(backend::deps::CRUNCH) {
                 let err_msg = "\"crunch\" is not installed on your system, could not generate a wordlist from a charset";
                 return ErrorDialog::spawn(&app_data.decrypt_gui.window, "Failed to run decryption", err_msg);
