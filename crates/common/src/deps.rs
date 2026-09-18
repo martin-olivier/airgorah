@@ -44,11 +44,6 @@ pub const TOOLS: &[Tool] = &[
         optional: false,
     },
     Tool {
-        name: "awk",
-        requirer: Requirer::Gui,
-        optional: false,
-    },
-    Tool {
         name: "xterm",
         requirer: Requirer::Gui,
         optional: false,
