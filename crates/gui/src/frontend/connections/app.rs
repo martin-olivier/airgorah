@@ -62,14 +62,17 @@ pub fn update_channel_status(app_data: &Rc<AppData>) {
     app_data.app_gui.channel_status_bar.push(0, &text);
 }
 
-/// The channels of every access point currently under attack, as a sorted,
-/// de-duplicated, comma-separated channel-filter string.
-fn attacked_channels_filter() -> String {
-    let mut channels: Vec<i32> = backend::get_attack_pool()
+/// The channels of every access point currently under attack.
+fn attacked_channels() -> Vec<i32> {
+    backend::get_attack_pool()
         .values()
         .filter_map(|state| state.ap.channel.trim().parse::<i32>().ok())
-        .collect();
+        .collect()
+}
 
+/// Format a set of channels as a sorted, de-duplicated, comma-separated
+/// channel-filter string.
+fn format_channel_filter(mut channels: Vec<i32>) -> String {
     channels.sort_unstable();
     channels.dedup();
 
@@ -103,16 +106,27 @@ fn lock_channel_controls(app_data: &Rc<AppData>) {
 
 /// Keep the channel filter in sync with the set of access points under attack.
 ///
-/// While an attack is running the filter is driven from the attack pool (the
-/// union of the attacked channels) so the scan only dwells on channels a deauth
-/// is actually targeting. When the last attack stops, the filter is cleared and
-/// the locked controls are handed back to the user.
+/// While an attack is running the filter is driven from the attack pool so the
+/// scan dwells on the attacked channels. Once locked the filter only ever grows.
+/// Stopping one of several attacks keeps its channel in the filter, so the radio
+/// stays parked on it and can still capture the handshake from the client that
+/// reconnects once the deauth stops.
+///
+/// When the last attack stops the filter is deliberately not cleared. The scan
+/// stays parked on the last attacked channel(s) so that reconnection handshake can
+/// still be captured, and the locked controls are handed back to the user.
 fn drive_channel_filter_from_attacks(app_data: &Rc<AppData>) {
     let attacking = !backend::get_attack_pool().is_empty();
     let was_locked = globals::CHANNEL_LOCK_ACTIVE.load(Ordering::Relaxed);
 
     if attacking {
-        let desired = attacked_channels_filter();
+        let mut channels = attacked_channels();
+
+        if was_locked {
+            channels.extend(get_channel_entries(&app_data.app_gui.channel_filter_entry));
+        }
+
+        let desired = format_channel_filter(channels);
 
         if app_data.app_gui.channel_filter_entry.text() != desired {
             app_data.app_gui.channel_filter_entry.set_text(&desired);
@@ -121,12 +135,11 @@ fn drive_channel_filter_from_attacks(app_data: &Rc<AppData>) {
         globals::CHANNEL_LOCK_ACTIVE.store(true, Ordering::Relaxed);
     } else if was_locked {
         app_data.app_gui.channel_filter_entry.set_sensitive(true);
+        app_data.app_gui.hopping_but.set_sensitive(true);
         app_data.app_gui.ghz_2_4_but.set_sensitive(true);
         app_data.app_gui.ghz_5_but.set_sensitive(true);
         app_data.app_gui.restart_but.set_sensitive(true);
         app_data.settings_gui.display_hidden_ap.set_sensitive(true);
-
-        app_data.app_gui.channel_filter_entry.set_text("");
 
         globals::CHANNEL_LOCK_ACTIVE.store(false, Ordering::Relaxed);
     }
