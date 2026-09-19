@@ -1,6 +1,6 @@
 //! Unprivileged interface queries, run directly by the GUI.
 //!
-//! Listing interfaces (`iw dev`) and probing 5 GHz capability (sysfs + `iw phy`)
+//! Listing interfaces (sysfs) and probing 5 GHz capability (sysfs + `iw phy`)
 //! need no privilege, so they stay in the GUI. Keeping them here — rather than
 //! behind the agent — is what lets the interface picker open and populate
 //! without ever escalating; the agent is only started once the user commits to
@@ -11,18 +11,20 @@ use std::process::Command;
 
 /// Get the available wireless interfaces.
 pub fn get_interfaces() -> Result<Vec<String>, AgentError> {
-    let cmd = Command::new("sh")
-        .args(["-c", "iw dev | awk '$1==\"Interface\"{print $2}'"])
-        .output()
-        .map_err(|e| AgentError(format!("failed to list interfaces: {e}")))?;
+    const NET_PATH: &str = "/sys/class/net";
 
-    if !cmd.status.success() {
-        return Err(AgentError("failed to retrieve interfaces list".to_string()));
-    }
+    let entries = std::fs::read_dir(NET_PATH)
+        .map_err(|e| AgentError(format!("could not read '{NET_PATH}': {e}")))?;
 
-    let out = String::from_utf8_lossy(&cmd.stdout);
+    let mut ifaces: Vec<String> = entries
+        .flatten()
+        .filter(|entry| entry.path().join("phy80211").exists())
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .collect();
 
-    Ok(out.split_terminator('\n').map(String::from).collect())
+    ifaces.sort();
+
+    Ok(ifaces)
 }
 
 /// Check if an interface supports 5 GHz.
