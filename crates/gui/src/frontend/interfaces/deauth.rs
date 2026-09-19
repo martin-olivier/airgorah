@@ -21,7 +21,7 @@ impl DeauthGui {
             .title("Deauth")
             .hide_on_close(true)
             .default_width(300)
-            .default_height(400)
+            .default_height(500)
             .resizable(false)
             .transient_for(parent)
             .modal(true)
