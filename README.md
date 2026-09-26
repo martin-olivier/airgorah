@@ -14,17 +14,13 @@ Airgorah</h1>
   <a href="https://github.com/martin-olivier/airgorah/wiki/Credits">Credits</a>
 </p>
 
-![illustration](.github/assets/illustration.png)
-
-[![crates](https://img.shields.io/crates/v/airgorah.svg)](https://crates.io/crates/airgorah)
-[![aur](https://img.shields.io/aur/version/airgorah)](https://aur.archlinux.org/packages/airgorah)
-[![ci](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg)](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml)
-
 `Airgorah` is a WiFi security auditing software that can capture nearby WiFi traffic, discover clients connected to access points, perform deauthentication attacks, capture handshakes and PMKIDs, and crack the password of access points.
 
 It is written in Rust and uses [GTK4](https://github.com/gtk-rs/gtk4-rs) for the graphical part.
 
-`⭐ Don't forget to put a star if you like the project!`
+[![crates](https://img.shields.io/crates/v/airgorah.svg)](https://crates.io/crates/airgorah)
+[![aur](https://img.shields.io/aur/version/airgorah)](https://aur.archlinux.org/packages/airgorah)
+[![ci](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml/badge.svg)](https://github.com/martin-olivier/airgorah/actions/workflows/CI.yml)
 
 ## Legal
 
