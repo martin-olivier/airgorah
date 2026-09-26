@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "airgorah"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "airgorah-common",
  "chrono",
@@ -38,7 +38,7 @@ dependencies = [
 
 [[package]]
 name = "airgorah-agent"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "airgorah-common",
  "chrono",
@@ -57,7 +57,7 @@ dependencies = [
 
 [[package]]
 name = "airgorah-common"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "libwifi",
  "radiotap",

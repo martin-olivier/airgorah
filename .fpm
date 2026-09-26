@@ -1,7 +1,7 @@
 -s dir ./target/debug/airgorah ./target/debug/airgorah-agent ./crates/gui/icons/app_icon.png package README.md LICENSE
 --name airgorah
 --license MIT
---version 0.8.1
+--version 0.9.0
 --description "A WiFi security auditing software"
 --url "https://github.com/martin-olivier/airgorah"
 --maintainer "Martin Olivier <martin.olivier@live.fr>"
