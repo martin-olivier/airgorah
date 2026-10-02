@@ -14,7 +14,15 @@ use std::collections::HashMap;
 use std::io::BufReader;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+/// Base wake-up cadence of the refresh timer. The timer fires this often but only
+/// does work once the user-configured [`refresh_rate`](crate::types::Settings) has
+/// elapsed, so the effective rate can be lowered to this floor.
+const REFRESH_BASE_TICK_MS: u64 = 50;
+/// Bounds for the user-configured GUI refresh interval.
+const MIN_REFRESH_MS: u64 = 50;
+const MAX_REFRESH_MS: u64 = 5000;
 
 fn list_store_find(storage: &ListStore, pos: i32, to_match: &str) -> Option<TreeIter> {
     let mut iter = storage.iter_first();
@@ -743,13 +751,24 @@ fn notify_capture(app: &Application, essid: &str, bssid: &str, kind: &str) {
 fn start_app_refresh(app: &Application, app_data: Rc<AppData>) {
     let mut capture_state: HashMap<String, (bool, bool)> = HashMap::new();
     let app = app.clone();
+    let mut last_refresh = Instant::now();
 
     glib::timeout_add_local(
-        Duration::from_millis(100),
+        Duration::from_millis(REFRESH_BASE_TICK_MS),
         clone!(
             #[strong]
             app_data,
             move || {
+                // Honor the user-configured refresh interval: wake on the base tick
+                // but skip the work until that interval has elapsed.
+                let refresh_rate = backend::get_settings()
+                    .refresh_rate
+                    .clamp(MIN_REFRESH_MS, MAX_REFRESH_MS);
+                if last_refresh.elapsed() < Duration::from_millis(refresh_rate) {
+                    return ControlFlow::Continue;
+                }
+                last_refresh = Instant::now();
+
                 match app_data.app_gui.aps_view.selection().selected() {
                     Some((_, iter)) => {
                         let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
@@ -808,13 +827,15 @@ fn start_app_refresh(app: &Application, app_data: Rc<AppData>) {
                     capture_state.clear();
                 }
 
+                let notifications_enabled = backend::get_settings().capture_notifications;
+
                 for (bssid, ap) in aps.iter() {
                     let (had_handshake, had_pmkid) =
                         capture_state.get(bssid).copied().unwrap_or((false, false));
-                    if ap.handshake && !had_handshake {
+                    if notifications_enabled && ap.handshake && !had_handshake {
                         notify_capture(&app, &ap.essid, bssid, "Handshake");
                     }
-                    if ap.pmkid && !had_pmkid {
+                    if notifications_enabled && ap.pmkid && !had_pmkid {
                         notify_capture(&app, &ap.essid, bssid, "PMKID");
                     }
                     capture_state.insert(bssid.clone(), (ap.handshake, ap.pmkid));
@@ -1119,6 +1140,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             );
 
             file_chooser_dialog.set_current_name(&format!("{essid}.cap"));
+            apply_default_folder(&file_chooser_dialog);
             file_chooser_dialog.run_async(clone!(
                 #[strong]
                 app_data,

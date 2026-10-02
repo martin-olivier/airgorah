@@ -1,5 +1,18 @@
+use crate::backend;
+
 use gtk4::prelude::*;
 use gtk4::*;
+
+/// Point a file-chooser at the user's configured default directory, when one is set.
+/// A no-op (leaving GTK's own default) when the setting is empty.
+pub fn apply_default_folder(dialog: &FileChooserDialog) {
+    let save_path = backend::get_settings().save_path;
+    if !save_path.is_empty() {
+        dialog
+            .set_current_folder(Some(&gio::File::for_path(&save_path)))
+            .ok();
+    }
+}
 
 pub struct ErrorDialog;
 

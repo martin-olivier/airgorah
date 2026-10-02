@@ -25,11 +25,13 @@ use libwifi::frame::components::{DataHeader, ManagementHeader, RsnAkmSuite, Stat
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
-/// How long to dwell on each channel while hopping.
-const HOP_INTERVAL: Duration = Duration::from_millis(250);
+/// Bounds for the per-channel dwell time, clamping a user-supplied value that would
+/// otherwise busy-loop (too low) or stall the sweep (too high).
+const MIN_HOP_INTERVAL_MS: u64 = 50;
+const MAX_HOP_INTERVAL_MS: u64 = 5000;
 
 /// Resolve the channels to visit from the enabled bands, or from an explicit
 /// comma-separated channel filter when one is given.
@@ -58,10 +60,14 @@ pub fn build_channel_list(ghz_2_4: bool, ghz_5: bool, filter: Option<&str>) -> V
 ///
 /// `channel_out` is updated with the channel the card is tuned to on every hop, so
 /// the GUI can display the channel the interface is currently listening on.
+///
+/// `hop_interval_ms` is shared and re-read every loop, so a settings change takes
+/// effect on a running scan the same way a channel-plan change does.
 pub fn run(
     iface: String,
     channels: Arc<Mutex<Vec<u32>>>,
     channel_out: Arc<AtomicU32>,
+    hop_interval_ms: Arc<AtomicU64>,
     stop: Arc<AtomicBool>,
 ) {
     let socket = match raw_socket::open(&iface) {
@@ -101,7 +107,12 @@ pub fn run(
     while !stop.load(Ordering::Relaxed) {
         // Re-read the (possibly just-updated) plan and retune if needed. The lock is
         // held only to decide; the slow `set_channel` runs without it.
-        let hop_due = last_hop.elapsed() >= HOP_INTERVAL;
+        let hop_interval = Duration::from_millis(
+            hop_interval_ms
+                .load(Ordering::Relaxed)
+                .clamp(MIN_HOP_INTERVAL_MS, MAX_HOP_INTERVAL_MS),
+        );
+        let hop_due = last_hop.elapsed() >= hop_interval;
         let retune = {
             let channels = channels.lock().unwrap();
             plan_channel(&channels, &mut chan_idx, current_channel, hop_due)

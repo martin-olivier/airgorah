@@ -78,19 +78,17 @@ fn missing_deps_error<S: AsRef<str>>(missing: &[S]) -> AgentError {
     AgentError(format!("Missing required dependencies: {list}"))
 }
 
-/// Startup initialization that needs no privilege: load settings and warn if the
-/// GUI is (pointlessly) running as root. The privileged agent is intentionally
-/// *not* started here — see [`ensure_agent`] — but we verify it is installed so a
-/// broken install fails clearly at launch rather than only on the first scan.
-/// Locating the binary does not run it and does not escalate.
+/// Startup initialization that needs no privilege: warn if the GUI is (pointlessly)
+/// running as root (settings are loaded earlier, when the UI is built). The
+/// privileged agent is intentionally *not* started here — see [`ensure_agent`] — but
+/// we verify it is installed so a broken install fails clearly at launch rather than
+/// only on the first scan. Locating the binary does not run it and does not escalate.
 pub fn init() -> Result<(), AgentError> {
     if geteuid().is_root() {
         log::warn!(
             "running the airgorah GUI as root is discouraged and does not work under Wayland"
         );
     }
-
-    super::load_settings();
 
     agent_binary_path()?;
 
@@ -297,11 +295,13 @@ pub fn set_scan_process(
     ghz_5: bool,
     channel_filter: Option<String>,
 ) -> Result<(), AgentError> {
+    let hop_interval = super::get_settings().hop_interval;
     expect_ok(request(Request::StartScan {
         iface: iface.to_string(),
         ghz_2_4,
         ghz_5,
         channels: channel_filter,
+        hop_interval,
     })?)
 }
 

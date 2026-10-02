@@ -145,6 +145,7 @@ fn dispatch(request: Request) -> (Response, bool) {
             ghz_2_4,
             ghz_5,
             channels,
+            hop_interval,
         } => {
             if !is_valid_interface_name(&iface) {
                 return (err("invalid interface name"), false);
@@ -154,7 +155,7 @@ fn dispatch(request: Request) -> (Response, bool) {
             {
                 return (err("invalid channel filter"), false);
             }
-            match backend::set_scan_process(&iface, ghz_2_4, ghz_5, channels) {
+            match backend::set_scan_process(&iface, ghz_2_4, ghz_5, channels, hop_interval) {
                 Ok(()) => (Response::Ok, false),
                 Err(e) => (err(e), false),
             }

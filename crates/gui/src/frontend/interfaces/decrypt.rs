@@ -299,6 +299,14 @@ impl DecryptGui {
             self.target_view.set_sensitive(false);
         }
 
+        // Pre-fill the configured default wordlist last, after the handshake and
+        // target above are set, so its change handler can enable the dictionary
+        // decrypt button straight away.
+        let default_wordlist = backend::get_settings().wordlist_path;
+        if !default_wordlist.is_empty() {
+            self.wordlist_entry.set_text(&default_wordlist);
+        }
+
         self.window.show();
     }
 }

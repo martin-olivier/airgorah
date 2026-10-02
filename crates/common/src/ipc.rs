@@ -51,6 +51,8 @@ pub enum Request {
         ghz_2_4: bool,
         ghz_5: bool,
         channels: Option<String>,
+        /// Dwell time per channel while hopping, in milliseconds.
+        hop_interval: u64,
     },
     StopScan,
     IsScanning,
