@@ -107,6 +107,7 @@ fn connect_export_button(app_data: Rc<AppData>) {
             let date = local.format("%Y-%m-%d-%Hh%M");
 
             file_chooser_dialog.set_current_name(&format!("capture_{date}.cap"));
+            apply_default_folder(&file_chooser_dialog);
             file_chooser_dialog.run_async(clone!(
                 #[strong]
                 app_data,
@@ -166,6 +167,7 @@ fn connect_report_button(app_data: Rc<AppData>) {
             let date = local.format("%Y-%m-%d-%Hh%M");
 
             file_chooser_dialog.set_current_name(&format!("report_{date}.json"));
+            apply_default_folder(&file_chooser_dialog);
             file_chooser_dialog.run_async(clone!(
                 #[strong]
                 app_data,

@@ -254,6 +254,19 @@ fn connect_charset_entry(app_data: Rc<AppData>) {
         ));
 }
 
+fn connect_wordlist_entry(app_data: Rc<AppData>) {
+    app_data
+        .decrypt_gui
+        .wordlist_entry
+        .connect_text_notify(clone!(
+            #[strong]
+            app_data,
+            move |_| {
+                update_decrypt_button_status(app_data.clone());
+            }
+        ));
+}
+
 fn connect_wordlist_button(app_data: Rc<AppData>) {
     app_data.decrypt_gui.wordlist_but.connect_clicked(clone!(
         #[strong]
@@ -284,8 +297,7 @@ fn connect_wordlist_button(app_data: Rc<AppData>) {
                             .decrypt_gui
                             .wordlist_entry
                             .set_text(gio_file.path().unwrap().to_str().unwrap());
-
-                        update_decrypt_button_status(app_data);
+                        // The wordlist entry's change handler refreshes the button.
                     }
                 }
             ));
@@ -403,6 +415,7 @@ pub fn connect(app_data: Rc<AppData>) {
     connect_settings_button(app_data.clone());
     connect_charset_entry(app_data.clone());
     connect_password_len_buttons(app_data.clone());
+    connect_wordlist_entry(app_data.clone());
     connect_wordlist_button(app_data.clone());
     connect_bruteforce_buttons(app_data.clone());
     connect_decrypt_button(app_data);

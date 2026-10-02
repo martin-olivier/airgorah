@@ -77,11 +77,39 @@ pub struct Client {
     pub probes: String,
 }
 
+/// Which theme variant the GUI asks GTK for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum Theme {
+    /// Follow the desktop/GTK default (do not override it).
+    #[default]
+    System,
+    /// Force the light variant.
+    Light,
+    /// Force the dark variant.
+    Dark,
+}
+
+/// Persistent user settings.
+///
+/// `#[serde(default)]` lets a config file written by an older version (missing some
+/// of these fields, or carrying ones since removed) load cleanly: any absent field
+/// falls back to [`Settings::default`] and unknown fields are ignored.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Settings {
     pub mac_address: String,
     pub display_hidden_ap: bool,
     pub kill_network_manager: bool,
+    /// Dwell time per channel while hopping, in milliseconds.
+    pub hop_interval: u64,
+    /// Default wordlist pre-filled in the WPA decryption window (empty = none).
+    pub wordlist_path: String,
+    /// Default directory the save/export dialogs open in (empty = GTK default).
+    pub save_path: String,
+    /// Theme variant requested from GTK.
+    pub theme: Theme,
+    /// Fire a desktop notification when a handshake or PMKID is captured.
+    pub capture_notifications: bool,
 }
 
 impl Default for Settings {
@@ -90,6 +118,11 @@ impl Default for Settings {
             mac_address: "random".to_string(),
             display_hidden_ap: true,
             kill_network_manager: true,
+            hop_interval: 250,
+            wordlist_path: String::new(),
+            save_path: String::new(),
+            theme: Theme::System,
+            capture_notifications: true,
         }
     }
 }
@@ -102,5 +135,74 @@ impl Settings {
             "default" => MacMode::Default,
             mac => MacMode::Specific(mac.to_string()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // A config file written before the newer fields existed must still load, with each
+    // absent field falling back to its default (guaranteed by `#[serde(default)]`).
+    #[test]
+    fn loads_legacy_config_with_defaults() {
+        let legacy = r#"
+mac_address = "default"
+display_hidden_ap = false
+kill_network_manager = false
+"#;
+        let s: Settings = toml::from_str(legacy).unwrap();
+
+        assert_eq!(s.mac_address, "default");
+        assert!(!s.display_hidden_ap);
+        assert!(!s.kill_network_manager);
+        assert_eq!(s.hop_interval, 250);
+        assert_eq!(s.wordlist_path, "");
+        assert_eq!(s.save_path, "");
+        assert_eq!(s.theme, Theme::System);
+        assert!(s.capture_notifications);
+    }
+
+    // Fields that were removed in a later version (here the old `[columns]` table) are
+    // ignored rather than failing the load.
+    #[test]
+    fn ignores_removed_legacy_fields() {
+        let cfg = r#"
+mac_address = "random"
+display_hidden_ap = true
+kill_network_manager = true
+
+[columns]
+power = false
+"#;
+        let s: Settings = toml::from_str(cfg).unwrap();
+
+        assert_eq!(s.mac_address, "random");
+        assert!(s.display_hidden_ap);
+        assert!(s.capture_notifications);
+    }
+
+    // A full round-trip must preserve every field.
+    #[test]
+    fn round_trip_preserves_values() {
+        let original = Settings {
+            mac_address: "00:11:22:33:44:55".to_string(),
+            hop_interval: 500,
+            wordlist_path: "/tmp/rockyou.txt".to_string(),
+            save_path: "/tmp/caps".to_string(),
+            theme: Theme::Dark,
+            capture_notifications: false,
+            ..Settings::default()
+        };
+
+        let text = toml::to_string(&original).unwrap();
+        let parsed: Settings = toml::from_str(&text).unwrap();
+
+        assert_eq!(parsed.mac_address, original.mac_address);
+        assert_eq!(parsed.hop_interval, 500);
+        assert_eq!(parsed.wordlist_path, "/tmp/rockyou.txt");
+        assert_eq!(parsed.save_path, "/tmp/caps");
+        assert_eq!(parsed.theme, Theme::Dark);
+        assert!(!parsed.capture_notifications);
     }
 }

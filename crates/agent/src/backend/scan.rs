@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 
 use super::get_attack_pool;
 use super::sniffer;
@@ -45,6 +45,7 @@ pub fn set_scan_process(
     ghz_2_4: bool,
     ghz_5: bool,
     channel_filter: Option<String>,
+    hop_interval_ms: u64,
 ) -> Result<(), ScanError> {
     if !ghz_2_4 && !ghz_5 {
         return Err(ScanError::NoBandSelected);
@@ -52,15 +53,19 @@ pub fn set_scan_process(
 
     let channels = sniffer::build_channel_list(ghz_2_4, ghz_5, channel_filter.as_deref());
 
-    // Adapt a scan already running on this interface by swapping its channel plan.
+    // Adapt a scan already running on this interface by swapping its channel plan
+    // and dwell time in place.
     let running = match SCAN_HANDLE.lock().unwrap().as_ref() {
-        Some(handle) if handle.iface == iface => Some(handle.channels.clone()),
+        Some(handle) if handle.iface == iface => {
+            Some((handle.channels.clone(), handle.hop_interval.clone()))
+        }
         _ => None,
     };
-    if let Some(running) = running {
-        *running.lock().unwrap() = channels;
+    if let Some((running_channels, running_hop)) = running {
+        *running_channels.lock().unwrap() = channels;
+        running_hop.store(hop_interval_ms, Ordering::Relaxed);
         log::info!(
-            "scan updated: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}"
+            "scan updated: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}, hop interval: {hop_interval_ms}ms"
         );
         return Ok(());
     }
@@ -71,24 +76,33 @@ pub fn set_scan_process(
     let stop = Arc::new(AtomicBool::new(false));
     let channels = Arc::new(Mutex::new(channels));
     let channel = Arc::new(AtomicU32::new(0));
+    let hop_interval = Arc::new(AtomicU64::new(hop_interval_ms));
     let thread_stop = stop.clone();
     let thread_channels = channels.clone();
     let thread_channel = channel.clone();
+    let thread_hop = hop_interval.clone();
     let thread_iface = iface.to_string();
     let handle = std::thread::spawn(move || {
-        sniffer::run(thread_iface, thread_channels, thread_channel, thread_stop);
+        sniffer::run(
+            thread_iface,
+            thread_channels,
+            thread_channel,
+            thread_hop,
+            thread_stop,
+        );
     });
 
     SCAN_HANDLE.lock().unwrap().replace(ScanHandle {
         iface: iface.to_string(),
         channels,
         channel,
+        hop_interval,
         stop,
         handle,
     });
 
     log::info!(
-        "scan started: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}"
+        "scan started: 2.4ghz: {ghz_2_4}, 5ghz: {ghz_5}, channel filter: {channel_filter:?}, hop interval: {hop_interval_ms}ms"
     );
 
     Ok(())

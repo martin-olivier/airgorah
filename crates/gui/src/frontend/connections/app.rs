@@ -808,13 +808,15 @@ fn start_app_refresh(app: &Application, app_data: Rc<AppData>) {
                     capture_state.clear();
                 }
 
+                let notifications_enabled = backend::get_settings().capture_notifications;
+
                 for (bssid, ap) in aps.iter() {
                     let (had_handshake, had_pmkid) =
                         capture_state.get(bssid).copied().unwrap_or((false, false));
-                    if ap.handshake && !had_handshake {
+                    if notifications_enabled && ap.handshake && !had_handshake {
                         notify_capture(&app, &ap.essid, bssid, "Handshake");
                     }
-                    if ap.pmkid && !had_pmkid {
+                    if notifications_enabled && ap.pmkid && !had_pmkid {
                         notify_capture(&app, &ap.essid, bssid, "PMKID");
                     }
                     capture_state.insert(bssid.clone(), (ap.handshake, ap.pmkid));
@@ -1119,6 +1121,7 @@ fn connect_capture_button(app_data: Rc<AppData>) {
             );
 
             file_chooser_dialog.set_current_name(&format!("{essid}.cap"));
+            apply_default_folder(&file_chooser_dialog);
             file_chooser_dialog.run_async(clone!(
                 #[strong]
                 app_data,
