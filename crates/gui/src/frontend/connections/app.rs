@@ -10,6 +10,7 @@ use glib::clone;
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4::prelude::*;
 use gtk4::*;
+use std::collections::HashMap;
 use std::io::BufReader;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
@@ -724,7 +725,25 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
     ));
 }
 
-fn start_app_refresh(app_data: Rc<AppData>) {
+/// Send a desktop notification announcing freshly captured crackable material.
+fn notify_capture(app: &Application, essid: &str, bssid: &str, kind: &str) {
+    let icon = gio::BytesIcon::new(&glib::Bytes::from_static(globals::APP_ICON));
+    let network = match essid.trim().is_empty() {
+        true => bssid.to_string(),
+        false => format!("{essid} ({bssid})"),
+    };
+
+    let notification = gio::Notification::new(&format!("{kind} captured"));
+    notification.set_body(Some(&network));
+    notification.set_icon(&icon);
+
+    app.send_notification(Some(&format!("airgorah-{kind}-{bssid}")), &notification);
+}
+
+fn start_app_refresh(app: &Application, app_data: Rc<AppData>) {
+    let mut capture_state: HashMap<String, (bool, bool)> = HashMap::new();
+    let app = app.clone();
+
     glib::timeout_add_local(
         Duration::from_millis(100),
         clone!(
@@ -785,7 +804,21 @@ fn start_app_refresh(app_data: Rc<AppData>) {
 
                 let aps = backend::get_airodump_data();
 
+                if aps.is_empty() {
+                    capture_state.clear();
+                }
+
                 for (bssid, ap) in aps.iter() {
+                    let (had_handshake, had_pmkid) =
+                        capture_state.get(bssid).copied().unwrap_or((false, false));
+                    if ap.handshake && !had_handshake {
+                        notify_capture(&app, &ap.essid, bssid, "Handshake");
+                    }
+                    if ap.pmkid && !had_pmkid {
+                        notify_capture(&app, &ap.essid, bssid, "PMKID");
+                    }
+                    capture_state.insert(bssid.clone(), (ap.handshake, ap.pmkid));
+
                     if !backend::get_settings().display_hidden_ap && ap.hidden {
                         if let Some(iter) =
                             list_store_find(app_data.app_gui.aps_model.as_ref(), 1, bssid.as_str())
@@ -1137,7 +1170,7 @@ pub fn connect(app: &Application, app_data: Rc<AppData>) {
     connect_top_button(app_data.clone());
     connect_bottom_button(app_data.clone());
 
-    start_app_refresh(app_data.clone());
+    start_app_refresh(app, app_data.clone());
 
     start_update_checker();
 
