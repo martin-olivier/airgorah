@@ -740,8 +740,22 @@ fn notify_capture(app: &Application, essid: &str, bssid: &str, kind: &str) {
     app.send_notification(Some(&format!("airgorah-{kind}-{bssid}")), &notification);
 }
 
+/// Notify the user when a completed scan did not discover any access points.
+fn notify_empty_scan(app: &Application) {
+    let icon = gio::BytesIcon::new(&glib::Bytes::from_static(globals::APP_ICON));
+    let notification = gio::Notification::new("No access points found");
+    notification.set_body(Some(
+        "Check the selected bands and channel filter. If nearby networks should be visible, the interface may not be receiving frames; some iwlwifi devices need a driver reset after monitor-mode scans.",
+    ));
+    notification.set_icon(&icon);
+
+    app.send_notification(Some("airgorah-empty-scan"), &notification);
+}
+
 fn start_app_refresh(app: &Application, app_data: Rc<AppData>) {
     let mut capture_state: HashMap<String, (bool, bool)> = HashMap::new();
+    let mut scan_was_active = false;
+    let mut scan_found_aps = false;
     let app = app.clone();
 
     glib::timeout_add_local(
@@ -803,6 +817,17 @@ fn start_app_refresh(app: &Application, app_data: Rc<AppData>) {
                 };
 
                 let aps = backend::get_airodump_data();
+                let scan_is_active = backend::is_scan_process();
+
+                if scan_is_active {
+                    if !scan_was_active {
+                        scan_found_aps = false;
+                    }
+                    scan_found_aps |= !aps.is_empty();
+                } else if scan_was_active && !scan_found_aps {
+                    notify_empty_scan(&app);
+                }
+                scan_was_active = scan_is_active;
 
                 if aps.is_empty() {
                     capture_state.clear();
