@@ -20,6 +20,6 @@ regex = "1.13"
 log = "0.4"
 env_logger = "0.11"
 thiserror = "2"
-nix = { version = "0.31", features = ["signal", "socket", "user", "fs"] }
+nix = { version = "0.32", features = ["signal", "socket", "user", "fs"] }
 which = "8"
 lazy_static = "1"
