@@ -168,12 +168,33 @@ fn record_essid(
     let Some(bssid) = header.bssid() else {
         return;
     };
-    if let Some(essid) = info.essid()
-        && !essid.is_empty()
-        && !essid.starts_with("<hidden")
-    {
-        essids.entry(bssid.to_long_string()).or_insert(essid);
-    }
+    let Some(essid) = essid_of(info) else {
+        return;
+    };
+    essids.entry(bssid.to_long_string()).or_insert(essid);
+}
+
+/// The network name a beacon / probe response advertises, or `None` when it
+/// carries none.
+///
+/// libwifi decodes the SSID element with `String::from_utf8_lossy`, which keeps
+/// any NUL or other control byte the frame carries. Such a byte must not be
+/// reported: a cloaked AP that beacons an all-NUL SSID would otherwise yield a
+/// non-empty ESSID that is not a network name, and an interior NUL cannot be
+/// stored in a GTK string — so the GUI would panic (or, in a release build,
+/// silently show a truncated name) as soon as the capture holding it is opened for
+/// decryption. The scan path already scrubs the same bytes in the agent's sniffer;
+/// this reader is the other producer of the value, so it applies the same rule.
+fn essid_of(info: &StationInfo) -> Option<String> {
+    info.essid()
+        .filter(|essid| !essid.starts_with("<hidden"))
+        .map(|essid| {
+            essid
+                .chars()
+                .filter(|c| !c.is_control())
+                .collect::<String>()
+        })
+        .filter(|essid| !essid.is_empty())
 }
 
 /// Whether an EAPOL key frame carries a PMKID that a passphrase dictionary can
@@ -535,5 +556,113 @@ mod tests {
     fn rejects_non_pcap_data() {
         assert!(PcapReader::new(&[0u8; 4]).is_none()); // too short
         assert!(PcapReader::new(&[0u8; 24]).is_none()); // right size, bad magic
+    }
+
+    /// Build an 802.11 beacon carrying `ssid` as the raw SSID element bytes.
+    fn beacon_frame(bssid: [u8; 6], ssid: &[u8], channel: u8) -> Vec<u8> {
+        let mut frame = Vec::new();
+        frame.extend_from_slice(&[0x80, 0x00]); // frame control: beacon
+        frame.extend_from_slice(&[0x00, 0x00]); // duration
+        frame.extend_from_slice(&[0xff; 6]); // address 1 (broadcast)
+        frame.extend_from_slice(&bssid); // address 2 (BSSID)
+        frame.extend_from_slice(&bssid); // address 3 (BSSID)
+        frame.extend_from_slice(&[0x00, 0x00]); // sequence control
+        frame.extend_from_slice(&[0x00; 8]); // timestamp
+        frame.extend_from_slice(&100u16.to_le_bytes()); // beacon interval
+        frame.extend_from_slice(&0x0431u16.to_le_bytes()); // capability info
+        frame.push(0x00); // SSID element id
+        frame.push(ssid.len() as u8);
+        frame.extend_from_slice(ssid);
+        frame.extend_from_slice(&[0x03, 0x01, channel]); // DS parameter set
+        frame.extend_from_slice(&[0x01, 0x04, 0x82, 0x84, 0x8b, 0x96]); // supported rates
+        frame
+    }
+
+    /// Build an 802.11 Data frame (to-DS) carrying an EAPOL-Key message 2, i.e. the
+    /// SNonce + MIC half of a 4-way handshake, sent by `station` to `bssid`.
+    fn eapol_m2_frame(bssid: [u8; 6], station: [u8; 6]) -> Vec<u8> {
+        let mut frame = Vec::new();
+        frame.extend_from_slice(&[0x08, 0x01]); // frame control: Data, to_ds
+        frame.extend_from_slice(&[0x00, 0x00]); // duration
+        frame.extend_from_slice(&bssid); // address 1 (RA): the AP
+        frame.extend_from_slice(&station); // address 2 (TA): the station
+        frame.extend_from_slice(&bssid); // address 3: BSSID
+        frame.extend_from_slice(&[0x00, 0x00]); // sequence control
+        frame.extend_from_slice(&[0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e]);
+
+        let mut eapol = Vec::new();
+        eapol.push(0x02); // protocol version
+        eapol.push(0x03); // packet type: EAPOL-Key
+        eapol.extend_from_slice(&95u16.to_be_bytes()); // packet length
+        eapol.push(0x02); // descriptor type: RSN
+        eapol.extend_from_slice(&0x010au16.to_be_bytes()); // key information: message 2
+        eapol.extend_from_slice(&0x0010u16.to_be_bytes()); // key length
+        eapol.extend_from_slice(&2u64.to_be_bytes()); // replay counter
+        eapol.extend_from_slice(&[0x22; 32]); // key nonce (SNonce)
+        eapol.extend_from_slice(&[0x00; 16]); // key iv
+        eapol.extend_from_slice(&0u64.to_be_bytes()); // key rsc
+        eapol.extend_from_slice(&0u64.to_be_bytes()); // key id
+        eapol.extend_from_slice(&[0x00; 16]); // key mic
+        eapol.extend_from_slice(&0u16.to_be_bytes()); // key data length
+        frame.extend_from_slice(&eapol);
+        frame
+    }
+
+    /// Capture an AP that beacons `ssid_bytes` and completes a 4-way handshake, and
+    /// return the single reported crackable. The handshake keeps the AP in the
+    /// result, so this isolates what the reported ESSID is.
+    fn crackable_for_beaconed_ssid(ssid_bytes: &[u8]) -> Crackable {
+        let bssid = [0x18, 0x86, 0x37, 0x1f, 0x30, 0x40];
+        let station = [0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
+
+        let mut data = global_header(LINKTYPE_IEEE802_11);
+        push_record(&mut data, &beacon_frame(bssid, ssid_bytes, 6));
+        push_record(&mut data, &eapol_m1_frame(bssid, station, None));
+        push_record(&mut data, &eapol_m2_frame(bssid, station));
+
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "airgorah-essid-test-{}-{}.cap",
+            std::process::id(),
+            ssid_bytes.len()
+        ));
+        std::fs::write(&path, &data).unwrap();
+
+        let mut crackables = get_crackables([&path]).unwrap();
+        std::fs::remove_file(&path).ok();
+
+        assert_eq!(crackables.len(), 1);
+        assert!(crackables[0].handshake);
+        crackables.remove(0)
+    }
+
+    #[test]
+    fn reports_the_essid_of_a_beaconed_ap() {
+        // Baseline: a plain SSID comes through unchanged.
+        assert_eq!(crackable_for_beaconed_ssid(b"MyNet").essid, "MyNet");
+    }
+
+    #[test]
+    fn scrubs_control_bytes_from_a_reported_essid() {
+        // libwifi decodes the SSID element with `String::from_utf8_lossy`, which keeps
+        // any NUL (or other control) byte the beacon carries. A cloaked AP that beacons
+        // an all-NUL SSID therefore yields a non-empty ESSID that is not a network name,
+        // and an interior NUL cannot be stored in a GTK string: the GUI's capture list
+        // panics with GStrInteriorNulError (the same defect fixed for the scan path in
+        // commit dfbda73, which only covered the sniffer).
+        let crackable = crackable_for_beaconed_ssid(b"\0\0\0");
+        assert!(
+            !crackable.essid.contains('\0'),
+            "reported ESSID {:?} still carries NUL bytes",
+            crackable.essid
+        );
+        // Nothing displayable is left, so the AP is reported like any other AP whose
+        // name was never learned.
+        assert_eq!(crackable.essid, "hidden");
+    }
+
+    #[test]
+    fn keeps_the_readable_part_of_a_partly_nul_essid() {
+        assert_eq!(crackable_for_beaconed_ssid(b"Free\0WiFi").essid, "FreeWiFi");
     }
 }
