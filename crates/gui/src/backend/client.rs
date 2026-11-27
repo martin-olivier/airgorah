@@ -69,13 +69,13 @@ fn expect_ok(response: Response) -> Result<(), AgentError> {
 
 /// Format the "missing required tools" error shown to the user. Both the GUI's
 /// own startup check and the agent's `Hello` reply feed through here.
-fn missing_deps_error<S: AsRef<str>>(missing: &[S]) -> AgentError {
+fn missing_deps_error<S: AsRef<str>>(process: &str, missing: &[S]) -> AgentError {
     let list = missing
         .iter()
         .map(AsRef::as_ref)
         .collect::<Vec<_>>()
         .join(", ");
-    AgentError(format!("Missing required dependencies: {list}"))
+    AgentError(format!("{process} could not find {list} in its PATH."))
 }
 
 /// Startup initialization that needs no privilege: load settings and warn if the
@@ -96,7 +96,7 @@ pub fn init() -> Result<(), AgentError> {
 
     let missing = deps::missing_required(Requirer::Gui);
     if !missing.is_empty() {
-        return Err(missing_deps_error(&missing));
+        return Err(missing_deps_error("The desktop app", &missing));
     }
 
     Ok(())
@@ -152,7 +152,10 @@ fn connect_agent(sock: &str, child: &mut Child) -> Result<UnixStream, AgentError
             missing_dependencies,
         } => {
             if !missing_dependencies.is_empty() {
-                return Err(missing_deps_error(&missing_dependencies));
+                return Err(missing_deps_error(
+                    "The privileged agent",
+                    &missing_dependencies,
+                ));
             }
         }
         Response::Error { message } => return Err(AgentError(message)),
